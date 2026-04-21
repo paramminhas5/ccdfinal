@@ -19,11 +19,16 @@ const Events = () => (
     <main className="bg-background text-foreground min-h-screen">
       <Nav />
       <PageHero
-        eyebrow="/ EVENTS"
+        eyebrow="EVENTS"
         title="EVERY EDITION."
-        subtitle="The cult underground series. Every drop, every floor, every city."
         bg="bg-lime"
-      />
+        textColor="text-ink"
+        eyebrowColor="text-magenta"
+      >
+        <p className="text-ink/80 font-medium text-lg max-w-2xl">
+          The cult underground series. Every drop, every floor, every city.
+        </p>
+      </PageHero>
       <section className="container py-16 md:py-24">
         <div className="grid gap-6 max-w-4xl">
           {all.map((e) => (
