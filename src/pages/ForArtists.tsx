@@ -1,0 +1,61 @@
+import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
+import PageHero from "@/components/PageHero";
+import Marquee from "@/components/Marquee";
+import SEO from "@/components/SEO";
+
+const bullets = [
+  "Curated crowd that cares about music",
+  "Content assets: full sets, clips, photos",
+  "Stronger personal brand association",
+  "Collabs, merch, community building",
+  "Repeat bookings and ecosystem value",
+];
+
+const ForArtists = () => (
+  <main className="bg-background text-foreground">
+    <SEO
+      title="For Artists — Cats Can Dance"
+      description="A platform, not just a set time. CCD helps artists compound — audience, identity, visibility — gig after gig."
+      path="/for-artists"
+    />
+    <Nav />
+    <PageHero
+      eyebrow="FOR ARTISTS"
+      title={<>A PLATFORM,<br/>NOT JUST<br/>A SET TIME.</>}
+      bg="bg-orange"
+      textColor="text-ink"
+      eyebrowColor="text-cream"
+    />
+    <Marquee bg="bg-magenta" />
+    <section className="bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain">
+      <div className="container grid md:grid-cols-2 gap-12">
+        <div>
+          <h2 className="font-display text-4xl md:text-6xl text-ink leading-[0.95] mb-6">
+            BUILD AN<br/>AUDIENCE,<br/>NOT JUST A NIGHT.
+          </h2>
+          <p className="text-ink/80 text-lg md:text-xl font-medium mb-6">
+            Most gigs are transactional. CCD turns each set into a content drop, a community moment and a repeat booking.
+          </p>
+          <a
+            href="mailto:artists@catscandance.com"
+            className="inline-block bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+          >
+            PLAY WITH US →
+          </a>
+        </div>
+        <ul className="space-y-3">
+          {bullets.map((b, i) => (
+            <li key={b} className="bg-orange border-4 border-ink chunk-shadow p-4 font-display text-lg md:text-xl text-ink flex gap-3">
+              <span className="text-cream">0{i + 1}</span>
+              {b}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+    <Footer />
+  </main>
+);
+
+export default ForArtists;

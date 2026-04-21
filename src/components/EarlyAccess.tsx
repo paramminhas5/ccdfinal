@@ -1,8 +1,12 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import note from "@/assets/music-note.png";
 import Confetti from "@/components/Confetti";
+import { supabase } from "@/integrations/supabase/client";
+
+const EmailSchema = z.string().trim().toLowerCase().email().max(255);
 
 const EarlyAccess = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -12,16 +16,46 @@ const EarlyAccess = () => {
   const orbit1 = useTransform(scrollYProgress, [0, 1], [0, 360]);
   const orbit2 = useTransform(scrollYProgress, [0, 1], [0, -360]);
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
+  const [busy, setBusy] = useState(false);
   const [burst, setBurst] = useState(false);
-  const onSubmit = (e: React.FormEvent) => {
+  const lastSubmitRef = useRef(0);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    toast.success("You're in! Welcome to the litter.");
-    setEmail("");
-    setBurst(false);
-    requestAnimationFrame(() => setBurst(true));
-    setTimeout(() => setBurst(false), 1300);
+    if (busy) return;
+    const now = Date.now();
+    if (now - lastSubmitRef.current < 2000) return;
+    lastSubmitRef.current = now;
+
+    const parsed = EmailSchema.safeParse(email);
+    if (!parsed.success) {
+      toast.error("Hmm, that doesn't look like a valid email.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("early-access-signup", {
+        body: { email: parsed.data, source: "home", website },
+      });
+      if (error) throw error;
+      if ((data as any)?.duplicate) {
+        toast("You're already on the list. See you soon. 🐾");
+      } else {
+        toast.success("You're in! Welcome to the litter.");
+      }
+      setEmail("");
+      setBurst(false);
+      requestAnimationFrame(() => setBurst(true));
+      setTimeout(() => setBurst(false), 1300);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Try again?");
+    } finally {
+      setBusy(false);
+    }
   };
+
   return (
     <section ref={ref} id="early-access" className="relative bg-electric-blue py-24 md:py-32 border-b-4 border-ink overflow-hidden">
       <Confetti active={burst} />
@@ -40,19 +74,32 @@ const EarlyAccess = () => {
           Sign up for early access to drops, gigs, and the cult before everyone else catches on.
         </p>
         <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+          {/* honeypot */}
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            name="website"
+            aria-hidden
+            className="hidden"
+          />
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
+            maxLength={255}
             className="flex-1 bg-cream text-ink border-4 border-ink px-5 py-4 font-display text-lg placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
           />
           <button
             type="submit"
-            className="bg-magenta text-cream font-display text-xl px-8 py-4 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+            disabled={busy}
+            className="bg-magenta text-cream font-display text-xl px-8 py-4 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
           >
-            COUNT ME IN
+            {busy ? "ADDING…" : "COUNT ME IN"}
           </button>
         </form>
       </div>
