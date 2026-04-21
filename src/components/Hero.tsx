@@ -54,6 +54,9 @@ const Hero = () => {
           <h1 className="font-display text-[18vw] md:text-[14vw] leading-[0.85] text-cream drop-shadow-[6px_6px_0_hsl(var(--ink))] -mt-4 md:-mt-6">
             CATS<br/>CAN<br/>DANCE
           </h1>
+          <p className="sr-only">
+            Cats Can Dance is a Bangalore-based event organiser hosting the best underground dance music parties and electronic events in Bangalore, India.
+          </p>
         </div>
 
         {/* DJ cat — slightly overlaps the headline */}

@@ -306,6 +306,7 @@ const Admin = () => {
                 <TabsTrigger value="playlists" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PLAYLISTS</TabsTrigger>
                 <TabsTrigger value="events" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENTS</TabsTrigger>
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
+                <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
               </TabsList>
 
               {/* SIGNUPS */}
@@ -463,6 +464,80 @@ const Admin = () => {
                   )}
                 </div>
               </TabsContent>
+
+              {/* SEO CHECKLIST */}
+              <TabsContent value="seo">
+                <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-5">
+                  <div>
+                    <h3 className="font-display text-2xl text-ink mb-1">SEO + GEO CHECKLIST</h3>
+                    <p className="text-ink/70 font-medium">
+                      Manual tasks to rank for "best parties / events in Bangalore & India" on Google and AI engines (ChatGPT, Perplexity, Gemini).
+                    </p>
+                  </div>
+
+                  <ChecklistGroup
+                    title="SEARCH ENGINES"
+                    items={[
+                      "Submit https://catscandance.com/sitemap.xml to Google Search Console",
+                      "Submit sitemap to Bing Webmaster Tools",
+                      "Verify ownership in Google Search Console (DNS or HTML tag)",
+                      "Request indexing for /, /events, /about after each big update",
+                    ]}
+                  />
+
+                  <ChecklistGroup
+                    title="GOOGLE BUSINESS / MAPS"
+                    items={[
+                      "Create / claim Google Business Profile: 'Cats Can Dance — Event Organiser, Bangalore'",
+                      "Category: Event Planner + Performing Arts Group",
+                      "Add photos from Episodes, hours, contact, website link",
+                      "Collect 5★ reviews from attendees after each Episode",
+                    ]}
+                  />
+
+                  <ChecklistGroup
+                    title="LOCAL LISTINGS (INDIA)"
+                    items={[
+                      "List Cats Can Dance on Insider.in",
+                      "List on BookMyShow Events",
+                      "List on Paytm Insider",
+                      "Create Resident Advisor (RA) promoter profile",
+                      "List on Skiddle (international reach)",
+                    ]}
+                  />
+
+                  <ChecklistGroup
+                    title="BACKLINKS / PRESS"
+                    items={[
+                      "Pitch Rolling Stone India",
+                      "Pitch Wild City (wildcity.com)",
+                      "Pitch Homegrown (homegrown.co.in)",
+                      "Pitch Mid-day Bangalore + Bangalore Mirror",
+                      "Reach out to local music podcasts / Spotify editorial",
+                    ]}
+                  />
+
+                  <ChecklistGroup
+                    title="CONSISTENCY (NAP)"
+                    items={[
+                      "Same Name + Address + Email across IG bio, Linktree, listings",
+                      "Use 'Cats Can Dance — Bangalore' wording consistently",
+                      "Link back to https://catscandance.com from every listing",
+                    ]}
+                  />
+
+                  <ChecklistGroup
+                    title="AI / GEO READY (DONE FOR YOU)"
+                    items={[
+                      "✓ /llms.txt — AI crawler brand summary",
+                      "✓ /llms-full.txt — long-form brand + events",
+                      "✓ robots.txt allows GPTBot / ClaudeBot / PerplexityBot / Google-Extended",
+                      "✓ JSON-LD: Organization, LocalBusiness, Event, FAQ, BlogPosting",
+                      "✓ Geo meta tags + Bangalore address in Footer",
+                    ]}
+                  />
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         )}
@@ -538,6 +613,20 @@ const Field = ({ label, value, onChange }: { label: string; value: string; onCha
       onChange={(e) => onChange(e.target.value)}
       className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
     />
+  </div>
+);
+
+const ChecklistGroup = ({ title, items }: { title: string; items: string[] }) => (
+  <div>
+    <p className="font-display text-magenta text-lg mb-2">/ {title}</p>
+    <ul className="space-y-2">
+      {items.map((it) => (
+        <li key={it} className="flex items-start gap-3 bg-background/50 border-2 border-ink/20 px-3 py-2">
+          <span className="font-display text-ink/40 mt-0.5">▢</span>
+          <span className="text-ink/85 font-medium">{it}</span>
+        </li>
+      ))}
+    </ul>
   </div>
 );
 

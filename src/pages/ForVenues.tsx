@@ -16,8 +16,8 @@ const bullets = [
 const ForVenues = () => (
   <main className="bg-background text-foreground">
     <SEO
-      title="For Venues — Cats Can Dance"
-      description="Turn your space into a destination. CCD brings a higher-value crowd, premium content and repeat footfall to venues."
+      title="For Venues — Cats Can Dance | Bangalore, India"
+      description="Host Cats Can Dance at your Bangalore venue. A higher-value crowd, premium content and repeat footfall from India's underground dance music community."
       path="/for-venues"
     />
     <Nav />

@@ -28,16 +28,39 @@ const Events = () => {
       e.status === "upcoming"
         ? "https://schema.org/EventScheduled"
         : "https://schema.org/EventMovedOnline",
-    location: { "@type": "Place", name: e.venue, address: e.city },
-    organizer: { "@type": "Organization", name: "Cats Can Dance", url: "https://catscandance.com" },
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: {
+      "@type": "Place",
+      name: e.venue,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: e.venue,
+        addressLocality: e.city || "Bangalore",
+        addressRegion: "Karnataka",
+        addressCountry: "IN",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: "Cats Can Dance",
+      url: "https://catscandance.com",
+    },
+    offers: {
+      "@type": "Offer",
+      url: `https://catscandance.com/events/${e.slug}`,
+      price: "0",
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+      validFrom: new Date().toISOString(),
+    },
     url: `https://catscandance.com/events/${e.slug}`,
   }));
 
   return (
     <>
       <SEO
-        title="Events — Cats Can Dance"
-        description="All Cats Can Dance editions, past and upcoming."
+        title="Upcoming Parties & Events in Bangalore, India | Cats Can Dance"
+        description="Every Cats Can Dance edition — the best underground parties and dance music events in Bangalore, India. Past and upcoming. RSVP free."
         path="/events"
         jsonLd={eventLd}
       />

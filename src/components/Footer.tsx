@@ -80,7 +80,10 @@ const Footer = () => {
           </div>
         </div>
 
-        <p className="mt-16 text-cream/50 text-sm font-medium text-center">© Cats Can Dance — so can you.</p>
+        <p className="mt-16 text-cream/70 text-sm font-display text-center tracking-wide">
+          BANGALORE · KARNATAKA · INDIA
+        </p>
+        <p className="mt-2 text-cream/50 text-sm font-medium text-center">© Cats Can Dance — so can you.</p>
       </div>
     </section>
   );

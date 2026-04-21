@@ -17,13 +17,19 @@ const BlogPost = () => {
     description: post.excerpt,
     image: [post.cover],
     datePublished: post.date,
+    dateModified: post.date,
+    inLanguage: "en-IN",
     author: { "@type": "Person", name: post.author },
     publisher: {
       "@type": "Organization",
       name: "Cats Can Dance",
       logo: { "@type": "ImageObject", url: "https://catscandance.com/ccd-logo.png" },
     },
-    mainEntityOfPage: `https://catscandance.com/blog/${post.slug}`,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://catscandance.com/blog/${post.slug}`,
+    },
+    about: ["dance music", "events in Bangalore", "underground parties India"],
   };
 
   return (
