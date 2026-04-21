@@ -6,7 +6,15 @@ import SEO from "@/components/SEO";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Signup = { id: string; email: string; source: string | null; created_at: string };
-type PlaylistItem = { id: string; title: string; spotify_id: string };
+type Platform = "spotify" | "youtube" | "soundcloud";
+type PlaylistItem = {
+  id: string;
+  title: string;
+  platform: Platform;
+  embed_id: string;
+  url: string;
+  spotify_id?: string;
+};
 type Settings = { id: string; playlists: PlaylistItem[]; featured_playlist_id: string | null };
 type EventRow = {
   id?: string; slug: string; title: string; date: string; city: string; venue: string;
@@ -16,10 +24,36 @@ type Message = { id: string; name: string; email: string; message: string; creat
 
 const PASS_KEY = "ccd_admin_pass";
 
-const extractSpotifyId = (input: string) => {
-  const m = input.match(/playlist\/([a-zA-Z0-9]+)/);
-  return m ? m[1] : input.trim();
+const extractPlaylistInfo = (
+  platform: Platform,
+  input: string
+): { embed_id: string; url: string } => {
+  const trimmed = input.trim();
+  if (platform === "spotify") {
+    const m = trimmed.match(/playlist\/([a-zA-Z0-9]+)/);
+    const id = m ? m[1] : trimmed;
+    return { embed_id: id, url: `https://open.spotify.com/playlist/${id}` };
+  }
+  if (platform === "youtube") {
+    const m = trimmed.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    const id = m ? m[1] : trimmed;
+    return { embed_id: id, url: `https://www.youtube.com/playlist?list=${id}` };
+  }
+  return { embed_id: trimmed, url: trimmed };
 };
+
+const normalizePlaylist = (p: any): PlaylistItem => ({
+  id: p.id,
+  title: p.title,
+  platform: (p.platform as Platform) ?? "spotify",
+  embed_id: p.embed_id ?? p.spotify_id ?? "",
+  url:
+    p.url ??
+    (p.spotify_id ? `https://open.spotify.com/playlist/${p.spotify_id}` : ""),
+});
+
+const platformGlyph = (p: Platform) =>
+  p === "spotify" ? "♫" : p === "youtube" ? "▶" : "☁";
 
 const Admin = () => {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PASS_KEY) ?? "");
@@ -32,6 +66,7 @@ const Admin = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [newPlTitle, setNewPlTitle] = useState("");
   const [newPlUrl, setNewPlUrl] = useState("");
+  const [newPlPlatform, setNewPlPlatform] = useState<Platform>("spotify");
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -70,7 +105,14 @@ const Admin = () => {
         callContent({ method: "GET", search: "?type=events" }),
         callContent({ method: "GET", search: "?type=messages" }),
       ]);
-      setSettings(s.settings);
+      setSettings(
+        s.settings
+          ? {
+              ...s.settings,
+              playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
+            }
+          : null
+      );
       setEvents(e.events);
       setMessages(m.messages);
     } catch {
@@ -148,11 +190,15 @@ const Admin = () => {
 
   const addPlaylist = () => {
     if (!settings || !newPlTitle.trim() || !newPlUrl.trim()) return;
-    const sid = extractSpotifyId(newPlUrl);
+    const { embed_id, url } = extractPlaylistInfo(newPlPlatform, newPlUrl);
+    if (!embed_id) return;
     const id = `${Date.now()}`;
     const next: Settings = {
       ...settings,
-      playlists: [...settings.playlists, { id, title: newPlTitle.trim(), spotify_id: sid }],
+      playlists: [
+        ...settings.playlists,
+        { id, title: newPlTitle.trim(), platform: newPlPlatform, embed_id, url },
+      ],
       featured_playlist_id: settings.featured_playlist_id ?? id,
     };
     setNewPlTitle(""); setNewPlUrl("");
@@ -301,14 +347,29 @@ const Admin = () => {
               <TabsContent value="playlists">
                 <div className="bg-cream border-4 border-ink chunk-shadow p-6 mb-6">
                   <h3 className="font-display text-2xl text-ink mb-4">ADD PLAYLIST</h3>
-                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                  <div className="grid sm:grid-cols-3 gap-3 mb-3">
+                    <select
+                      value={newPlPlatform}
+                      onChange={(e) => setNewPlPlatform(e.target.value as Platform)}
+                      className="bg-cream text-ink border-4 border-ink px-4 py-3 font-display focus:outline-none focus:bg-acid-yellow"
+                    >
+                      <option value="spotify">♫ Spotify</option>
+                      <option value="youtube">▶ YouTube</option>
+                      <option value="soundcloud">☁ SoundCloud</option>
+                    </select>
                     <input
                       placeholder="Title (e.g. Summer Mix)"
                       value={newPlTitle} onChange={(e) => setNewPlTitle(e.target.value)}
                       className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
                     />
                     <input
-                      placeholder="Spotify URL or playlist ID"
+                      placeholder={
+                        newPlPlatform === "spotify"
+                          ? "Spotify playlist URL"
+                          : newPlPlatform === "youtube"
+                          ? "YouTube playlist URL (with ?list=…)"
+                          : "SoundCloud track or playlist URL"
+                      }
                       value={newPlUrl} onChange={(e) => setNewPlUrl(e.target.value)}
                       className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
                     />
@@ -321,9 +382,13 @@ const Admin = () => {
                 <div className="space-y-3">
                   {settings?.playlists.map((p) => (
                     <div key={p.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-3 justify-between">
-                      <div>
-                        <p className="font-display text-xl text-ink">{p.title}</p>
-                        <p className="text-ink/60 text-sm font-mono">{p.spotify_id}</p>
+                      <div className="min-w-0">
+                        <p className="font-display text-xl text-ink flex items-center gap-2">
+                          <span aria-hidden>{platformGlyph(p.platform)}</span>
+                          {p.title}
+                          <span className="text-ink/50 text-xs uppercase">{p.platform}</span>
+                        </p>
+                        <p className="text-ink/60 text-sm font-mono truncate max-w-[60ch]">{p.url || p.embed_id}</p>
                       </div>
                       <div className="flex gap-2">
                         {settings.featured_playlist_id === p.id ? (

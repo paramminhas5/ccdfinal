@@ -10,9 +10,32 @@ const BlogPost = () => {
 
   if (!post) return <Navigate to="/" replace />;
 
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    image: [post.cover],
+    datePublished: post.date,
+    author: { "@type": "Person", name: post.author },
+    publisher: {
+      "@type": "Organization",
+      name: "Cats Can Dance",
+      logo: { "@type": "ImageObject", url: "https://catscandance.com/ccd-logo.png" },
+    },
+    mainEntityOfPage: `https://catscandance.com/blog/${post.slug}`,
+  };
+
   return (
     <>
-      <SEO title={`${post.title} — Cats Can Dance`} description={post.excerpt} path={`/blog/${post.slug}`} />
+      <SEO
+        title={`${post.title} — Cats Can Dance`}
+        description={post.excerpt}
+        path={`/blog/${post.slug}`}
+        image={post.cover}
+        type="article"
+        jsonLd={articleLd}
+      />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
         <article className="pt-32 pb-16">

@@ -16,6 +16,7 @@ import PawCursor from "@/components/PawCursor";
 import Catbot from "@/components/Catbot";
 import SectionReveal from "@/components/SectionReveal";
 import SEO from "@/components/SEO";
+import MoonwalkCat from "@/components/MoonwalkCat";
 
 const Index = () => {
   useSmoothScroll();
@@ -30,6 +31,7 @@ const Index = () => {
         <Nav />
         <PawCursor />
         <Catbot />
+        <MoonwalkCat />
         <Hero />
         <Marquee bg="bg-acid-yellow" />
         <SectionReveal><About /></SectionReveal>
