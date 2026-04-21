@@ -7,10 +7,10 @@ const groups = [
     links: [
       { to: "/", label: "Home" },
       { to: "/about", label: "About" },
+      { to: "/events", label: "Events" },
       { to: "/shop", label: "Shop" },
+      { to: "/blog", label: "Blog" },
       { to: "/#playlist", label: "Playlist" },
-      { to: "/#events", label: "Events" },
-      { to: "/#drops", label: "Drops" },
     ],
   },
   {
@@ -30,6 +30,7 @@ const Footer = () => {
         src={ccdLogo}
         alt=""
         aria-hidden="true"
+        loading="lazy"
         style={{ filter: "invert(1) brightness(1.2)" }}
         className="absolute top-10 right-10 w-24 transition-transform duration-1000 hover:rotate-[360deg]"
       />
@@ -37,6 +38,7 @@ const Footer = () => {
         src={ccdLogo}
         alt=""
         aria-hidden="true"
+        loading="lazy"
         style={{ filter: "invert(1) brightness(1.2)" }}
         className="absolute bottom-20 left-10 w-20 transition-transform duration-1000 hover:rotate-[360deg]"
       />

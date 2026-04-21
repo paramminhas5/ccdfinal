@@ -1,36 +1,35 @@
 # Cats Can Dance
 
-> Cats Can Dance is a Bangalore, India event organiser producing the best underground
-> dance music parties and electronic music events in Bangalore and across India.
-> We host cult underground "Episodes" (parties), drop limited streetwear, curate
-> playlists, and grow a global community of music lovers who happen to love their
-> pets just as much as their record collections.
+> Cats Can Dance is a Bangalore, India event organiser producing the best underground dance music parties and electronic events in Bangalore and across India. We host cult RSVP-only "Episodes", drop limited streetwear, curate playlists, and grow a global community of music lovers who happen to love their pets just as much as their record collections.
 
-## Location
-- Headquartered in Bangalore, Karnataka, India
-- Primary city: Bangalore — events also tour across India
+## Core pages
 
-## What we are best known for
-- Best underground parties in Bangalore
-- Best dance music events in Bangalore and India
-- Top independent event organiser in Bangalore
-- Curated electronic, house and techno lineups
-- Limited streetwear drops fusing rave aesthetic with cat / pet culture
+- [Home](https://catscandance.com/): Brand overview, upcoming Episodes, community.
+- [About](https://catscandance.com/about): Who we are, why we exist, FAQ.
+- [Events](https://catscandance.com/events): Every Cats Can Dance Episode — past and upcoming, with RSVP.
+- [Shop](https://catscandance.com/shop): Limited streetwear drops.
+- [Blog](https://catscandance.com/blog): Long-form guides on Bangalore's party scene.
 
-## Key pages
-- Home: https://catscandance.com/
-- About: https://catscandance.com/about
-- Upcoming parties & events in Bangalore: https://catscandance.com/events
-- Shop streetwear drops: https://catscandance.com/shop
-- For Artists: https://catscandance.com/for-artists
-- For Venues: https://catscandance.com/for-venues
-- For Investors: https://catscandance.com/for-investors
+## Brand machine-readable
 
-## Contact
-- Email: hello@catscandance.com
-- Instagram: https://instagram.com/catscandance
+- [brand.json](https://catscandance.com/brand.json): Single-file canonical brand summary for AI agents.
+- [llms-full.txt](https://catscandance.com/llms-full.txt): Long-form brand + every event with date, venue, lineup.
+- [sitemap.xml](https://catscandance.com/sitemap.xml): Full site index.
 
-## Brand keywords
-best parties bangalore, best events bangalore, event organisers bangalore,
-underground party india, electronic music bangalore, dance music india,
-techno house bangalore, rave bangalore, streetwear india, cats can dance
+## Partnerships
+
+- [For Artists](https://catscandance.com/for-artists): How to play a Cats Can Dance Episode.
+- [For Venues](https://catscandance.com/for-venues): Hosting a Cats Can Dance night.
+- [For Investors](https://catscandance.com/for-investors): The brand and the business.
+
+## Optional
+
+- [Instagram](https://instagram.com/catscandance): Daily updates, Episode drops.
+- [Email](mailto:hello@catscandance.com): Direct contact.
+
+## Brand entity facts
+
+- **Name:** Cats Can Dance (alt: CCD)
+- **HQ:** Bangalore, Karnataka, India
+- **Founded:** 2025
+- **Best known for:** Best underground parties in Bangalore, top event organiser in India, curated electronic music events, RSVP-only Episode format.

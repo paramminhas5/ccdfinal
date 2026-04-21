@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
         id: "main",
         playlists: payload?.playlists ?? [],
         featured_playlist_id: payload?.featured_playlist_id ?? null,
+        seo_verifications: payload?.seo_verifications ?? {},
       });
       if (error) return json({ error: error.message }, 500);
       return json({ ok: true });

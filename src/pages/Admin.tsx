@@ -15,7 +15,13 @@ type PlaylistItem = {
   url: string;
   spotify_id?: string;
 };
-type Settings = { id: string; playlists: PlaylistItem[]; featured_playlist_id: string | null };
+type Verifications = { google?: string; bing?: string; plausible_domain?: string };
+type Settings = {
+  id: string;
+  playlists: PlaylistItem[];
+  featured_playlist_id: string | null;
+  seo_verifications?: Verifications;
+};
 type EventRow = {
   id?: string; slug: string; title: string; date: string; city: string; venue: string;
   blurb: string; lineup: string[]; status: string; poster_url: string | null; sort_order: number;
@@ -110,6 +116,7 @@ const Admin = () => {
           ? {
               ...s.settings,
               playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
+              seo_verifications: s.settings.seo_verifications ?? {},
             }
           : null
       );
@@ -219,6 +226,21 @@ const Admin = () => {
   const setFeatured = (id: string) => {
     if (!settings) return;
     savePlaylists({ ...settings, featured_playlist_id: id });
+  };
+
+  const saveVerifications = async (next: Verifications) => {
+    if (!settings) return;
+    const merged: Settings = { ...settings, seo_verifications: next };
+    setSettings(merged);
+    try {
+      await callContent({
+        method: "POST",
+        body: JSON.stringify({ type: "settings", action: "upsert", payload: merged }),
+      });
+      toast.success("Verification saved");
+    } catch {
+      toast.error("Save failed");
+    }
   };
 
   // Events
@@ -467,75 +489,90 @@ const Admin = () => {
 
               {/* SEO CHECKLIST */}
               <TabsContent value="seo">
-                <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-5">
-                  <div>
-                    <h3 className="font-display text-2xl text-ink mb-1">SEO + GEO CHECKLIST</h3>
-                    <p className="text-ink/70 font-medium">
-                      Manual tasks to rank for "best parties / events in Bangalore & India" on Google and AI engines (ChatGPT, Perplexity, Gemini).
+                <div className="space-y-6">
+                  <div className="bg-cream border-4 border-ink chunk-shadow p-6">
+                    <h3 className="font-display text-2xl text-ink mb-1">SEARCH CONSOLE & ANALYTICS</h3>
+                    <p className="text-ink/70 font-medium mb-5">
+                      Paste verification tokens — they'll appear in the page &lt;head&gt; site-wide.
                     </p>
+                    <VerificationForm
+                      value={settings?.seo_verifications ?? {}}
+                      onSave={saveVerifications}
+                    />
                   </div>
 
-                  <ChecklistGroup
-                    title="SEARCH ENGINES"
-                    items={[
-                      "Submit https://catscandance.com/sitemap.xml to Google Search Console",
-                      "Submit sitemap to Bing Webmaster Tools",
-                      "Verify ownership in Google Search Console (DNS or HTML tag)",
-                      "Request indexing for /, /events, /about after each big update",
-                    ]}
-                  />
+                  <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-5">
+                    <div>
+                      <h3 className="font-display text-2xl text-ink mb-1">SEO + GEO CHECKLIST</h3>
+                      <p className="text-ink/70 font-medium">
+                        Manual tasks to rank for "best parties / events in Bangalore & India" on Google and AI engines (ChatGPT, Perplexity, Gemini).
+                      </p>
+                    </div>
 
-                  <ChecklistGroup
-                    title="GOOGLE BUSINESS / MAPS"
-                    items={[
-                      "Create / claim Google Business Profile: 'Cats Can Dance — Event Organiser, Bangalore'",
-                      "Category: Event Planner + Performing Arts Group",
-                      "Add photos from Episodes, hours, contact, website link",
-                      "Collect 5★ reviews from attendees after each Episode",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="SEARCH ENGINES"
+                      items={[
+                        { label: "Google Search Console — submit sitemap.xml", url: "https://search.google.com/search-console" },
+                        { label: "Bing Webmaster Tools — submit sitemap", url: "https://www.bing.com/webmasters" },
+                        { label: "Verify ownership in GSC (DNS or HTML tag)", url: "https://search.google.com/search-console" },
+                        { label: "Request indexing for /, /events, /about after each big update", url: "https://search.google.com/search-console" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="LOCAL LISTINGS (INDIA)"
-                    items={[
-                      "List Cats Can Dance on Insider.in",
-                      "List on BookMyShow Events",
-                      "List on Paytm Insider",
-                      "Create Resident Advisor (RA) promoter profile",
-                      "List on Skiddle (international reach)",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="GOOGLE BUSINESS / MAPS"
+                      items={[
+                        { label: "Create Google Business Profile: 'Cats Can Dance — Event Organiser, Bangalore'", url: "https://business.google.com/create" },
+                        { label: "Bing Places — claim & list", url: "https://www.bingplaces.com/" },
+                        { label: "Add photos from Episodes, hours, contact, website link", url: "https://business.google.com/" },
+                        { label: "Collect 5★ reviews from attendees after each Episode" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="BACKLINKS / PRESS"
-                    items={[
-                      "Pitch Rolling Stone India",
-                      "Pitch Wild City (wildcity.com)",
-                      "Pitch Homegrown (homegrown.co.in)",
-                      "Pitch Mid-day Bangalore + Bangalore Mirror",
-                      "Reach out to local music podcasts / Spotify editorial",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="LOCAL LISTINGS (INDIA)"
+                      items={[
+                        { label: "List on Insider.in (organiser signup)", url: "https://insider.in/organisers" },
+                        { label: "List on BookMyShow Events", url: "https://in.bookmyshow.com/list-your-show" },
+                        { label: "List on Paytm Insider", url: "https://insider.in/" },
+                        { label: "Create Resident Advisor promoter profile", url: "https://ra.co/promoters" },
+                        { label: "List on Skiddle (international reach)", url: "https://www.skiddle.com/promotioncentre/" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="CONSISTENCY (NAP)"
-                    items={[
-                      "Same Name + Address + Email across IG bio, Linktree, listings",
-                      "Use 'Cats Can Dance — Bangalore' wording consistently",
-                      "Link back to https://catscandance.com from every listing",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="BACKLINKS / PRESS"
+                      items={[
+                        { label: "Pitch Rolling Stone India", url: "https://rollingstoneindia.com/contact-us/" },
+                        { label: "Pitch Wild City", url: "https://wildcity.com/" },
+                        { label: "Pitch Homegrown", url: "https://homegrown.co.in/" },
+                        { label: "Pitch Mid-day Bangalore + Bangalore Mirror" },
+                        { label: "Reach out to local music podcasts / Spotify editorial" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="AI / GEO READY (DONE FOR YOU)"
-                    items={[
-                      "✓ /llms.txt — AI crawler brand summary",
-                      "✓ /llms-full.txt — long-form brand + events",
-                      "✓ robots.txt allows GPTBot / ClaudeBot / PerplexityBot / Google-Extended",
-                      "✓ JSON-LD: Organization, LocalBusiness, Event, FAQ, BlogPosting",
-                      "✓ Geo meta tags + Bangalore address in Footer",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="CONSISTENCY (NAP)"
+                      items={[
+                        { label: "Same Name + Address + Email across IG bio, Linktree, listings" },
+                        { label: "Use 'Cats Can Dance — Bangalore' wording consistently" },
+                        { label: "Link back to https://catscandance.com from every listing" },
+                      ]}
+                    />
+
+                    <LinkChecklistGroup
+                      title="AI / GEO READY (DONE FOR YOU)"
+                      items={[
+                        { label: "✓ /llms.txt — AI crawler brand summary", url: "/llms.txt" },
+                        { label: "✓ /llms-full.txt — long-form brand + events", url: "/llms-full.txt" },
+                        { label: "✓ /brand.json — single-file brand summary for AI agents", url: "/brand.json" },
+                        { label: "✓ robots.txt allows GPTBot / ClaudeBot / PerplexityBot / Google-Extended", url: "/robots.txt" },
+                        { label: "✓ JSON-LD: Organization, LocalBusiness, MusicEvent, FAQ, BlogPosting, ItemList, BreadcrumbList" },
+                        { label: "✓ Geo meta tags + Bangalore address in Footer" },
+                        { label: "✓ Pillar blog posts targeting 'best parties Bangalore'", url: "/blog" },
+                      ]}
+                    />
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -630,4 +667,100 @@ const ChecklistGroup = ({ title, items }: { title: string; items: string[] }) =>
   </div>
 );
 
+const LinkChecklistGroup = ({
+  title,
+  items,
+}: {
+  title: string;
+  items: { label: string; url?: string }[];
+}) => (
+  <div>
+    <p className="font-display text-magenta text-lg mb-2">/ {title}</p>
+    <ul className="space-y-2">
+      {items.map((it) => (
+        <li key={it.label} className="flex items-start gap-3 bg-background/50 border-2 border-ink/20 px-3 py-2">
+          <span className="font-display text-ink/40 mt-0.5">▢</span>
+          {it.url ? (
+            <a
+              href={it.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink/85 font-medium underline decoration-2 underline-offset-2 hover:text-magenta transition-colors"
+            >
+              {it.label} ↗
+            </a>
+          ) : (
+            <span className="text-ink/85 font-medium">{it.label}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const VerificationForm = ({
+  value,
+  onSave,
+}: {
+  value: Verifications;
+  onSave: (v: Verifications) => void;
+}) => {
+  const [google, setGoogle] = useState(value.google ?? "");
+  const [bing, setBing] = useState(value.bing ?? "");
+  const [plausible, setPlausible] = useState(value.plausible_domain ?? "");
+
+  useEffect(() => {
+    setGoogle(value.google ?? "");
+    setBing(value.bing ?? "");
+    setPlausible(value.plausible_domain ?? "");
+  }, [value.google, value.bing, value.plausible_domain]);
+
+  return (
+    <div className="grid sm:grid-cols-3 gap-3">
+      <div>
+        <label className="block font-display text-sm text-ink mb-1">Google site-verification token</label>
+        <input
+          value={google}
+          onChange={(e) => setGoogle(e.target.value)}
+          placeholder="abc123...xyz"
+          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:bg-acid-yellow"
+        />
+      </div>
+      <div>
+        <label className="block font-display text-sm text-ink mb-1">Bing msvalidate.01</label>
+        <input
+          value={bing}
+          onChange={(e) => setBing(e.target.value)}
+          placeholder="ABCDEF1234..."
+          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:bg-acid-yellow"
+        />
+      </div>
+      <div>
+        <label className="block font-display text-sm text-ink mb-1">Plausible domain (optional)</label>
+        <input
+          value={plausible}
+          onChange={(e) => setPlausible(e.target.value)}
+          placeholder="catscandance.com"
+          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:bg-acid-yellow"
+        />
+      </div>
+      <div className="sm:col-span-3">
+        <button
+          onClick={() =>
+            onSave({
+              google: google.trim() || undefined,
+              bing: bing.trim() || undefined,
+              plausible_domain: plausible.trim() || undefined,
+            })
+          }
+          className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors"
+        >
+          SAVE VERIFICATION
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default Admin;
+

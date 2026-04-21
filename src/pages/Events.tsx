@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 
 type EventRow = {
@@ -19,9 +20,11 @@ const Events = () => {
     })();
   }, []);
 
+  const upcoming = all.filter((e) => e.status === "upcoming");
+
   const eventLd = all.map((e) => ({
     "@context": "https://schema.org",
-    "@type": "Event",
+    "@type": "MusicEvent",
     name: `Cats Can Dance — ${e.title}`,
     startDate: e.date,
     eventStatus:
@@ -56,13 +59,29 @@ const Events = () => {
     url: `https://catscandance.com/events/${e.slug}`,
   }));
 
+  const itemListLd = upcoming.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Upcoming Cats Can Dance events in Bangalore",
+        itemListElement: upcoming.map((e, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          url: `https://catscandance.com/events/${e.slug}`,
+          name: `${e.title} — ${e.city}`,
+        })),
+      }
+    : null;
+
+  const jsonLd = itemListLd ? [...eventLd, itemListLd] : eventLd;
+
   return (
     <>
       <SEO
         title="Upcoming Parties & Events in Bangalore, India | Cats Can Dance"
         description="Every Cats Can Dance edition — the best underground parties and dance music events in Bangalore, India. Past and upcoming. RSVP free."
         path="/events"
-        jsonLd={eventLd}
+        jsonLd={jsonLd}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
@@ -79,6 +98,7 @@ const Events = () => {
           </p>
         </PageHero>
         <section className="container py-16 md:py-20">
+          <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Events" }]} />
           <div className="grid gap-6 max-w-4xl">
             {all.map((e) => (
               <Link

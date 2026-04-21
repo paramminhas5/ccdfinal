@@ -16,9 +16,11 @@ import EventDetail from "./pages/EventDetail.tsx";
 import Shop from "./pages/Shop.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
+import Blog from "./pages/Blog.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
+import SeoVerification from "@/components/SeoVerification";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,7 @@ const App = () => (
           <DiscoProvider>
             <CartSyncProvider>
               <ScrollToTop />
+              <SeoVerification />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/about" element={<About />} />
@@ -48,6 +51,7 @@ const App = () => (
                 <Route path="/events/:slug" element={<EventDetail />} />
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/product/:handle" element={<ProductDetail />} />
+                <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
