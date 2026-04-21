@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import RsvpDialog from "@/components/RsvpDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -58,7 +59,7 @@ const EventDetail = () => {
 
   const eventLd = {
     "@context": "https://schema.org",
-    "@type": "Event",
+    "@type": "MusicEvent",
     name: `Cats Can Dance — ${event.title}`,
     description: event.blurb,
     startDate: event.date,
@@ -110,9 +111,14 @@ const EventDetail = () => {
         <Nav />
         <section className={`pt-32 pb-16 border-b-4 border-ink ${isUpcoming ? "bg-magenta text-cream" : "bg-cream text-ink"}`}>
           <div className="container">
-            <Link to="/events" className="font-display underline decoration-4 underline-offset-4 mb-6 inline-block">
-              ← All events
-            </Link>
+            <Breadcrumbs
+              light={isUpcoming}
+              items={[
+                { label: "Home", to: "/" },
+                { label: "Events", to: "/events" },
+                { label: event.title },
+              ]}
+            />
             <span className={`inline-block text-xs font-bold px-3 py-1 border-2 border-ink uppercase mb-4 ${
               isUpcoming ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
             }`}>
@@ -133,7 +139,8 @@ const EventDetail = () => {
           <div className="container pt-12">
             <img
               src={event.poster_url}
-              alt={`${event.title} — ${event.city}`}
+              alt={`${event.title} — Cats Can Dance dance music event in ${event.city || "Bangalore"}`}
+              loading="lazy"
               className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
             />
           </div>

@@ -2,13 +2,16 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
-import { getPost } from "@/content/posts";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { getPost, getRelatedPosts } from "@/content/posts";
 
 const BlogPost = () => {
   const { slug = "" } = useParams();
   const post = getPost(slug);
 
   if (!post) return <Navigate to="/" replace />;
+
+  const related = getRelatedPosts(post.slug, 3);
 
   const articleLd = {
     "@context": "https://schema.org",
@@ -46,9 +49,13 @@ const BlogPost = () => {
         <Nav />
         <article className="pt-32 pb-16">
           <div className="container max-w-3xl">
-            <Link to="/" className="font-display text-magenta underline decoration-4 underline-offset-4 mb-6 inline-block">
-              ← Back home
-            </Link>
+            <Breadcrumbs
+              items={[
+                { label: "Home", to: "/" },
+                { label: "Blog", to: "/blog" },
+                { label: post.title },
+              ]}
+            />
             <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-4">{post.tag}</span>
             <h1 className="font-display text-5xl md:text-7xl text-ink mb-4 leading-[0.9]">{post.title}</h1>
             <p className="font-display text-ink/70 text-sm mb-8">
@@ -56,7 +63,8 @@ const BlogPost = () => {
             </p>
             <img
               src={post.cover}
-              alt={post.title}
+              alt={`${post.title} — Cats Can Dance, Bangalore`}
+              loading="lazy"
               className="w-full max-h-[520px] object-cover border-4 border-ink chunk-shadow-lg mb-10"
             />
             <div className="space-y-6">
@@ -66,6 +74,27 @@ const BlogPost = () => {
                 </p>
               ))}
             </div>
+
+            {related.length > 0 && (
+              <aside className="mt-16 pt-10 border-t-4 border-ink">
+                <h2 className="font-display text-3xl text-ink mb-6">/ READ NEXT</h2>
+                <ul className="grid gap-4 sm:grid-cols-3">
+                  {related.map((r) => (
+                    <li key={r.slug}>
+                      <Link
+                        to={`/blog/${r.slug}`}
+                        className="block bg-cream border-4 border-ink chunk-shadow p-4 hover:-translate-y-1 hover:translate-x-1 transition-transform h-full"
+                      >
+                        <span className="inline-block bg-ink text-cream text-[10px] font-bold px-2 py-0.5 mb-2">
+                          {r.tag}
+                        </span>
+                        <p className="font-display text-ink text-lg leading-tight">{r.title}</p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            )}
           </div>
         </article>
         <Footer />
