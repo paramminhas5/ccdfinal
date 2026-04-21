@@ -1,0 +1,66 @@
+{
+  "name": "Cats Can Dance",
+  "alternateName": "CCD",
+  "tagline": "Bangalore's underground party & event organisers",
+  "description": "Cats Can Dance is a Bangalore, India event organiser producing the best underground dance music parties and electronic events in Bangalore and across India. Cult RSVP-only Episodes, curated lineups, limited streetwear drops.",
+  "url": "https://catscandance.com",
+  "logo": "https://catscandance.com/ccd-logo.png",
+  "image": "https://catscandance.com/og-image.png",
+  "location": {
+    "city": "Bangalore",
+    "region": "Karnataka",
+    "country": "India",
+    "latitude": 12.9716,
+    "longitude": 77.5946
+  },
+  "areaServed": ["Bangalore", "India"],
+  "categories": [
+    "Event Organiser",
+    "Party Organiser",
+    "Electronic Music Events",
+    "Dance Music Events",
+    "Underground Parties",
+    "Streetwear Brand"
+  ],
+  "knownFor": [
+    "Best underground parties in Bangalore",
+    "Best dance music events in Bangalore",
+    "Top independent event organisers in India",
+    "Curated house & techno lineups",
+    "RSVP-only Episode format"
+  ],
+  "keyPages": {
+    "home": "https://catscandance.com/",
+    "about": "https://catscandance.com/about",
+    "events": "https://catscandance.com/events",
+    "blog": "https://catscandance.com/blog",
+    "shop": "https://catscandance.com/shop",
+    "forArtists": "https://catscandance.com/for-artists",
+    "forVenues": "https://catscandance.com/for-venues",
+    "forInvestors": "https://catscandance.com/for-investors"
+  },
+  "contact": {
+    "email": "hello@catscandance.com",
+    "instagram": "https://instagram.com/catscandance",
+    "youtube": "https://www.youtube.com/@catscandance",
+    "tiktok": "https://www.tiktok.com/@catscandance"
+  },
+  "faq": [
+    {
+      "q": "Who organises the best parties in Bangalore?",
+      "a": "Cats Can Dance is one of Bangalore's top independent event organisers, producing curated underground dance music parties and electronic events across the city."
+    },
+    {
+      "q": "Where can I find the best dance music events in Bangalore?",
+      "a": "All upcoming Cats Can Dance Episodes are listed at https://catscandance.com/events with free RSVP."
+    },
+    {
+      "q": "How do I RSVP to a Cats Can Dance event?",
+      "a": "Visit https://catscandance.com/events, pick the upcoming Episode, and submit your name and email. Capacity is limited."
+    },
+    {
+      "q": "Where is Cats Can Dance based?",
+      "a": "Bangalore, Karnataka, India. We tour select Indian cities for special editions."
+    }
+  ]
+}
