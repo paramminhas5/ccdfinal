@@ -1,35 +1,77 @@
-const drops = [
-  { name: "DISCO PAW TEE", price: "$48", tag: "COMING SOON", color: "bg-acid-yellow" },
-  { name: "RAVE COLLAR", price: "$32", tag: "COMING SOON", color: "bg-magenta text-cream" },
-  { name: "9 LIVES HOODIE", price: "$96", tag: "DROP 01", color: "bg-electric-blue" },
-  { name: "MEOWMIX TOTE", price: "$28", tag: "COMING SOON", color: "bg-lime" },
-];
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ShopifyProduct, STOREFRONT_QUERY, storefrontApiRequest } from "@/lib/shopify";
+import { ArrowRight } from "lucide-react";
 
-const Drops = () => (
-  <section id="drops" className="relative bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain overflow-hidden">
-    <div className="container">
-      <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ DROPS · SHOP</p>
-      <h2 className="font-display text-ink text-6xl md:text-8xl mb-12 leading-[0.9]">
-        WEAR THE<br/>CULTURE.
-      </h2>
+const Drops = () => {
+  const [products, setProducts] = useState<ShopifyProduct[]>([]);
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {drops.map((d) => (
-          <article
-            key={d.name}
-            className={`${d.color} border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 transition-transform`}
-          >
-            <div className="aspect-square bg-cream border-4 border-ink mb-4 grid place-items-center font-display text-4xl">
-              👕
-            </div>
-            <span className="inline-block bg-ink text-cream text-xs font-bold px-2 py-1 mb-2">{d.tag}</span>
-            <h3 className="font-display text-xl md:text-2xl mb-1">{d.name}</h3>
-            <p className="font-display text-lg">{d.price}</p>
-          </article>
-        ))}
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: 4, query: null });
+        setProducts(data?.data?.products?.edges || []);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, []);
+
+  return (
+    <section id="drops" className="relative bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain overflow-hidden">
+      <div className="container">
+        <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ DROPS · SHOP</p>
+        <h2 className="font-display text-ink text-6xl md:text-8xl mb-12 leading-[0.9]">
+          WEAR THE<br />CULTURE.
+        </h2>
+
+        {products.length > 0 ? (
+          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+            {products.slice(0, 2).map((p) => {
+              const img = p.node.images.edges[0]?.node;
+              return (
+                <Link
+                  key={p.node.id}
+                  to={`/product/${p.node.handle}`}
+                  className="border-4 border-ink chunk-shadow bg-acid-yellow overflow-hidden hover:-translate-y-1 transition-transform group"
+                >
+                  <div className="aspect-square bg-cream border-b-4 border-ink overflow-hidden">
+                    {img && (
+                      <img
+                        src={img.url}
+                        alt={img.altText || p.node.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display text-2xl mb-1">{p.node.title}</h3>
+                    <p className="font-display text-lg">
+                      {p.node.priceRange.minVariantPrice.currencyCode}{" "}
+                      {parseFloat(p.node.priceRange.minVariantPrice.amount).toFixed(2)}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+            {[0, 1].map((i) => (
+              <div key={i} className="aspect-[4/5] border-4 border-ink bg-acid-yellow animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        <Link
+          to="/shop"
+          className="inline-flex items-center gap-3 bg-ink text-cream font-display text-2xl px-8 py-4 border-4 border-ink chunk-shadow hover:bg-magenta transition-colors"
+        >
+          SHOP THE DROP <ArrowRight className="w-6 h-6" />
+        </Link>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export default Drops;
