@@ -15,8 +15,8 @@ const bullets = [
 const ForInvestors = () => (
   <main className="bg-background text-foreground">
     <SEO
-      title="For Investors — Cats Can Dance"
-      description="An ecosystem, not an event business. A multi-revenue culture company with expanding moats."
+      title="For Investors — Cats Can Dance | Bangalore, India"
+      description="Cats Can Dance is a Bangalore-based culture company — events, drops, playlists, community. A multi-revenue ecosystem scaling across India."
       path="/for-investors"
     />
     <Nav />

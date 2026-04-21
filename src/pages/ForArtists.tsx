@@ -15,8 +15,8 @@ const bullets = [
 const ForArtists = () => (
   <main className="bg-background text-foreground">
     <SEO
-      title="For Artists — Cats Can Dance"
-      description="A platform, not just a set time. CCD helps artists compound — audience, identity, visibility — gig after gig."
+      title="For Artists — Cats Can Dance | Bangalore, India"
+      description="Play Cats Can Dance in Bangalore. A platform, not just a set time — curated crowd, premium content, real audience growth for electronic artists in India."
       path="/for-artists"
     />
     <Nav />
