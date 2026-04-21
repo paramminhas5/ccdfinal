@@ -3,6 +3,7 @@ import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
 import DiscoButton from "@/components/DiscoButton";
 import DiscoMute from "@/components/DiscoMute";
 import { CartDrawer } from "@/components/CartDrawer";
+import { useCartStore } from "@/stores/cartStore";
 
 const links = [
   { to: "/", label: "Home" },
@@ -16,6 +17,8 @@ const Nav = () => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
+  const hasCart = cartCount > 0;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -55,7 +58,7 @@ const Nav = () => {
           ))}
           <li><DiscoMute /></li>
           <li><DiscoButton compact /></li>
-          <li><CartDrawer /></li>
+          {hasCart && <li><CartDrawer /></li>}
           <li>
             <Link
               to="/#early-access"
@@ -69,7 +72,7 @@ const Nav = () => {
         <div className="lg:hidden flex items-center gap-2">
           <DiscoMute />
           <DiscoButton compact />
-          <CartDrawer />
+          {hasCart && <CartDrawer />}
           <button
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}

@@ -1,16 +1,27 @@
+import { useRef } from "react";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import vinyl from "@/assets/vinyl-music.png";
 
 const PLAYLIST_ID = "1cEE860l9GiBvIYVM2BbSS";
 
 const Playlist = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const rotate = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 540]);
+
   return (
-    <section id="playlist" className="relative bg-magenta py-24 md:py-32 border-t-4 border-b-4 border-ink overflow-hidden">
-      <img
+    <section
+      ref={ref}
+      id="playlist"
+      className="relative bg-magenta py-24 md:py-32 border-t-4 border-b-4 border-ink overflow-hidden"
+    >
+      <motion.img
         src={vinyl}
         alt=""
         loading="lazy"
-        className="absolute -top-20 -right-20 w-56 md:w-[28rem] opacity-90 pointer-events-none transform-gpu spin-slow"
-        style={{ willChange: "transform" }}
+        style={{ rotate, willChange: "transform" }}
+        className="absolute -top-20 -right-20 w-56 md:w-[28rem] opacity-90 pointer-events-none transform-gpu"
       />
       <div className="container relative z-10">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ THE PLAYLIST</p>

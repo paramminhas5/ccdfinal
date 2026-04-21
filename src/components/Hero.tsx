@@ -21,7 +21,6 @@ const Hero = () => {
   const rightRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 45]);
 
   const djY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "18%"]);
-  const djScale = useTransform(scrollYProgress, [0, 1], reduce ? [1, 1] : [1, 1.06]);
 
   const starRotA = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 360]);
   const starRotB = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, -360]);
@@ -53,25 +52,25 @@ const Hero = () => {
           </h1>
         </div>
 
-        {/* DJ cat — sits above buttons on mobile */}
+        {/* DJ cat — slightly overlaps the headline */}
         <motion.img
           src={heroCenter}
           alt=""
           aria-hidden
-          style={{ y: djY, scale: djScale, willChange: "transform" }}
-          className="absolute inset-x-0 mx-auto bottom-28 md:bottom-0 z-30 w-[78%] min-w-[280px] max-w-[680px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
+          style={{ y: djY, willChange: "transform" }}
+          className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
         />
 
-        {/* Side cats — smaller on mobile */}
+        {/* Side cats — bigger and raised */}
         <motion.div
           style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
-          className="absolute bottom-4 left-2 md:left-10 z-40 w-16 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          className="absolute bottom-12 md:bottom-16 left-2 md:left-10 z-40 w-24 md:w-72 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
         >
           <img src={catLeft} alt="" className="w-full wiggle" />
         </motion.div>
         <motion.div
           style={{ x: rightX, y: rightY, rotate: rightRot, willChange: "transform" }}
-          className="absolute bottom-4 right-2 md:right-10 z-40 w-16 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          className="absolute bottom-12 md:bottom-16 right-2 md:right-10 z-40 w-24 md:w-72 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
         >
           <img src={catRight} alt="" className="w-full wiggle" />
         </motion.div>
