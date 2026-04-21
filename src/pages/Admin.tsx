@@ -228,6 +228,21 @@ const Admin = () => {
     savePlaylists({ ...settings, featured_playlist_id: id });
   };
 
+  const saveVerifications = async (next: Verifications) => {
+    if (!settings) return;
+    const merged: Settings = { ...settings, seo_verifications: next };
+    setSettings(merged);
+    try {
+      await callContent({
+        method: "POST",
+        body: JSON.stringify({ type: "settings", action: "upsert", payload: merged }),
+      });
+      toast.success("Verification saved");
+    } catch {
+      toast.error("Save failed");
+    }
+  };
+
   // Events
   const saveEvent = async (ev: EventRow) => {
     try {
