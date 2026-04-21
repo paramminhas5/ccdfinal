@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import RsvpDialog from "@/components/RsvpDialog";
+import episode1Poster from "@/assets/episode-1-poster.png";
 
 const events: Record<string, {
   title: string;
@@ -30,11 +31,10 @@ const events: Record<string, {
     date: "TBA",
     city: "Bangalore",
     venue: "TBA",
-    blurb: "The one that started it. Sold out, no flyer.",
-    lineup: ["TBA"],
+    blurb: "The one that started it. No flyer, no ads — twenty people whispered the address and the room was full by midnight. The opening b2b ran ninety minutes long and nobody noticed.",
+    lineup: ["Opening b2b — Residents", "Surprise guest set", "DJ Meowmix — close"],
     status: "past",
-    // heroImage: "/images/episode-1-hero.jpg",
-    // gallery: ["/images/episode-1-1.jpg", "/images/episode-1-2.jpg"],
+    heroImage: episode1Poster,
   },
 };
 

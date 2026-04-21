@@ -87,6 +87,9 @@
     animation: marquee 30s linear infinite;
   }
   .marquee-speed { animation-duration: 30s; }
+  @media (max-width: 768px) {
+    .marquee-speed { animation-duration: 15s; }
+  }
   @keyframes marquee {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
