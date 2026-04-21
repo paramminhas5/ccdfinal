@@ -1,103 +1,125 @@
-## ShinyBall + nav fixes + scroll storytelling
-
-### 1. Replace DiscoBall with ShinyBall (3D CSS)
-
-Rebuild `src/components/DiscoBall.tsx` as a true 3D mirror ball using your reference code, ported to React + Tailwind:
-
-- Outer wrapper: fixed/absolute positioned in Hero, drops from `-200px` with a framer spring on disco enable.
-- Hanging cord (`<div>` 4px wide, `bg-ink`).
-- `#discoBall` div with `transform-style: preserve-3d` and `rotateDiscoBall` 18s linear infinite rotation.
-- Inner `#discoBallMiddle` core sphere with the dark gradient + counter-rotation.
-- `useEffect` generates ~400 mirror tile `<div>`s using the spherical math from the snippet (cos/sin around the sphere). Tiles get random grayscale colors + `reflect` opacity flicker animation with random delays.
-- Soft white blurred light disk behind the ball.
-- Keyframes (`rotateDiscoBall`, `rotateDiscoBallMiddle`, `reflect`) added to `src/index.css`.
-- Renamed component export to `ShinyBall` for clarity, kept import path.  
-  
 
 
-### 2. Fix the broken hero CTAs
+# Cats Can Dance — Full Build Plan
 
-The CTAs sit on a `pointer-events-none` parent. The current `pointer-events-auto` on the buttons row should work — but the centered DJ cat image (`z-20`) sits ON TOP of the buttons (`z-10`) and intercepts clicks. Fix:
+This is a big scope, so I'm breaking it into phases. Phase 1 is the highest-leverage stuff (backend + structure). I'll need a few decisions before I start.
 
-- Add `pointer-events-none` to the centered DJ `<img>` (decorative, never interactive).
-- Bump CTA wrapper to `z-30` and ensure `pointer-events-auto`.
-- Add smooth scroll behavior via existing `useSmoothScroll` (already global, so anchors will work once clicks land).
+## Questions before I build
 
-### 3. Move Disco button into the Nav
+1. **Admin access** — should the admin page be locked behind a login (email/password via Lovable Cloud auth), or a simple shared password gate for now?
+2. **Disco audio loop** — do you have an audio file you want to upload, or should I source/generate a royalty-free 120 BPM ambient loop?
+3. **Instagram feed** — real Instagram embed (requires their Graph API + a business account) or a styled mock grid that links to your profile?
+4. **Shop / Drops** — is this a real store (Shopify/Stripe later) or a "coming soon" showcase grid for now?
 
-- Remove the floating `<DiscoButton />` mount from `Index.tsx`.  
-Also when disco button is pressed, the section bgs auto change into gradients full disco vibes 
-- Render it inline inside `src/components/Nav.tsx` — desktop: between the link list and "Early Access" CTA; mobile: inside the hamburger menu and a compact icon-only version next to the burger so it's visible while closed.
-- Tweak `DiscoButton.tsx` to accept a `compact` prop (icon-only square) and remove its `fixed` positioning.
+I'll proceed assuming: **shared password admin**, **I'll add a placeholder audio loop you can swap**, **mocked Instagram grid linking out**, **showcase-only shop**. Tell me if any of those are wrong.
 
-### 4. Make ScrollPaw actually visible
+---
 
-- Increase size from `w-14 h-14` → `w-20 h-20`.
-- Use a real, recognizable paw SVG path (current path is malformed/clipped).
-- Animate the fill with `framer-motion`'s `useScroll` + `useTransform` mapped to the SVG's `<rect y>` so it updates every frame, not on throttled scroll.
-- Add a thin pulsing outer ring that brightens as progress nears 100%.
-- Add a subtle "100% — top" tooltip and click-to-scroll-top behavior.
+## Phase 1 — Site architecture & routing
 
-### 5. Scroll-linked animation in EVERY section
+Restructure into a multi-page site. Home becomes user-focused only.
 
-A consistent scroll-storytelling layer per section using `useScroll({ target, offset: ["start end","end start"] })`:
+```text
+/                → Home (users)
+/about           → About the brand
+/for-venues      → Pitch page for venues
+/for-artists     → Pitch page for artists
+/for-investors   → Pitch page for investors
+/admin           → Early access list (gated)
+```
 
+- Add a global `Nav` with: Home · About · Playlists · Events · Shop · For Venues · For Artists · For Investors (collapses to hamburger on mobile).
+- Add a `Footer` link group mirroring the nav.
+- Each "For X" page reuses the brand system (Marquee, big display type, chunk shadows) with audience-specific copy + a single CTA (contact / pitch deck / invest inquiry).
 
-| Section         | Scroll-linked effect                                                                                                                                      |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Hero**        | (already has) cats fly off + stars spin                                                                                                                   |
-| **Why**         | Vinyl rotates + side cat slides; ADD: headline letters slide in horizontally via a translateX transform; bullets stagger-snap with shadow drop            |
-| **Stats**       | Numbers count-up tied to `scrollYProgress` (0 → final value), cards rise with parallax (back card slower than front)                                      |
-| **What**        | Background grain shifts; the "FOUR ENGINES" title gets horizontal parallax; cards fan in with rotateY based on scroll position                            |
-| **WhyNow**      | Cloud + raver cat parallax (already there); ADD: vertical timeline line on the left that "draws" itself (`pathLength` 0→1) as you scroll through the list |
-| **Audiences**   | The active panel gets a subtle parallax background blob; tab underline animates on enter                                                                  |
-| **Playlist**    | Vinyl spin speed couples to scroll velocity; track rows slide in from alternating sides                                                                   |
-| **Events**      | Boombox slides across bottom L→R with scroll; event cards tilt 3D on cursor + stagger-rise                                                                |
-| **EarlyAccess** | Title gets a chunky shadow that grows with scroll; floating notes orbit on scroll                                                                         |
+## Phase 2 — Home redesign (user-focused)
 
+New section order on `/`:
 
-Implementation: each section gets its own `useRef` + `useScroll` hook (cheap, since target-scoped). Reused `useParallax(ref, [from, to])` helper extracted to `src/hooks/useParallax.ts`.
+1. Hero (fixed jank, see Phase 6)
+2. Marquee
+3. About (short — full story lives on `/about`)
+4. Playlists (existing, polished — embed Spotify/SoundCloud iframes)
+5. Events (existing)
+6. Media (press logos + video/photo strip)
+7. Drops / Shop (product card grid, "coming soon" badges OK)
+8. Instagram (3×3 grid linking to @catscandance)
+9. Posts (blog/news teaser cards — static for now)
+10. Early Access (now wired to backend)
+11. Contact + Footer
 
-### 6. Other UX/visual upgrades
+I'll build new components: `About`, `Media`, `Drops`, `Instagram`, `Posts`. Existing `WhyNow`, `Why`, `Audiences` move to the `/about` and `/for-*` pages where they fit.
 
-- **Sticky section labels**: each section's `/ WHY` `/ WHAT` etc becomes a left-side sticky chip that travels down with you while inside that section (position: sticky, top: 80px). Adds wayfinding.
-- **Section dividers**: replace flat `border-b-4` between sections with an SVG zig-zag/wave divider in `bg-ink` for chunkier handoffs between color blocks.
-- **Cursor-reactive headlines**: hero + section titles get a tiny `mousemove` parallax (max 8px) so they feel alive.
-- **Magnetic buttons**: primary CTAs (JOIN THE PACK, COUNT ME IN, GET TICKETS) attract the cursor by ±6px when hovered.
-- **Marquee content upgrade**: include emoji glyphs (🐾 🪩 🎧) between phrases for more rhythm.
-- **Contact section** currently has no scroll animation — add a parallax phone/headphones and a slide-in card.
-- **Reduced motion**: all new effects gated by `prefers-reduced-motion`.
+## Phase 3 — Lovable Cloud + Early Access backend
 
-### Files
+- Enable Lovable Cloud.
+- Create `early_access_signups` table: `id`, `email` (unique), `source`, `created_at`, `user_agent`.
+- RLS: public can `INSERT` only; only admins can `SELECT`.
+- Wire `EarlyAccess.tsx` form:
+  - Zod validation (`email().max(255)`)
+  - Trim + lowercase before insert
+  - Friendly toast for success, duplicate, and failure cases
+  - Keep the confetti burst on success
+- Honeypot field + simple client throttle to deter bots.
 
-**New**
+## Phase 4 — Admin page
 
-- `src/hooks/useParallax.ts`
-- `src/components/StickyChip.tsx` (the per-section sticky label)
-- `src/components/Divider.tsx` (zigzag SVG between sections)
-- `src/components/MagneticButton.tsx`
+`/admin` route:
+- Password gate (env-stored shared password checked via edge function — never client-side).
+- Once unlocked: paginated table of signups with search by email, sort by date, total count, and a **Download CSV** button.
+- Reuses shadcn `Table`, `Input`, `Button`.
 
-**Modified**
+## Phase 5 — Disco audio
 
-- `src/components/DiscoBall.tsx` — full ShinyBall rewrite (3D CSS sphere)
-- `src/index.css` — `rotateDiscoBall`, `rotateDiscoBallMiddle`, `reflect` keyframes
-- `src/components/Nav.tsx` — embed DiscoButton (desktop + mobile)
-- `src/components/DiscoButton.tsx` — remove fixed positioning, add `compact` variant
-- `src/pages/Index.tsx` — remove floating DiscoButton, insert `<Divider />` between sections
-- `src/components/Hero.tsx` — fix CTA pointer-events / z-index, ShinyBall hookup
-- `src/components/ScrollPaw.tsx` — bigger, valid paw path, framer-driven fill, click-to-top
-- `src/components/Why.tsx` — scroll-linked headline + bullets
-- `src/components/Stats.tsx` — scroll-driven count-up + parallax
-- `src/components/What.tsx` — sticky chip + scroll parallax title
-- `src/components/WhyNow.tsx` — drawn timeline line
-- `src/components/Audiences.tsx` — parallax blob + animated tab underline
-- `src/components/Playlist.tsx` — alternating row slide-in
-- `src/components/Events.tsx` — boombox L→R scroll travel
-- `src/components/EarlyAccess.tsx` — orbiting notes on scroll
-- `src/components/Contact.tsx` — parallax props + reveal
-- `src/components/Marquee.tsx` — add emoji glyphs
+- Add `useDiscoAudio` hook tied to `DiscoContext`.
+- Plays a looping ambient 120 BPM track when disco mode is on; fades in/out.
+- Mute toggle pinned next to the disco toggle in the nav.
+- Respects `prefers-reduced-motion` AND first-user-gesture autoplay rules (audio only starts after the user clicks the disco toggle, which is already a gesture).
+- Audio file lives at `public/audio/disco-loop.mp3` (placeholder; swappable).
 
-### Skipped / open
+## Phase 6 — Hero polish + scroll de-jank
 
-- Ambient audio loop (still needs your go-ahead + a 120 BPM royalty-free file).
-- Replacing remaining PNG assets (vinyl, boombox, cloud, music-note) with SVGs — say the word and I'll swap to inline SVG so they scale crisp on all DPRs.
+- Re-stack hero z-index: **text behind**, **DJ cat image in middle layer**, **buttons on top**. Currently the DJ image sits above the text already — I'll formalize the layering and move buttons to `z-50`.
+- Tie hero center DJ image to scroll: gentle parallax `y` + slight `scale` driven by `useScroll`.
+- Performance fixes for jank:
+  - Add `will-change: transform` only to actively-animating elements.
+  - Wrap heavy `motion` transforms with `useReducedMotion` so they collapse to static on low-power devices.
+  - Throttle `ScrollPaw` and `PawCursor` updates with `rAF` if not already.
+  - Lower Lenis `duration` from 1.1 → 0.9 and disable smoothWheel on touch devices (Lenis already does this, but I'll confirm).
+  - Audit `SectionReveal` to use `whileInView` with `once: true` so it stops recomputing.
+
+## Phase 7 — QA pass
+
+- Mobile (375px, 390px, 414px): tap targets, marquee overflow, hero text clipping.
+- `prefers-reduced-motion`: disables marquee, parallax, confetti orbits, paw cursor.
+- Disco mode: verify gradient/filter applies cleanly across every section without breaking text contrast.
+- Lighthouse run; fix any red items.
+
+## Phase 8 — SEO & share previews
+
+- Per-route `<title>` and `<meta description>` via `react-helmet-async`.
+- Open Graph + Twitter card tags per page.
+- Custom OG image (1200×630) generated with the brand palette + DJ cat.
+- `favicon.ico` + `apple-touch-icon.png` + `site.webmanifest`.
+- `sitemap.xml` and updated `robots.txt`.
+- JSON-LD `Organization` schema on home.
+
+---
+
+## Technical notes
+
+- **Stack additions**: `react-helmet-async`, `zod` (already common in shadcn forms — confirm), Lovable Cloud client.
+- **Audio**: native `<audio loop>` with a ref; no library needed.
+- **Admin auth**: edge function `verify-admin-password` returns a short-lived signed token stored in `sessionStorage`; gate uses it to fetch signups via another edge function that validates the token before reading the table. No service role keys leak to the client.
+- **CSV export**: edge function streams `text/csv` with proper headers.
+- **Routing**: existing `react-router-dom` BrowserRouter; just add the new routes above the catch-all.
+
+## Suggested order of execution
+
+1. Answer the 4 questions above.
+2. I'll do Phase 1 + 2 (architecture + home restructure) — this is the biggest visible change.
+3. Then Phase 3 + 4 (Cloud, signups, admin) in one pass.
+4. Then Phase 5 (audio), Phase 6 (hero + jank), Phase 7 (QA), Phase 8 (SEO) — these can ship together.
+
+Reply with answers to the 4 questions (or "go with your defaults") and I'll start.
+
