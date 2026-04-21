@@ -145,6 +145,7 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          backlinks: Json
           featured_playlist_id: string | null
           id: string
           playlists: Json
@@ -152,6 +153,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          backlinks?: Json
           featured_playlist_id?: string | null
           id: string
           playlists?: Json
@@ -159,6 +161,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          backlinks?: Json
           featured_playlist_id?: string | null
           id?: string
           playlists?: Json
