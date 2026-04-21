@@ -19,18 +19,12 @@ export const CartDrawer = () => {
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
   const totalPrice = items.reduce((s, i) => s + parseFloat(i.price.amount) * i.quantity, 0);
   const currency = items[0]?.price.currencyCode || "INR";
+  const checkoutUrl = getCheckoutUrl();
+  const canCheckout = items.length > 0 && !!checkoutUrl && !isLoading && !isSyncing;
 
   useEffect(() => {
     if (isOpen) syncCart();
   }, [isOpen, syncCart]);
-
-  const handleCheckout = () => {
-    const url = getCheckoutUrl();
-    if (url) {
-      window.open(url, "_blank");
-      setIsOpen(false);
-    }
-  };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -128,21 +122,26 @@ export const CartDrawer = () => {
                     {currency} {totalPrice.toFixed(2)}
                   </span>
                 </div>
-                <Button
-                  onClick={handleCheckout}
-                  className="w-full bg-magenta text-cream border-4 border-ink hover:bg-magenta/90"
-                  size="lg"
-                  disabled={items.length === 0 || isLoading || isSyncing}
-                >
-                  {isLoading || isSyncing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Checkout
-                    </>
-                  )}
-                </Button>
+                {canCheckout ? (
+                  <a
+                    href={checkoutUrl!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full inline-flex items-center justify-center gap-2 bg-magenta text-cream border-4 border-ink hover:bg-magenta/90 font-display text-lg py-3 px-4"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Checkout
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full inline-flex items-center justify-center gap-2 bg-magenta/60 text-cream border-4 border-ink font-display text-lg py-3 px-4 cursor-not-allowed"
+                  >
+                    {isLoading || isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Checkout"}
+                  </button>
+                )}
               </div>
             </>
           )}

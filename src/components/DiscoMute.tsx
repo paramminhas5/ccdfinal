@@ -4,7 +4,19 @@ import { useDisco } from "@/contexts/DiscoContext";
 const DiscoMute = () => {
   const { disco } = useDisco();
   const { muted, setMuted, available } = useDiscoAudio();
-  if (!available || !disco) return null;
+  if (!disco) return null;
+
+  if (!available) {
+    return (
+      <span
+        title="Drop an mp3 at /public/audio/disco-loop.mp3 to enable disco audio"
+        className="hidden md:inline-flex items-center px-2 h-11 border-4 border-ink bg-cream text-ink text-xs font-display"
+      >
+        🔇 NO AUDIO FILE
+      </span>
+    );
+  }
+
   return (
     <button
       type="button"

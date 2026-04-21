@@ -7,6 +7,8 @@ type Props = {
   textColor?: string;
   eyebrowColor?: string;
   children?: ReactNode;
+  shadow?: boolean;
+  shadowColor?: string;
 };
 
 const PageHero = ({
@@ -16,11 +18,16 @@ const PageHero = ({
   textColor = "text-cream",
   eyebrowColor = "text-acid-yellow",
   children,
+  shadow = true,
+  shadowColor = "hsl(var(--ink))",
 }: Props) => (
   <section className={`relative ${bg} border-b-4 border-ink pt-32 md:pt-40 pb-16 md:pb-24 overflow-hidden`}>
     <div className="container">
       <p className={`font-display ${eyebrowColor} text-2xl md:text-3xl mb-4`}>/ {eyebrow}</p>
-      <h1 className={`font-display ${textColor} text-5xl md:text-8xl leading-[0.9] max-w-5xl drop-shadow-[5px_5px_0_hsl(var(--ink))]`}>
+      <h1
+        className={`font-display ${textColor} text-5xl md:text-8xl leading-[0.9] max-w-5xl`}
+        style={shadow ? { filter: `drop-shadow(5px 5px 0 ${shadowColor})` } : undefined}
+      >
         {title}
       </h1>
       {children && <div className="mt-8">{children}</div>}

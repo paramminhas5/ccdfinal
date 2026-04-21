@@ -27,6 +27,7 @@ const ForVenues = () => (
       bg="bg-lime"
       textColor="text-ink"
       eyebrowColor="text-magenta"
+      shadow={false}
     />
     <Marquee bg="bg-acid-yellow" />
     <section className="bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain">

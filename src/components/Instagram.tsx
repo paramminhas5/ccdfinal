@@ -36,10 +36,10 @@ const Instagram = () => {
     <section id="instagram" className="relative bg-magenta border-b-4 border-ink py-24 md:py-32 overflow-hidden">
       <div className="container">
         <div className="flex items-end justify-between flex-wrap gap-6 mb-12">
-          <div>
+          <div className="min-w-0 max-w-full">
             <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ INSTAGRAM</p>
-            <h2 className="font-display text-cream text-6xl md:text-8xl leading-[0.9] drop-shadow-[5px_5px_0_hsl(var(--ink))]">
-              @{HANDLE.toUpperCase()}
+            <h2 className="font-display text-cream text-4xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.9] drop-shadow-[5px_5px_0_hsl(var(--ink))] break-all">
+              @{HANDLE}
             </h2>
           </div>
           <a

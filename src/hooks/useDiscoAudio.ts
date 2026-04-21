@@ -5,10 +5,13 @@ const AUDIO_SRC = "/audio/disco-loop.mp3";
 const FADE_MS = 600;
 const TARGET_VOL = 0.5;
 
+const clamp = (v: number) => Math.max(0, Math.min(1, v));
+
 export const useDiscoAudio = () => {
   const { disco } = useDisco();
   const [muted, setMuted] = useState(false);
   const [available, setAvailable] = useState(true);
+  const [primed, setPrimed] = useState(false);
   const ref = useRef<HTMLAudioElement | null>(null);
 
   // create the element once
@@ -25,6 +28,27 @@ export const useDiscoAudio = () => {
     };
   }, []);
 
+  // one-time gesture unlock so iOS/Safari/Chrome will let us play later
+  useEffect(() => {
+    if (primed) return;
+    const unlock = () => {
+      const el = ref.current;
+      if (!el) return;
+      el.volume = 0;
+      el.play().then(() => {
+        el.pause();
+        el.currentTime = 0;
+        setPrimed(true);
+      }).catch(() => setPrimed(true));
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [primed]);
+
   // fade helper
   const fadeTo = (target: number) => {
     const el = ref.current;
@@ -33,7 +57,7 @@ export const useDiscoAudio = () => {
     const t0 = performance.now();
     const step = (t: number) => {
       const k = Math.min(1, (t - t0) / FADE_MS);
-      el.volume = start + (target - start) * k;
+      el.volume = clamp(start + (target - start) * k);
       if (k < 1) requestAnimationFrame(step);
       else if (target === 0) el.pause();
     };

@@ -1,21 +1,16 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
 import vinyl from "@/assets/vinyl-music.png";
 
 const PLAYLIST_ID = "1cEE860l9GiBvIYVM2BbSS";
 
 const Playlist = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const spin = useTransform(scrollYProgress, [0, 1], [0, 540]);
-
   return (
-    <section ref={ref} id="playlist" className="relative bg-magenta py-24 md:py-32 border-t-4 border-b-4 border-ink overflow-hidden">
-      <motion.img
+    <section id="playlist" className="relative bg-magenta py-24 md:py-32 border-t-4 border-b-4 border-ink overflow-hidden">
+      <img
         src={vinyl}
         alt=""
-        style={{ rotate: spin, willChange: "transform" }}
-        className="absolute -top-20 -right-20 w-80 md:w-[28rem] opacity-90 pointer-events-none transform-gpu"
+        loading="lazy"
+        className="absolute -top-20 -right-20 w-56 md:w-[28rem] opacity-90 pointer-events-none transform-gpu animate-spin-slow"
+        style={{ willChange: "transform" }}
       />
       <div className="container relative z-10">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ THE PLAYLIST</p>
@@ -23,14 +18,14 @@ const Playlist = () => {
           NOW<br/>SPINNING
         </h2>
 
-        <div className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-cream overflow-hidden animate-fade-in">
+        <div className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-cream overflow-hidden relative z-20">
           <iframe
             title="Cats Can Dance — Now Spinning"
             src={`https://open.spotify.com/embed/playlist/${PLAYLIST_ID}?utm_source=generator&theme=0`}
             width="100%"
             height={480}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="eager"
+            loading="lazy"
             className="block w-full h-[380px] md:h-[480px] border-0"
           />
         </div>

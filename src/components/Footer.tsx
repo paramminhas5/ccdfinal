@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import star from "@/assets/star.png";
 
@@ -8,6 +7,7 @@ const groups = [
     links: [
       { to: "/", label: "Home" },
       { to: "/about", label: "About" },
+      { to: "/shop", label: "Shop" },
       { to: "/#playlist", label: "Playlist" },
       { to: "/#events", label: "Events" },
       { to: "/#drops", label: "Drops" },
@@ -26,8 +26,8 @@ const groups = [
 const Footer = () => {
   return (
     <section className="relative bg-ink text-cream py-24 md:py-32 overflow-hidden">
-      <motion.img src={star} alt="" className="absolute top-10 right-10 w-16 spin-slow" />
-      <motion.img src={star} alt="" className="absolute bottom-20 left-10 w-12 spin-slow" />
+      <img src={star} alt="" className="absolute top-10 right-10 w-16 spin-slow" />
+      <img src={star} alt="" className="absolute bottom-20 left-10 w-12 spin-slow" />
 
       <div className="container">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-6 text-center">/ JOIN THE PARTY</p>
