@@ -14,14 +14,13 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import PawCursor from "@/components/PawCursor";
 import ScrollPaw from "@/components/ScrollPaw";
-import { DiscoProvider } from "@/contexts/DiscoContext";
 import SectionReveal from "@/components/SectionReveal";
 import SEO from "@/components/SEO";
 
 const Index = () => {
   useSmoothScroll();
   return (
-    <DiscoProvider>
+    <>
       <SEO
         title="Cats Can Dance — So Can You"
         description="A culture brand uniting dance music, pet culture and streetwear. Drops, events, playlists and a community that shows up."
@@ -47,7 +46,7 @@ const Index = () => {
         <Contact />
         <Footer />
       </main>
-    </DiscoProvider>
+    </>
   );
 };
 
