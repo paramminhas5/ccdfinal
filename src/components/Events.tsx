@@ -2,9 +2,10 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import RsvpDialog from "@/components/RsvpDialog";
+import episode1Poster from "@/assets/episode-1-poster.png";
 
 const pastEpisodes = [
-  { slug: "episode-1", date: "TBA", city: "BANGALORE", venue: "TBA", tag: "EPISODE 01" },
+  { slug: "episode-1", date: "TBA", city: "BANGALORE", venue: "TBA", tag: "EPISODE 01", poster: episode1Poster },
 ];
 
 const Events = () => {
@@ -76,14 +77,20 @@ const Events = () => {
           <p className="font-display text-ink text-xl mb-4">/ PAST EPISODES</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {pastEpisodes.map((e) => (
-              <div
+              <Link
                 key={e.slug}
-                className="bg-cream border-4 border-ink chunk-shadow p-5 opacity-80 hover:opacity-100 transition"
+                to={`/events/${e.slug}`}
+                className="bg-cream border-4 border-ink chunk-shadow overflow-hidden hover:-translate-y-1 hover:translate-x-1 transition-transform block"
               >
-                <span className="bg-ink text-cream text-xs font-bold px-2 py-1 inline-block mb-2">{e.tag}</span>
-                <p className="font-display text-2xl text-magenta">{e.city}</p>
-                <p className="text-ink/70 font-medium text-sm">{e.venue} · {e.date}</p>
-              </div>
+                <div className="aspect-video bg-ink border-b-4 border-ink overflow-hidden">
+                  <img src={e.poster} alt={`${e.tag} poster`} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="p-5">
+                  <span className="bg-ink text-cream text-xs font-bold px-2 py-1 inline-block mb-2">{e.tag}</span>
+                  <p className="font-display text-2xl text-magenta">{e.city}</p>
+                  <p className="text-ink/70 font-medium text-sm">{e.venue} · {e.date}</p>
+                </div>
+              </Link>
             ))}
           </div>
           <Link
