@@ -30,12 +30,14 @@ const Footer = () => {
         src={ccdLogo}
         alt=""
         aria-hidden="true"
+        style={{ filter: "invert(1) brightness(1.2)" }}
         className="absolute top-10 right-10 w-24 transition-transform duration-1000 hover:rotate-[360deg]"
       />
       <img
         src={ccdLogo}
         alt=""
         aria-hidden="true"
+        style={{ filter: "invert(1) brightness(1.2)" }}
         className="absolute bottom-20 left-10 w-20 transition-transform duration-1000 hover:rotate-[360deg]"
       />
 
