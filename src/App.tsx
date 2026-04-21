@@ -20,6 +20,7 @@ import Blog from "./pages/Blog.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
+import SeoVerification from "@/components/SeoVerification";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <DiscoProvider>
             <CartSyncProvider>
               <ScrollToTop />
+              <SeoVerification />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/about" element={<About />} />
