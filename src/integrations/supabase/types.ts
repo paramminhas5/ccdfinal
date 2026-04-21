@@ -148,18 +148,21 @@ export type Database = {
           featured_playlist_id: string | null
           id: string
           playlists: Json
+          seo_verifications: Json
           updated_at: string
         }
         Insert: {
           featured_playlist_id?: string | null
           id: string
           playlists?: Json
+          seo_verifications?: Json
           updated_at?: string
         }
         Update: {
           featured_playlist_id?: string | null
           id?: string
           playlists?: Json
+          seo_verifications?: Json
           updated_at?: string
         }
         Relationships: []
