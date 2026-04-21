@@ -24,6 +24,9 @@ const Drops = () => {
         <h2 className="font-display text-ink text-6xl md:text-7xl mb-12 leading-[0.9]">
           WEAR THE<br />CULTURE.
         </h2>
+        <p className="sr-only">
+          Limited streetwear drops and collectibles from Cats Can Dance — a Bangalore streetwear brand and India's leading independent drop culture label. Cat-graphic tees, hoodies, music merch and music collectibles, made for the dance floor.
+        </p>
 
         {products.length > 0 ? (
           <div className="grid sm:grid-cols-2 gap-6 mb-10">
