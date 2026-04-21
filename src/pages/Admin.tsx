@@ -66,6 +66,7 @@ const Admin = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [newPlTitle, setNewPlTitle] = useState("");
   const [newPlUrl, setNewPlUrl] = useState("");
+  const [newPlPlatform, setNewPlPlatform] = useState<Platform>("spotify");
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -104,7 +105,14 @@ const Admin = () => {
         callContent({ method: "GET", search: "?type=events" }),
         callContent({ method: "GET", search: "?type=messages" }),
       ]);
-      setSettings(s.settings);
+      setSettings(
+        s.settings
+          ? {
+              ...s.settings,
+              playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
+            }
+          : null
+      );
       setEvents(e.events);
       setMessages(m.messages);
     } catch {
@@ -182,11 +190,15 @@ const Admin = () => {
 
   const addPlaylist = () => {
     if (!settings || !newPlTitle.trim() || !newPlUrl.trim()) return;
-    const sid = extractSpotifyId(newPlUrl);
+    const { embed_id, url } = extractPlaylistInfo(newPlPlatform, newPlUrl);
+    if (!embed_id) return;
     const id = `${Date.now()}`;
     const next: Settings = {
       ...settings,
-      playlists: [...settings.playlists, { id, title: newPlTitle.trim(), spotify_id: sid }],
+      playlists: [
+        ...settings.playlists,
+        { id, title: newPlTitle.trim(), platform: newPlPlatform, embed_id, url },
+      ],
       featured_playlist_id: settings.featured_playlist_id ?? id,
     };
     setNewPlTitle(""); setNewPlUrl("");
