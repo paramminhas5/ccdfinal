@@ -19,12 +19,27 @@ const Events = () => {
     })();
   }, []);
 
+  const eventLd = all.map((e) => ({
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: `Cats Can Dance — ${e.title}`,
+    startDate: e.date,
+    eventStatus:
+      e.status === "upcoming"
+        ? "https://schema.org/EventScheduled"
+        : "https://schema.org/EventMovedOnline",
+    location: { "@type": "Place", name: e.venue, address: e.city },
+    organizer: { "@type": "Organization", name: "Cats Can Dance", url: "https://catscandance.com" },
+    url: `https://catscandance.com/events/${e.slug}`,
+  }));
+
   return (
     <>
       <SEO
         title="Events — Cats Can Dance"
         description="All Cats Can Dance editions, past and upcoming."
         path="/events"
+        jsonLd={eventLd}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />

@@ -56,12 +56,33 @@ const EventDetail = () => {
 
   const isUpcoming = event.status === "upcoming";
 
+  const eventLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: `Cats Can Dance — ${event.title}`,
+    description: event.blurb,
+    startDate: event.date,
+    eventStatus:
+      event.status === "upcoming"
+        ? "https://schema.org/EventScheduled"
+        : "https://schema.org/EventMovedOnline",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: { "@type": "Place", name: event.venue, address: event.city },
+    image: event.poster_url ? [event.poster_url] : undefined,
+    performer: (event.lineup ?? []).map((p) => ({ "@type": "PerformingGroup", name: p })),
+    organizer: { "@type": "Organization", name: "Cats Can Dance", url: "https://catscandance.com" },
+    url: `https://catscandance.com/events/${slug}`,
+  };
+
   return (
     <>
       <SEO
         title={`${event.title} — Cats Can Dance`}
         description={event.blurb}
         path={`/events/${slug}`}
+        image={event.poster_url ?? undefined}
+        type="event"
+        jsonLd={eventLd}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
