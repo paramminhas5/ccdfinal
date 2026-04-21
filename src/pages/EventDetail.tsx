@@ -88,6 +88,16 @@ const EventDetail = () => {
           </div>
         </section>
 
+        {event.heroImage && (
+          <div className="container pt-12">
+            <img
+              src={event.heroImage}
+              alt={`${event.title} — ${event.city}`}
+              className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
+            />
+          </div>
+        )}
+
         <section className="container py-16 md:py-24 grid md:grid-cols-2 gap-10 max-w-5xl">
           <div>
             <h2 className="font-display text-3xl text-ink mb-4">/ THE NIGHT</h2>
