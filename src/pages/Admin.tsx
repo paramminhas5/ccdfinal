@@ -667,4 +667,100 @@ const ChecklistGroup = ({ title, items }: { title: string; items: string[] }) =>
   </div>
 );
 
+const LinkChecklistGroup = ({
+  title,
+  items,
+}: {
+  title: string;
+  items: { label: string; url?: string }[];
+}) => (
+  <div>
+    <p className="font-display text-magenta text-lg mb-2">/ {title}</p>
+    <ul className="space-y-2">
+      {items.map((it) => (
+        <li key={it.label} className="flex items-start gap-3 bg-background/50 border-2 border-ink/20 px-3 py-2">
+          <span className="font-display text-ink/40 mt-0.5">▢</span>
+          {it.url ? (
+            <a
+              href={it.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink/85 font-medium underline decoration-2 underline-offset-2 hover:text-magenta transition-colors"
+            >
+              {it.label} ↗
+            </a>
+          ) : (
+            <span className="text-ink/85 font-medium">{it.label}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const VerificationForm = ({
+  value,
+  onSave,
+}: {
+  value: Verifications;
+  onSave: (v: Verifications) => void;
+}) => {
+  const [google, setGoogle] = useState(value.google ?? "");
+  const [bing, setBing] = useState(value.bing ?? "");
+  const [plausible, setPlausible] = useState(value.plausible_domain ?? "");
+
+  useEffect(() => {
+    setGoogle(value.google ?? "");
+    setBing(value.bing ?? "");
+    setPlausible(value.plausible_domain ?? "");
+  }, [value.google, value.bing, value.plausible_domain]);
+
+  return (
+    <div className="grid sm:grid-cols-3 gap-3">
+      <div>
+        <label className="block font-display text-sm text-ink mb-1">Google site-verification token</label>
+        <input
+          value={google}
+          onChange={(e) => setGoogle(e.target.value)}
+          placeholder="abc123...xyz"
+          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:bg-acid-yellow"
+        />
+      </div>
+      <div>
+        <label className="block font-display text-sm text-ink mb-1">Bing msvalidate.01</label>
+        <input
+          value={bing}
+          onChange={(e) => setBing(e.target.value)}
+          placeholder="ABCDEF1234..."
+          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:bg-acid-yellow"
+        />
+      </div>
+      <div>
+        <label className="block font-display text-sm text-ink mb-1">Plausible domain (optional)</label>
+        <input
+          value={plausible}
+          onChange={(e) => setPlausible(e.target.value)}
+          placeholder="catscandance.com"
+          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:bg-acid-yellow"
+        />
+      </div>
+      <div className="sm:col-span-3">
+        <button
+          onClick={() =>
+            onSave({
+              google: google.trim() || undefined,
+              bing: bing.trim() || undefined,
+              plausible_domain: plausible.trim() || undefined,
+            })
+          }
+          className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors"
+        >
+          SAVE VERIFICATION
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default Admin;
+
