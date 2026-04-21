@@ -4,7 +4,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import RsvpDialog from "@/components/RsvpDialog";
-import episode1Poster from "@/assets/episode-1-poster.png";
+import episode1Poster from "@/assets/episode-1-poster.gif";
 
 const events: Record<string, {
   title: string;

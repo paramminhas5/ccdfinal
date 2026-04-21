@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import RsvpDialog from "@/components/RsvpDialog";
-import episode1Poster from "@/assets/episode-1-poster.png";
+import episode1Poster from "@/assets/episode-1-poster.gif";
 
 const pastEpisodes = [
   { slug: "episode-1", date: "TBA", city: "BANGALORE", venue: "TBA", tag: "EPISODE 01", poster: episode1Poster },

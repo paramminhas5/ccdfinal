@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import star from "@/assets/star.png";
+import ccdLogo from "@/assets/ccd-logo.png";
 
 const groups = [
   {
@@ -26,8 +26,18 @@ const groups = [
 const Footer = () => {
   return (
     <section className="relative bg-ink text-cream py-24 md:py-32 overflow-hidden">
-      <img src={star} alt="" className="absolute top-10 right-10 w-16 spin-slow" />
-      <img src={star} alt="" className="absolute bottom-20 left-10 w-12 spin-slow" />
+      <img
+        src={ccdLogo}
+        alt=""
+        aria-hidden="true"
+        className="absolute top-10 right-10 w-24 transition-transform duration-1000 hover:rotate-[360deg]"
+      />
+      <img
+        src={ccdLogo}
+        alt=""
+        aria-hidden="true"
+        className="absolute bottom-20 left-10 w-20 transition-transform duration-1000 hover:rotate-[360deg]"
+      />
 
       <div className="container">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-6 text-center">/ JOIN THE PARTY</p>
