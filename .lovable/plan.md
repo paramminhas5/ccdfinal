@@ -1,125 +1,125 @@
 
 
-# Cats Can Dance — Full Build Plan
+# Episode 2, Catbot, Shop, Real Playlists, YouTube + Instagram
 
-This is a big scope, so I'm breaking it into phases. Phase 1 is the highest-leverage stuff (backend + structure). I'll need a few decisions before I start.
+## 1. Hero — recenter the DJ cat
 
-## Questions before I build
+The DJ cat drifts right because `bottom-0` + `left-1/2 -translate-x-1/2` interacts with the side cats and the `95vw` width on small viewports. Fix:
+- Use `inset-x-0 mx-auto` (true horizontal centering) instead of left-50%/translate.
+- Cap width at `max-w-[680px]` and reduce mobile width to `w-[88%]` so it doesn't lean.
+- Tighten side cats to `w-24` on mobile so they don't push the visual weight right.
 
-1. **Admin access** — should the admin page be locked behind a login (email/password via Lovable Cloud auth), or a simple shared password gate for now?
-2. **Disco audio loop** — do you have an audio file you want to upload, or should I source/generate a royalty-free 120 BPM ambient loop?
-3. **Instagram feed** — real Instagram embed (requires their Graph API + a business account) or a styled mock grid that links to your profile?
-4. **Shop / Drops** — is this a real store (Shopify/Stripe later) or a "coming soon" showcase grid for now?
+## 2. Events — Episode 2 front and center + RSVP
 
-I'll proceed assuming: **shared password admin**, **I'll add a placeholder audio loop you can swap**, **mocked Instagram grid linking out**, **showcase-only shop**. Tell me if any of those are wrong.
+Replace the current 4-card grid with one **hero event card** (Episode 2) + a small "past episodes" strip below.
+
+**Episode 2 hero card** (full-width, magenta on lime, chunk-shadow-lg):
+- Big date, city, venue, "EPISODE 02" tag
+- Lineup blurb
+- Two CTAs: **RSVP** (opens modal) and **View details** (links to `/events/episode-2`)
+
+**RSVP flow:**
+- New table `event_rsvps` (`id`, `event_slug`, `name`, `email`, `plus_ones`, `created_at`, unique on `event_slug + email`)
+- RLS: public `INSERT` only; admin `SELECT` via existing admin edge function
+- New edge function `event-rsvp` with Zod validation + honeypot
+- Modal uses shadcn `Dialog` + `Form`, success → confetti + toast
+- `/admin` gets a second tab listing RSVPs per event with CSV export
+
+**Events page** (`/events` route, plus `/events/:slug`):
+- Lists all editions (Episode 1 archived, Episode 2 upcoming)
+- Detail page with full lineup, venue map link, RSVP form inline
+
+## 3. Catbot — replace the ScrollPaw
+
+Remove `ScrollPaw` from the home page. Add a new `Catbot` floating button (bottom-right) that opens a chat panel.
+
+**Tech:**
+- Floating button: cat-face SVG with a small "ask me" tooltip
+- shadcn `Sheet` (slide-up on mobile, side panel on desktop) for the chat UI
+- Edge function `catbot-chat` calls **Lovable AI Gateway** (`google/gemini-2.5-flash`, no API key needed)
+- System prompt pre-loaded with site facts: next event (Episode 2 details), current drops, links to playlist/IG/shop, brand voice
+- Tool/data injection: at request time, edge function fetches the next upcoming event and active products from the DB and injects them into the system prompt so answers stay fresh
+- Streaming response rendered with `react-markdown`
+- Message history kept client-side only (sessionStorage) — no auth needed
+- Suggested prompts shown on open: "When's the next event?", "What drops are live?", "Where can I find the playlist?"
+
+## 4. Shop — 2 real T-shirts with Stripe checkout
+
+Replace the placeholder `Drops` grid with a real 2-product shop.
+
+**Recommended provider:** Lovable's built-in **Stripe Payments** (no account setup needed, test mode immediately, lower fees for physical goods at this scale than Shopify's monthly cost).
+- Note: Stripe handles the payment, but you'll be on the hook for fulfillment/shipping yourself (printing, packing, mailing). If you want the platform to manage inventory and shipping labels too, **Shopify** is the alternative — say the word and we'll go that route.
+
+**Flow:**
+1. Run `recommend_payment_provider` to confirm Stripe eligibility for apparel
+2. Enable Stripe payments
+3. Create the 2 products (you'll provide: name, price, description, image; I'll handle the create-product calls)
+4. Build a `/shop` page with both products + product cards on home (`Drops` becomes a 2-card showcase linking to `/shop`)
+5. Each product → Stripe Checkout session edge function → success/cancel pages
+6. Order webhook stores orders in an `orders` table for the admin
+
+You'll need to upload the 2 T-shirt photos before I generate the Stripe products. Plain question I'll need answered after this plan: name, price, description, sizes, photo for each shirt.
+
+## 5. Real playlists — replace mock tracks
+
+Two options, my recommendation is **Spotify embed** (zero config):
+- Replace the mock track list with a Spotify embedded playlist iframe (`https://open.spotify.com/embed/playlist/{PLAYLIST_ID}`)
+- Keep the magenta section, big "NOW SPINNING" header, vinyl spin animation
+- Add a small grid below for "Other playlists" (each an embedded mini-player)
+- You'll provide the Spotify playlist URL(s); I'll wire them in
+
+If you use SoundCloud or Apple Music instead, same pattern with their embed URLs. Tell me which.
+
+## 6. YouTube videos section
+
+Rename `Posts` → `Videos` (or keep Posts hidden until you have articles, add a new `Videos` section).
+
+**Approach:** YouTube channel feed via a single edge function:
+- Edge function `youtube-videos` calls YouTube Data API v3 (`/search?channelId=...&order=date`) and caches results for 10 min
+- Requires a YouTube Data API key (free, 10k requests/day quota) — I'll request it via secrets when we get to this phase
+- Renders 3-up grid of latest videos, each clicks into a lightbox with the embedded player
+- Falls back to a hardcoded list of video IDs if API call fails
+
+Alternative if you don't want to deal with an API key: I just hardcode an array of YouTube video IDs you give me, and we render `<iframe>` embeds. Faster, but you'd update the code each time you upload a video. Tell me which you prefer.
+
+## 7. Instagram — how to actually hook it up
+
+Real Instagram embedding requires the **Instagram Graph API** (the old Basic Display API was deprecated Dec 2024). Here's exactly what's needed:
+
+**Prerequisites you'd set up on Meta's side:**
+1. Convert @catscandance to a **Business or Creator account** (free, in IG settings)
+2. Connect it to a **Facebook Page** (required by Meta, even if the page is empty)
+3. Create a **Meta Developer App** at developers.facebook.com → add the "Instagram Graph API" product
+4. Generate a **long-lived access token** (60 days) for that app + IG Business Account
+
+**What I'd build once you have the token:**
+- Add the access token + IG business account ID as project secrets
+- Edge function `instagram-feed` calls `https://graph.facebook.com/v21.0/{ig-user-id}/media?fields=id,media_url,permalink,caption,media_type,thumbnail_url&access_token=...`
+- Caches responses for 15 min (Meta has rate limits)
+- Auto-refreshes the long-lived token every ~50 days via a cron-style invocation
+- Replaces the 9 mock tiles with real posts — clicking opens the IG permalink
+
+**Easier alternative if Meta App setup feels heavy:** use a third-party service like **Behold.so** or **EmbedSocial** — they handle the Meta auth and give you a simple JSON endpoint. Free tiers exist. I'd just consume their endpoint from a small edge function.
+
+Tell me whether you want to: **(a)** set up the Meta Developer App yourself (I'll provide step-by-step), **(b)** use Behold.so/EmbedSocial, or **(c)** keep the mocked grid for now and revisit later.
 
 ---
 
-## Phase 1 — Site architecture & routing
+## Decisions I need from you
 
-Restructure into a multi-page site. Home becomes user-focused only.
+1. **Episode 2 details** — date, city, venue, lineup blurb, ticket/RSVP-only?
+2. **Shop provider** — Stripe (recommended) or Shopify? I'll need product photos + details either way.
+3. **Playlists** — Spotify (recommended)? Send the playlist URL(s).
+4. **Videos** — YouTube Data API (auto-updating) or hardcoded video ID list?
+5. **Instagram** — (a) DIY Meta App, (b) Behold.so/EmbedSocial, or (c) defer?
+6. **Catbot scope confirm** — OK to remove the ScrollPaw entirely and replace it with the Catbot button?
 
-```text
-/                → Home (users)
-/about           → About the brand
-/for-venues      → Pitch page for venues
-/for-artists     → Pitch page for artists
-/for-investors   → Pitch page for investors
-/admin           → Early access list (gated)
-```
+## Suggested execution order once approved
 
-- Add a global `Nav` with: Home · About · Playlists · Events · Shop · For Venues · For Artists · For Investors (collapses to hamburger on mobile).
-- Add a `Footer` link group mirroring the nav.
-- Each "For X" page reuses the brand system (Marquee, big display type, chunk shadows) with audience-specific copy + a single CTA (contact / pitch deck / invest inquiry).
-
-## Phase 2 — Home redesign (user-focused)
-
-New section order on `/`:
-
-1. Hero (fixed jank, see Phase 6)
-2. Marquee
-3. About (short — full story lives on `/about`)
-4. Playlists (existing, polished — embed Spotify/SoundCloud iframes)
-5. Events (existing)
-6. Media (press logos + video/photo strip)
-7. Drops / Shop (product card grid, "coming soon" badges OK)
-8. Instagram (3×3 grid linking to @catscandance)
-9. Posts (blog/news teaser cards — static for now)
-10. Early Access (now wired to backend)
-11. Contact + Footer
-
-I'll build new components: `About`, `Media`, `Drops`, `Instagram`, `Posts`. Existing `WhyNow`, `Why`, `Audiences` move to the `/about` and `/for-*` pages where they fit.
-
-## Phase 3 — Lovable Cloud + Early Access backend
-
-- Enable Lovable Cloud.
-- Create `early_access_signups` table: `id`, `email` (unique), `source`, `created_at`, `user_agent`.
-- RLS: public can `INSERT` only; only admins can `SELECT`.
-- Wire `EarlyAccess.tsx` form:
-  - Zod validation (`email().max(255)`)
-  - Trim + lowercase before insert
-  - Friendly toast for success, duplicate, and failure cases
-  - Keep the confetti burst on success
-- Honeypot field + simple client throttle to deter bots.
-
-## Phase 4 — Admin page
-
-`/admin` route:
-- Password gate (env-stored shared password checked via edge function — never client-side).
-- Once unlocked: paginated table of signups with search by email, sort by date, total count, and a **Download CSV** button.
-- Reuses shadcn `Table`, `Input`, `Button`.
-
-## Phase 5 — Disco audio
-
-- Add `useDiscoAudio` hook tied to `DiscoContext`.
-- Plays a looping ambient 120 BPM track when disco mode is on; fades in/out.
-- Mute toggle pinned next to the disco toggle in the nav.
-- Respects `prefers-reduced-motion` AND first-user-gesture autoplay rules (audio only starts after the user clicks the disco toggle, which is already a gesture).
-- Audio file lives at `public/audio/disco-loop.mp3` (placeholder; swappable).
-
-## Phase 6 — Hero polish + scroll de-jank
-
-- Re-stack hero z-index: **text behind**, **DJ cat image in middle layer**, **buttons on top**. Currently the DJ image sits above the text already — I'll formalize the layering and move buttons to `z-50`.
-- Tie hero center DJ image to scroll: gentle parallax `y` + slight `scale` driven by `useScroll`.
-- Performance fixes for jank:
-  - Add `will-change: transform` only to actively-animating elements.
-  - Wrap heavy `motion` transforms with `useReducedMotion` so they collapse to static on low-power devices.
-  - Throttle `ScrollPaw` and `PawCursor` updates with `rAF` if not already.
-  - Lower Lenis `duration` from 1.1 → 0.9 and disable smoothWheel on touch devices (Lenis already does this, but I'll confirm).
-  - Audit `SectionReveal` to use `whileInView` with `once: true` so it stops recomputing.
-
-## Phase 7 — QA pass
-
-- Mobile (375px, 390px, 414px): tap targets, marquee overflow, hero text clipping.
-- `prefers-reduced-motion`: disables marquee, parallax, confetti orbits, paw cursor.
-- Disco mode: verify gradient/filter applies cleanly across every section without breaking text contrast.
-- Lighthouse run; fix any red items.
-
-## Phase 8 — SEO & share previews
-
-- Per-route `<title>` and `<meta description>` via `react-helmet-async`.
-- Open Graph + Twitter card tags per page.
-- Custom OG image (1200×630) generated with the brand palette + DJ cat.
-- `favicon.ico` + `apple-touch-icon.png` + `site.webmanifest`.
-- `sitemap.xml` and updated `robots.txt`.
-- JSON-LD `Organization` schema on home.
-
----
-
-## Technical notes
-
-- **Stack additions**: `react-helmet-async`, `zod` (already common in shadcn forms — confirm), Lovable Cloud client.
-- **Audio**: native `<audio loop>` with a ref; no library needed.
-- **Admin auth**: edge function `verify-admin-password` returns a short-lived signed token stored in `sessionStorage`; gate uses it to fetch signups via another edge function that validates the token before reading the table. No service role keys leak to the client.
-- **CSV export**: edge function streams `text/csv` with proper headers.
-- **Routing**: existing `react-router-dom` BrowserRouter; just add the new routes above the catch-all.
-
-## Suggested order of execution
-
-1. Answer the 4 questions above.
-2. I'll do Phase 1 + 2 (architecture + home restructure) — this is the biggest visible change.
-3. Then Phase 3 + 4 (Cloud, signups, admin) in one pass.
-4. Then Phase 5 (audio), Phase 6 (hero + jank), Phase 7 (QA), Phase 8 (SEO) — these can ship together.
-
-Reply with answers to the 4 questions (or "go with your defaults") and I'll start.
+1. Hero recenter + Catbot (no external deps) — quick win
+2. Episode 2 event card + RSVP backend + `/events` page
+3. Real playlists (Spotify embed)
+4. Videos section
+5. Stripe shop (needs your product info)
+6. Instagram (needs your auth choice)
 
