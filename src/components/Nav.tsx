@@ -4,6 +4,7 @@ import DiscoButton from "@/components/DiscoButton";
 import DiscoMute from "@/components/DiscoMute";
 import { CartDrawer } from "@/components/CartDrawer";
 import { useCartStore } from "@/stores/cartStore";
+import ccdLogo from "@/assets/ccd-logo.png";
 
 const links = [
   { to: "/", label: "Home" },
@@ -36,8 +37,13 @@ const Nav = () => {
       }`}
     >
       <nav className="container flex items-center justify-between py-4 gap-4">
-        <Link to="/" className="font-display text-xl md:text-2xl text-ink leading-none shrink-0">
-          CATS<span className="text-magenta">.</span>CAN<span className="text-magenta">.</span>DANCE
+        <Link to="/" className="group flex items-center gap-2 font-display text-xl md:text-2xl text-ink leading-none shrink-0">
+          <img
+            src={ccdLogo}
+            alt="Cats Can Dance logo"
+            className="h-9 md:h-10 w-auto transition-transform duration-700 group-hover:rotate-[360deg]"
+          />
+          <span>CATS<span className="text-magenta">.</span>CAN<span className="text-magenta">.</span>DANCE</span>
         </Link>
 
         <ul className="hidden lg:flex items-center gap-6">

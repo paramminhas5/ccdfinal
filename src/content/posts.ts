@@ -2,7 +2,7 @@
 // excerpt, cover image, tag, date, author, and a body (array of paragraph strings
 // or simple HTML strings — rendered as paragraphs).
 
-import episode1Poster from "@/assets/episode-1-poster.png";
+import episode1Poster from "@/assets/episode-1-poster.gif";
 
 export type Post = {
   slug: string;
