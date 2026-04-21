@@ -13,7 +13,7 @@ import EarlyAccess from "@/components/EarlyAccess";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import PawCursor from "@/components/PawCursor";
-import ScrollPaw from "@/components/ScrollPaw";
+import Catbot from "@/components/Catbot";
 import SectionReveal from "@/components/SectionReveal";
 import SEO from "@/components/SEO";
 
@@ -29,7 +29,7 @@ const Index = () => {
       <main className="bg-background text-foreground">
         <Nav />
         <PawCursor />
-        <ScrollPaw />
+        <Catbot />
         <Hero />
         <Marquee bg="bg-acid-yellow" />
         <SectionReveal><About /></SectionReveal>

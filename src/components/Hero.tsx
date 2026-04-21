@@ -57,25 +57,25 @@ const Hero = () => {
         </h1>
       </div>
 
-      {/* z-30: DJ CAT (middle, scroll-tied) */}
+      {/* z-30: DJ CAT (middle, scroll-tied) — true centering via inset-x-0 + mx-auto */}
       <motion.img
         src={heroCenter}
         alt=""
         aria-hidden
         style={{ y: djY, scale: djScale, willChange: "transform" }}
-        className="absolute left-1/2 -translate-x-1/2 bottom-0 z-30 w-[95%] max-w-5xl drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
+        className="absolute inset-x-0 mx-auto bottom-0 z-30 w-[88%] max-w-[680px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
       />
 
       {/* z-40: side cats */}
       <motion.div
         style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
-        className="absolute bottom-4 left-2 md:left-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+        className="absolute bottom-4 left-2 md:left-10 z-40 w-24 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
       >
         <img src={catLeft} alt="" className="w-full wiggle" />
       </motion.div>
       <motion.div
         style={{ x: rightX, y: rightY, rotate: rightRot, willChange: "transform" }}
-        className="absolute bottom-4 right-2 md:right-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+        className="absolute bottom-4 right-2 md:right-10 z-40 w-24 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
       >
         <img src={catRight} alt="" className="w-full wiggle" />
       </motion.div>

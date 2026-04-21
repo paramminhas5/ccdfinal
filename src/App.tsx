@@ -11,6 +11,8 @@ import ForVenues from "./pages/ForVenues.tsx";
 import ForArtists from "./pages/ForArtists.tsx";
 import ForInvestors from "./pages/ForInvestors.tsx";
 import Admin from "./pages/Admin.tsx";
+import Events from "./pages/Events.tsx";
+import EventDetail from "./pages/EventDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const App = () => (
               <Route path="/for-artists" element={<ForArtists />} />
               <Route path="/for-investors" element={<ForInvestors />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:slug" element={<EventDetail />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </DiscoProvider>
