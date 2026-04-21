@@ -15,7 +15,13 @@ type PlaylistItem = {
   url: string;
   spotify_id?: string;
 };
-type Settings = { id: string; playlists: PlaylistItem[]; featured_playlist_id: string | null };
+type Verifications = { google?: string; bing?: string; plausible_domain?: string };
+type Settings = {
+  id: string;
+  playlists: PlaylistItem[];
+  featured_playlist_id: string | null;
+  seo_verifications?: Verifications;
+};
 type EventRow = {
   id?: string; slug: string; title: string; date: string; city: string; venue: string;
   blurb: string; lineup: string[]; status: string; poster_url: string | null; sort_order: number;
@@ -110,6 +116,7 @@ const Admin = () => {
           ? {
               ...s.settings,
               playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
+              seo_verifications: s.settings.seo_verifications ?? {},
             }
           : null
       );
