@@ -5,8 +5,8 @@ import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 
 const all = [
-  { slug: "episode-2", title: "Episode 02", city: "Brooklyn", venue: "TBA", date: "TBA", status: "upcoming" },
-  { slug: "episode-1", title: "Episode 01", city: "Brooklyn", venue: "House of Yes", date: "Mar 22", status: "past" },
+  { slug: "episode-2", title: "Episode 02", city: "Bangalore", venue: "TBA", date: "TBA", status: "upcoming" },
+  { slug: "episode-1", title: "Episode 01", city: "Bangalore", venue: "TBA", date: "TBA", status: "past" },
 ];
 
 const Events = () => (

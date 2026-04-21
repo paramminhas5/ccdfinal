@@ -13,11 +13,13 @@ const events: Record<string, {
   blurb: string;
   lineup: string[];
   status: "upcoming" | "past";
+  heroImage?: string;
+  gallery?: string[];
 }> = {
   "episode-2": {
     title: "Episode 02",
     date: "TBA",
-    city: "Brooklyn",
+    city: "Bangalore",
     venue: "TBA",
     blurb: "Round two. Heavier low-end, deeper crates, the same energy that made Episode 01 sell out by word of mouth.",
     lineup: ["Headliner: TBA", "Support: TBA", "Surprise b2b set", "Resident: DJ Meowmix"],
@@ -25,12 +27,14 @@ const events: Record<string, {
   },
   "episode-1": {
     title: "Episode 01",
-    date: "Mar 22",
-    city: "Brooklyn",
-    venue: "House of Yes",
+    date: "TBA",
+    city: "Bangalore",
+    venue: "TBA",
     blurb: "The one that started it. Sold out, no flyer.",
-    lineup: ["Luna Beats", "Whisker Funk", "DJ Meowmix"],
+    lineup: ["TBA"],
     status: "past",
+    // heroImage: "/images/episode-1-hero.jpg",
+    // gallery: ["/images/episode-1-1.jpg", "/images/episode-1-2.jpg"],
   },
 };
 
@@ -84,6 +88,16 @@ const EventDetail = () => {
           </div>
         </section>
 
+        {event.heroImage && (
+          <div className="container pt-12">
+            <img
+              src={event.heroImage}
+              alt={`${event.title} — ${event.city}`}
+              className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
+            />
+          </div>
+        )}
+
         <section className="container py-16 md:py-24 grid md:grid-cols-2 gap-10 max-w-5xl">
           <div>
             <h2 className="font-display text-3xl text-ink mb-4">/ THE NIGHT</h2>
@@ -106,6 +120,23 @@ const EventDetail = () => {
             )}
           </div>
         </section>
+
+        {event.gallery && event.gallery.length > 0 && (
+          <section className="container pb-16 md:pb-24 max-w-5xl">
+            <h2 className="font-display text-3xl text-ink mb-6">/ GALLERY</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {event.gallery.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${event.title} photo ${i + 1}`}
+                  loading="lazy"
+                  className="w-full aspect-square object-cover border-4 border-ink chunk-shadow"
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <Footer />
       </main>
