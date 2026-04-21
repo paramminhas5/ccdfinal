@@ -31,7 +31,7 @@ const Hero = () => {
 
   return (
     <>
-      <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
+      <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue bg-[#11328d]">
         {disco && <Lasers />}
         {disco && !isMobile && <DiscoBall />}
 
