@@ -8,7 +8,7 @@ import Events from "@/components/Events";
 import Media from "@/components/Media";
 import Drops from "@/components/Drops";
 import Instagram from "@/components/Instagram";
-import Posts from "@/components/Posts";
+import Videos from "@/components/Videos";
 import EarlyAccess from "@/components/EarlyAccess";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -40,7 +40,7 @@ const Index = () => {
         <SectionReveal><Media /></SectionReveal>
         <SectionReveal><Drops /></SectionReveal>
         <SectionReveal><Instagram /></SectionReveal>
-        <SectionReveal><Posts /></SectionReveal>
+        <SectionReveal><Videos /></SectionReveal>
         <Marquee bg="bg-acid-yellow" />
         <SectionReveal><EarlyAccess /></SectionReveal>
         <Contact />
