@@ -67,10 +67,32 @@ const EventDetail = () => {
         ? "https://schema.org/EventScheduled"
         : "https://schema.org/EventMovedOnline",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    location: { "@type": "Place", name: event.venue, address: event.city },
+    location: {
+      "@type": "Place",
+      name: event.venue,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: event.venue,
+        addressLocality: event.city || "Bangalore",
+        addressRegion: "Karnataka",
+        addressCountry: "IN",
+      },
+    },
     image: event.poster_url ? [event.poster_url] : undefined,
     performer: (event.lineup ?? []).map((p) => ({ "@type": "PerformingGroup", name: p })),
-    organizer: { "@type": "Organization", name: "Cats Can Dance", url: "https://catscandance.com" },
+    organizer: {
+      "@type": "Organization",
+      name: "Cats Can Dance",
+      url: "https://catscandance.com",
+    },
+    offers: {
+      "@type": "Offer",
+      url: `https://catscandance.com/events/${slug}`,
+      price: "0",
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+      validFrom: new Date().toISOString(),
+    },
     url: `https://catscandance.com/events/${slug}`,
   };
 

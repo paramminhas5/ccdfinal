@@ -23,9 +23,20 @@ const Index = () => {
   return (
     <>
       <SEO
-        title="Cats Can Dance — So Can You"
-        description="A culture brand uniting dance music, pet culture and streetwear. Drops, events, playlists and a community that shows up."
+        title="Best Parties & Events in Bangalore | Cats Can Dance"
+        description="Cats Can Dance — Bangalore's top event organisers. The best underground parties, dance music nights and electronic events in Bangalore, India. RSVP now."
         path="/"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://catscandance.com/" },
+              { "@type": "ListItem", position: 2, name: "Events", item: "https://catscandance.com/events" },
+              { "@type": "ListItem", position: 3, name: "Shop", item: "https://catscandance.com/shop" },
+            ],
+          },
+        ]}
       />
       <main className="bg-background text-foreground">
         <Nav />
