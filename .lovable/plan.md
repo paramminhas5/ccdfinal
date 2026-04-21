@@ -1,89 +1,102 @@
 
 
-# SEO + GEO round 2: pre-rendering, content depth, internal links, images
+# Streetwear SEO expansion + per-post blog imagery + discovery push
 
-The current setup has the basics (meta, JSON-LD, sitemap, llms.txt). The biggest remaining gaps are: **(1) the site is a SPA so Google sees an empty `<div id="root">` for many crawls, (2) thin content on key pages, (3) no real backlink/local-content surface, (4) no per-page social images, (5) no analytics to measure rankings**. Here's what to do next, ordered by ranking impact.
+Three things in this batch: (1) lock the hero blue to `#2463eb` in the theme so it's permanent, (2) widen SEO to cover **streetwear / drops / collectibles** alongside parties, (3) give every blog post its own AI-generated hero image, (4) ship a discovery + backlink engine.
 
-## 1. Fix the SPA crawl problem (biggest single win)
-Right now Googlebot has to render JS to see anything. AI crawlers (GPTBot, PerplexityBot, ClaudeBot) mostly do **not** render JS — they see a blank page. Fix:
+## 1. Lock hero blue to `#2463eb`
+- Update `--electric-blue` in `src/index.css` to the HSL of `#2463eb` so the `bg-electric-blue` token matches everywhere.
+- Remove the inline `bg-[#2463eb]` override on `Hero.tsx` once the token is correct (cleaner, future-proof).
 
-- **Add `react-snap` or `vite-plugin-prerender`** to pre-render every static route at build time into real HTML files (`/about/index.html`, `/events/index.html`, `/for-venues/index.html`, etc.). Each file ships with the actual H1/copy/JSON-LD already in the markup.
-- Routes to pre-render: `/`, `/about`, `/events`, `/events/episode-1`, `/events/episode-2`, `/shop`, `/for-venues`, `/for-artists`, `/for-investors`, `/blog/inside-episode-01`.
-- Result: AI engines and Google get fully-rendered HTML on first byte. Massive lift for both rankings and AI citations.
+## 2. SEO expansion: streetwear, drops, collectibles
+Right now every meta tag, JSON-LD, llms.txt and sitemap entry talks only about parties/events. Add a parallel keyword spine.
 
-## 2. Add a real `/blog` index + 4-6 pillar articles
-Blog content is the #1 way to rank for long-tail "best X in Bangalore" queries. Create:
+**Target keywords**: *Bangalore streetwear brand, India streetwear drops, limited edition merch India, music collectibles India, party merch Bangalore, cat streetwear, underground streetwear India, drop culture India*.
 
-- `/blog` index page listing all posts (currently only `/blog/inside-episode-01` exists, no index).
-- 6 new pillar posts (markdown in `src/content/posts.ts`):
-  1. "The Best Underground Parties in Bangalore (2026 Guide)"
-  2. "Where to Find Electronic Music Events in Bangalore"
-  3. "Top 10 Event Organisers in India for Dance Music"
-  4. "RSVP Culture: How Bangalore's Party Scene Works"
-  5. "A Guide to Techno & House Nights in Bangalore"
-  6. "Behind the Decks: Bangalore's Rising DJs"
-- Each post: 800-1200 words, internal links to `/events`, `/about`, other posts. `BlogPosting` JSON-LD already exists.
-- Add each new slug to `sitemap.xml` and `llms-full.txt`.
+- **`index.html`** — extend `<meta name="keywords">`, description, and Organization JSON-LD `category` array with `["Streetwear Brand","Apparel","Limited Drops","Music Merchandise","Collectibles"]`. Add a second JSON-LD node `@type: "Brand"` with `slogan`, `category: "Streetwear"`.
+- **`src/pages/Shop.tsx`** — rewrite SEO title to `Cats Can Dance Shop — Limited Streetwear Drops & Collectibles | Bangalore` + description. Add `ItemList` JSON-LD of products (name, image, price) and `CollectionPage` schema. Wrap the page in visible H1 "Drops & Collectibles".
+- **`src/pages/ProductDetail.tsx`** — already has `Product` schema; extend with `brand`, `category: "Streetwear"`, `audience: { @type: "PeopleAudience", suggestedGender: "unisex" }`, `additionalProperty` for "Limited drop" badge.
+- **`src/components/Drops.tsx`** — add SR-only line: "Limited streetwear drops and collectibles from Cats Can Dance, Bangalore" so the homepage section is crawlable for these terms.
+- **`public/brand.json`** — add `categories: [...existing, "Streetwear", "Limited Drops", "Collectibles"]`, new `products` summary, new `faq` entries ("Where to buy Cats Can Dance merch?", "When is the next drop?").
+- **`public/llms.txt` + `llms-full.txt`** — add a **Shop / Drops** section listing every product URL with one-line descriptions. Lead paragraph extended to "…dance music parties **and a streetwear label of limited drops and collectibles**…".
+- **`public/sitemap.xml`** — add every `/shop/:slug` product URL with `<image:image>` tags (image sitemap extension) so Google Images indexes drops.
 
-## 3. Per-page Open Graph images (social CTR → indirect ranking)
-Today every page shares one OG image. Generate route-specific OGs at `/public/og/`:
-- `/og/events.png`, `/og/about.png`, `/og/shop.png`, `/og/for-venues.png`, etc.
-- Each is 1200×630, branded magenta, with the page's H1 baked in. Boosts share CTR on WhatsApp/Twitter/LinkedIn → more clicks → ranking signal.
-- Pass via `<SEO image="/og/events.png" />` (already supported).
+## 3. Unique AI-generated hero image per blog post
+Currently all 7 posts share one image. Generate a distinct one per post via the Lovable AI image script.
 
-## 4. Internal linking + breadcrumbs
-- Add a visible breadcrumb component (`Home › Events › Episode 1`) to every non-home page. Wrap with `BreadcrumbList` JSON-LD per page (currently only homepage has it).
-- Add a "Related events" / "Read next" block at the bottom of each event and blog post linking to 3 related URLs. Internal link depth is a known ranking signal.
-- Footer: add a sitemap-style link block (Events / Shop / About / For Artists / For Venues / For Investors / Blog).
+- Run the `ai-gateway` skill with `google/gemini-3.1-flash-image-preview` for each of the 7 posts using prompts derived from the post title/topic (e.g. for "Best Underground Parties in Bangalore" → moody Bangalore skyline + neon, brutalist poster collage style consistent with brand).
+- Save to `public/blog/<slug>.png` (1200×630, also reusable as OG image).
+- Update `src/content/posts.ts` so each post has `image: "/blog/<slug>.png"` and `ogImage` matching.
+- `BlogPost.tsx` already passes `image` to `<SEO>`; verify per-post OG works.
+- Add `<img>` with descriptive `alt` like "Underground party in Bangalore by Cats Can Dance" — keyword + entity.
 
-## 5. Image SEO
-- Audit every `<img>` for descriptive `alt` text including target keywords ("Cats Can Dance party in Bangalore", "Episode 1 dance music event Bangalore"). Currently many are `alt=""`.
-- Add `loading="lazy"` to below-fold images, `loading="eager" fetchpriority="high"` to hero LCP image.
-- Generate `srcset` for hero / event posters via Vite's `?w=400;800;1200` import suffix to cut LCP on mobile.
+## 4. Discovery + backlink engine
+SEO is half on-page, half off-page. Make it easy (and trackable) to ship backlinks.
 
-## 6. Performance signals (Core Web Vitals)
-- Add `<link rel="preload" as="image" href="/src/assets/cat-dj-hero.svg">` for hero LCP.
-- Self-host the Google fonts already in use (`@fontsource/*`) and drop the `gstatic` preconnect — eliminates a render-blocking round trip.
-- Add `Cache-Control: public, max-age=31536000, immutable` headers via `_headers` file (Lovable static host) for `/assets/*`.
+### a. Outreach helper in admin
+Expand the **SEO Checklist** tab in `src/pages/Admin.tsx` with a new **Backlinks** sub-section:
+- **Pre-written pitch templates** (copy-to-clipboard) for: Wild City, Rolling Stone India, Homegrown, Mid-day Bangalore, The Hindu MetroPlus, Insider.in editorial, Skiddle, Resident Advisor.
+- **Directory submission links** (one-click open): Google Business Profile, Bing Places, Insider.in promoter signup, Skiddle promoter, RA promoter, Songkick, Bandsintown, JamBase, Eventbrite organiser, Allevents.in, Eventil, India Nightlife, LBB Bangalore, Little Black Book.
+- **Streetwear directories**: Hypebeast tips, Highsnobiety submit, Sneaker News India, The Established, Lifestyle Asia India, Grailed seller signup, Depop.
+- **Status tracker**: each row has a `pending / submitted / live` toggle stored in `site_settings.backlinks` jsonb (new column via migration). Lets the team see progress.
 
-## 7. Analytics + Search Console wiring
-You can't rank what you don't measure. Add:
-- **Google Search Console verification** via a `<meta name="google-site-verification">` field in `index.html` (admin can paste the token in the new SEO Checklist tab and it surfaces in head).
-- **Bing Webmaster** verification meta the same way.
-- **Plausible or Google Analytics 4** (lightweight, privacy-friendly Plausible recommended) to track which queries land where.
-- New `site_settings.seo_verifications` jsonb (`{google, bing, plausible_domain}`) editable from admin.
+### b. Auto-generated press kit page
+New route `/press` (`src/pages/Press.tsx`) with:
+- Brand description (3 lengths: 50 / 150 / 500 chars — for press to copy)
+- Logo downloads (PNG light/dark, SVG)
+- Founder bios + headshots
+- Photo gallery from past events (downloadable zip link)
+- Press contact email
+- Linked from footer + `brand.json` + `llms.txt`. Massive backlink magnet — every outlet that covers you needs this page.
 
-## 8. Local citations + entity reinforcement (in-app helpers)
-- Expand the admin "SEO Checklist" with **clickable submission links** (Google Business Profile create URL, Bing Places, Insider.in submit form, Skiddle promoter signup, RA promoter signup, Wild City contact).
-- Add a "NAP card" on `/about` (Name / Address / "Contact via Instagram") that exactly mirrors what gets submitted to directories — consistency matters for local SEO.
-- Add an **Events archive page** `/events/past` listing previous episodes with photos + lineup (currently nothing past episode-2). Old event pages are a huge source of "best parties Bangalore [year]" rankings.
+### c. Embeddable widgets (link-bait)
+- New `/embed/upcoming` route returning a tiny iframe-friendly card listing next 3 events. Other Bangalore blogs / venue sites embed it → each embed = a backlink. Add a "Copy embed code" button in admin.
 
-## 9. Schema additions
-- `ItemList` of upcoming events on the `/events` page (Google can pull this into a carousel).
-- `MusicEvent` instead of generic `Event` for episodes (more specific = better rich result eligibility).
-- `VideoObject` JSON-LD on the Videos section pulling from the existing YouTube data.
-- `Review` / `AggregateRating` on `/about` if/when testimonials are added (admin form).
+### d. Schema additions for discovery surfaces
+- Add `Brand` + `OnlineStore` JSON-LD on `/shop`.
+- Add `Person` schema for founders on `/about` (LinkedIn `sameAs`).
+- Add `WebSite` schema with `potentialAction: SearchAction` on homepage so Google shows a sitelinks search box.
+- Add `Speakable` schema on FAQ + key paragraphs (helps Google Assistant / voice).
 
-## 10. AI engine optimisation extras
-- Rewrite `llms.txt` to follow the **exact spec** at llmstxt.org (H1 brand name, blockquote summary, sectioned link lists). Current file is close but not strictly compliant.
-- Add `/api/brand.json` (a static JSON file in `public/`) with brand name, tagline, locations, upcoming events, FAQ — a single endpoint Perplexity/ChatGPT plugins can ingest cleanly.
+### e. Content velocity (long-term ranking)
+- 4 new pillar posts focused on streetwear + culture (added to `src/content/posts.ts`):
+  1. "Inside the Cats Can Dance Streetwear Drop"
+  2. "The Rise of Music Merch as Collectibles in India"
+  3. "How Bangalore's Underground Brands Build Cult Followings"
+  4. "Limited Drops 101: Why Scarcity Sells"
+- Each 800-1200 words, internal-linked to `/shop`, `/events`, other posts. Each gets its own AI image.
+
+### f. Social + share boosters
+- Add `og:image` per blog post (already wired) + `twitter:creator` meta.
+- Add a "Share" button row to every blog post + product (WhatsApp / X / copy link). More shares = more crawlable mentions.
+- Add `<link rel="me" href="https://instagram.com/catscandance">` etc. in `<head>` for Mastodon/IndieWeb verification.
+
+### g. RSS feed
+- New `/rss.xml` static (regenerated when posts change) — picked up by Feedly, Inoreader, NetNewsWire users + AI training pipelines.
+
+## 5. Performance tightening (re-confirm)
+- Audit images audited in round 2 — also serve `<img loading="lazy" decoding="async">` on all blog hero thumbs.
+- Add `Cache-Control` for `/blog/*.png` and `/og/*.png` in `public/_headers`.
 
 ## Files touched
-- `vite.config.ts` + new `package.json` dep `vite-plugin-prerender` — pre-rendering
-- `src/content/posts.ts` — 6 new pillar articles
-- `src/pages/Blog.tsx` — NEW blog index
-- `src/components/Breadcrumbs.tsx` — NEW reusable breadcrumb (visible + JSON-LD)
-- `src/components/Footer.tsx` — sitemap link block
-- `public/og/*.png` — NEW per-route social images
-- `public/_headers` — NEW cache headers
-- `public/llms.txt` — strict-spec rewrite
-- `public/brand.json` — NEW
-- `public/sitemap.xml` — add new blog + past events URLs
-- `index.html` — verification meta slots, font self-host, hero preload
-- `src/pages/Admin.tsx` — SEO Checklist v2 (verification token inputs, submission links)
-- DB migration — `site_settings.seo_verifications` jsonb
-- `src/pages/Events.tsx` + new `/events/past` route — `MusicEvent` + `ItemList` schema
-- All page components — alt-text audit, internal-link blocks
+- `src/index.css` — `--electric-blue` → `#2463eb` HSL
+- `src/components/Hero.tsx` — drop inline override
+- `index.html` — keywords + Brand schema + WebSite SearchAction + verification slots intact
+- `src/pages/Shop.tsx` + `ProductDetail.tsx` — streetwear copy + schema
+- `src/components/Drops.tsx` — SR-only keyword line
+- `public/brand.json` — extended categories + faq + products
+- `public/llms.txt` + `llms-full.txt` — Shop section + streetwear lead
+- `public/sitemap.xml` — product URLs + image sitemap entries
+- `src/content/posts.ts` — 4 new streetwear posts; image field per post
+- `public/blog/*.png` — NEW, 11 unique AI-generated hero images
+- `src/pages/BlogPost.tsx` — render hero `<img>` with keyword alt
+- `src/pages/Admin.tsx` — Backlinks sub-tab (templates, directories, status)
+- `src/pages/Press.tsx` — NEW press kit page
+- `src/pages/Embed.tsx` — NEW `/embed/upcoming` widget
+- `src/components/Footer.tsx` — Press link
+- `public/rss.xml` — NEW
+- `public/_headers` — cache rules for new assets
+- DB migration — `site_settings.backlinks` jsonb default `'[]'`
 
-No design/visual changes. No backend behaviour changes beyond storing verification tokens.
+No new npm dependencies. No design changes beyond the locked-in blue.
 
