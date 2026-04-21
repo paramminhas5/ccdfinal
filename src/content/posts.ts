@@ -2,8 +2,6 @@
 // excerpt, cover image, tag, date, author, and a body (array of paragraph strings
 // or simple HTML strings — rendered as paragraphs).
 
-import episode1Poster from "@/assets/episode-1-poster.gif";
-
 export type Post = {
   slug: string;
   title: string;
@@ -15,13 +13,16 @@ export type Post = {
   body: string[];
 };
 
+// Each post gets its own AI-generated hero image at /public/blog/<slug>.png.
+const img = (slug: string) => `/blog/${slug}.png`;
+
 export const posts: Post[] = [
   {
     slug: "best-underground-parties-bangalore-2026",
     title: "The Best Underground Parties in Bangalore (2026 Guide)",
     excerpt:
       "From basements in Indiranagar to warehouses in Whitefield — a working guide to where Bangalore actually dances when the lights go down.",
-    cover: episode1Poster,
+    cover: img("best-underground-parties-bangalore-2026"),
     tag: "GUIDE",
     date: "JAN 14, 2026",
     author: "The Pack",
@@ -41,7 +42,7 @@ export const posts: Post[] = [
     title: "Where to Find Electronic Music Events in Bangalore",
     excerpt:
       "Insider.in, Instagram, word of mouth — the actual sources Bangalore promoters use to fill rooms in 2026.",
-    cover: episode1Poster,
+    cover: img("where-to-find-electronic-music-events-bangalore"),
     tag: "GUIDE",
     date: "JAN 21, 2026",
     author: "The Pack",
@@ -60,7 +61,7 @@ export const posts: Post[] = [
     title: "Top 10 Event Organisers in India for Dance Music",
     excerpt:
       "From Bangalore to Mumbai to Goa — the independent crews shaping India's dance music scene right now.",
-    cover: episode1Poster,
+    cover: img("top-event-organisers-india-dance-music"),
     tag: "FEATURE",
     date: "JAN 28, 2026",
     author: "The Pack",
@@ -80,7 +81,7 @@ export const posts: Post[] = [
     title: "RSVP Culture: How Bangalore's Party Scene Works",
     excerpt:
       "Why the best nights in Bangalore aren't sold by the ticket — and what RSVP actually means in 2026.",
-    cover: episode1Poster,
+    cover: img("rsvp-culture-bangalore-party-scene"),
     tag: "ESSAY",
     date: "FEB 4, 2026",
     author: "The Pack",
@@ -98,7 +99,7 @@ export const posts: Post[] = [
     title: "A Guide to Techno & House Nights in Bangalore",
     excerpt:
       "Where the city actually plays techno and house in 2026 — by tempo, by neighbourhood, by what time you should arrive.",
-    cover: episode1Poster,
+    cover: img("guide-techno-house-nights-bangalore"),
     tag: "GUIDE",
     date: "FEB 11, 2026",
     author: "The Pack",
@@ -116,7 +117,7 @@ export const posts: Post[] = [
     title: "Behind the Decks: Bangalore's Rising DJs",
     excerpt:
       "Six artists from Bangalore reshaping how the city sounds at 2am — and where to catch them next.",
-    cover: episode1Poster,
+    cover: img("behind-the-decks-bangalore-rising-djs"),
     tag: "ARTISTS",
     date: "FEB 18, 2026",
     author: "The Pack",
@@ -135,7 +136,7 @@ export const posts: Post[] = [
     title: "Inside Episode 01: How Bangalore Showed Up",
     excerpt:
       "No flyer, no ads, just a whisper. Here's what happened when Cats Can Dance dropped its first night in Bangalore.",
-    cover: episode1Poster,
+    cover: img("inside-episode-01"),
     tag: "JOURNAL",
     date: "MAY 12, 2025",
     author: "The Pack",
@@ -145,6 +146,84 @@ export const posts: Post[] = [
       "The opening b2b ran ninety minutes longer than planned. Nobody noticed. The bar ran out of one specific drink at 1:14am and somebody made a TikTok about it. Two strangers swapped jackets. A cat-eared kid in the back kept yelling 'one more' until we played one more.",
       "We learned three things. One: people are starving for nights that feel like they were made by humans, not algorithms. Two: a tight room beats a big room every time. Three: the cats can, in fact, dance.",
       "Episode 02 is being built right now. Same energy, more space, better low-end. RSVP locks your spot — capacity will be tighter than you think.",
+    ],
+  },
+  // ==== STREETWEAR / CULTURE PILLARS ====
+  {
+    slug: "streetwear-drop-cats-can-dance",
+    title: "Inside the Cats Can Dance Streetwear Drop",
+    excerpt:
+      "How a Bangalore streetwear label turns a music night into a wearable archive — limited drops, cat graphics, no restocks.",
+    cover: img("streetwear-drop-cats-can-dance"),
+    tag: "STREETWEAR",
+    date: "FEB 25, 2026",
+    author: "The Pack",
+    body: [
+      "Cats Can Dance isn't just a Bangalore party brand — it's a streetwear label that drops limited collections tied to specific Episodes. Each piece is a wearable archive of the night it came out of, and once a drop sells through, it doesn't come back.",
+      "The format is simple and old-school. We design a small capsule — usually a tee, a hoodie, sometimes a longsleeve and a cap — around the visual identity of the next Episode. Quantities are deliberately low (often under 100 units per SKU). We list it the week of the party. Whatever sells, sells. Whatever doesn't, gets retired.",
+      "Why limited? The same reason our parties are RSVP-only: scarcity protects the meaning. Every Cats Can Dance piece in the wild is a flag — a way of saying 'I was in that room' or 'I follow what this brand actually does'. Mass-printing the same logo tee every quarter dilutes that. We'd rather sell out small than discount big.",
+      "Materials matter to us. Every drop is heavyweight cotton, screen-printed in Bangalore by people we know. We pay properly for the labour, we don't cut corners on the print, and we'd rather skip a drop than ship something we wouldn't wear ourselves.",
+      "Graphically, the spine is the cat. Sometimes a literal cat (the Cats Can Dance mascot, drawn in our brutalist house style) and sometimes more abstract — a paw, a silhouette, a slogan reworking the name. The constraint forces creativity, and it makes every piece instantly recognisable to anyone who knows the brand.",
+      "If you've never grabbed a piece, head to /shop. The current capsule is live now. If it's sold out by the time you read this, sign up to the early-access list at /#early-access — we drop next-edition emails before anything goes public.",
+      "Related: Read 'Limited Drops 101: Why Scarcity Sells' and 'How Bangalore's Underground Brands Build Cult Followings'.",
+    ],
+  },
+  {
+    slug: "music-merch-collectibles-india",
+    title: "The Rise of Music Merch as Collectibles in India",
+    excerpt:
+      "Why a 2026 hoodie from a Bangalore party brand is the new vinyl — and how India's music merch culture finally caught up.",
+    cover: img("music-merch-collectibles-india"),
+    tag: "CULTURE",
+    date: "MAR 4, 2026",
+    author: "The Pack",
+    body: [
+      "Five years ago, music merch in India meant a tour t-shirt at a stadium gig and not much else. In 2026, the most-traded music collectibles in the country are limited drops from independent labels and party brands — and Bangalore is in the middle of it.",
+      "The shift mirrors what happened globally a decade ago. As streaming flattened the value of recorded music, artists and labels rebuilt their identity around physical objects: vinyl, cassettes, books, and merch. In India, the gap between releasing music and being able to sell anything tangible used to be huge. Now it's closing fast.",
+      "What counts as a music collectible in India today? A pressing of an Indian electronic record on coloured vinyl. A first-run Cats Can Dance Episode tee. A festival enamel pin from a one-off rooftop show. A zine printed in 200 copies. A cap from a sound system collective that never made another. The unifying thread is scarcity plus context — these objects mean something because they came out of a specific moment in a specific scene.",
+      "The resale market is small but growing. Indian buyers are starting to track second-hand listings on Instagram and Telegram channels the way collectors used to track record fairs. Pricing is informal but real: a sold-out Bangalore party hoodie can trade at 2-3x its retail price within months.",
+      "Cats Can Dance leans into this on purpose. Every drop has a date, a story, and a tied-back Episode. We don't restock. We don't run sales. The goal isn't volume — it's making things that hold their meaning ten years from now, the same way a 1995 rave flyer or a 2008 boiler room poster does today.",
+      "If you want to start a small collection, the entry points are easy: follow a few independent labels and party brands on Instagram, sign up to their early-access lists, and grab the pieces that resonate when they drop. The Cats Can Dance shop is at /shop and the early-access list is at /#early-access.",
+    ],
+  },
+  {
+    slug: "bangalore-underground-brands-cult",
+    title: "How Bangalore's Underground Brands Build Cult Followings",
+    excerpt:
+      "From RSVP nights to limited streetwear drops — the playbook independent Bangalore brands are using to build real loyalty.",
+    cover: img("bangalore-underground-brands-cult"),
+    tag: "CULTURE",
+    date: "MAR 11, 2026",
+    author: "The Pack",
+    body: [
+      "There's a specific kind of brand emerging out of Bangalore right now. Small. Independent. Music-adjacent. Wildly loyal audience. They sell out drops in hours, fill rooms with no flyer, and outperform companies ten times their size on cultural relevance. Here's what they all do.",
+      "**One: they pick a tribe and stay loyal.** The best Bangalore underground brands don't try to be for everybody. They pick a sound, a scene, an aesthetic, and they go deep. Cats Can Dance is for people who like dance music and cats, and that's not a joke — that's a precise audience definition that lets every decision flow from one filter.",
+      "**Two: they treat scarcity as a feature, not a bug.** RSVP-only parties. Limited drops. No restocks. No discount codes. Scarcity isn't a marketing trick — it's the entire economic model. It also happens to make everything you buy or attend feel meaningful.",
+      "**Three: they over-invest in identity.** Visual language, copy, music selection, room design — every touchpoint reinforces the brand. A Cats Can Dance Episode flyer, an Instagram post, a hoodie label, the typography on this blog: they all live in the same aesthetic universe. That coherence is what builds cult loyalty over time.",
+      "**Four: they show up consistently.** Most cult brands don't blow up. They compound. A drop a quarter, a party every other month, a blog post a week. The audience grows because the brand keeps showing up — not because it goes viral.",
+      "**Five: they keep the loop tight.** Bangalore's best underground brands sell directly to their audience, talk to them in DMs, get feedback after every drop, and adjust. There's no agency, no PR firm, no algorithm in the middle. The relationship is the moat.",
+      "If you're building something in this space, the playbook is open. If you want to support it, the answer is what it always is: show up to the parties, buy the drops while they're available, and tell a friend.",
+      "Read more on the Cats Can Dance approach at /about, see upcoming events at /events, or grab the current drop at /shop.",
+    ],
+  },
+  {
+    slug: "limited-drops-101-scarcity-sells",
+    title: "Limited Drops 101: Why Scarcity Sells",
+    excerpt:
+      "A field guide to drop culture for India's emerging streetwear and music brands — written from inside the room.",
+    cover: img("limited-drops-101-scarcity-sells"),
+    tag: "STREETWEAR",
+    date: "MAR 18, 2026",
+    author: "The Pack",
+    body: [
+      "Drop culture isn't new — Supreme has been doing it since 1994 and Japanese streetwear brands have been doing it for longer. But it took until the last few years for the model to land properly in India. This is what we've learned running it for Cats Can Dance.",
+      "**What is a drop?** A drop is a small, time-limited release of a product. You make less than you think you'll sell. You list it on a fixed day. You don't restock. The drop window can be hours or weeks — usually it sells through fast or doesn't sell at all, and either is fine.",
+      "**Why does scarcity sell?** Three reasons. Loss aversion (people are wired to want what they might miss). Signal value (owning something rare is a way of demonstrating taste and membership). And economics (low quantity protects margin and lets you skip the discounting cycle that destroys most apparel brands).",
+      "**The trap.** Scarcity only works if it's real. If you keep restocking, if you do private discount codes, if you produce twice what you said you would, the audience figures it out fast and the model collapses. The brands that get this right are the ones that hold the line — even when it costs them money in the short term.",
+      "**Drop sizing for an Indian independent brand.** A reasonable starting point: 50-150 units per SKU for a first drop, 100-300 once you have an audience. Sell direct (Shopify, Instagram). Price for the audience you actually have, not the one you wish you had. Use the data from each drop to size the next one — never the other way round.",
+      "**Marketing a drop.** Less is more. A drop announcement on Instagram 7 days out, a teaser 48 hours out, a launch post on the day. No discounts, no urgency-bots, no countdown overlays. The product and the brand do the work.",
+      "**What we do at Cats Can Dance.** Every drop ties back to an Episode. We design the capsule with the night in mind, list it the same week, and retire whatever doesn't sell. The current drop is at /shop. To get on the early-access list for the next one, sign up at /#early-access.",
+      "Related: Read 'Inside the Cats Can Dance Streetwear Drop' and 'The Rise of Music Merch as Collectibles in India'.",
     ],
   },
 ];

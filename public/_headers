@@ -1,6 +1,12 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+/blog/*
+  Cache-Control: public, max-age=2592000
+
+/og/*
+  Cache-Control: public, max-age=2592000
+
 /*.png
   Cache-Control: public, max-age=2592000
 
@@ -12,6 +18,10 @@
 
 /sitemap.xml
   Cache-Control: public, max-age=86400
+
+/rss.xml
+  Cache-Control: public, max-age=86400
+  Content-Type: application/rss+xml
 
 /robots.txt
   Cache-Control: public, max-age=86400

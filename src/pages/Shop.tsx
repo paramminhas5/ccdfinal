@@ -29,19 +29,100 @@ const Shop = () => {
     })();
   }, []);
 
+  const collectionLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Cats Can Dance — Limited Streetwear Drops & Music Collectibles",
+    description:
+      "Limited streetwear drops, cat-graphic apparel and music collectibles from Cats Can Dance — a Bangalore streetwear brand. Heavyweight cotton, screen-printed in India, no restocks.",
+    url: "https://catscandance.com/shop",
+    inLanguage: "en-IN",
+    isPartOf: { "@type": "WebSite", name: "Cats Can Dance", url: "https://catscandance.com" },
+  };
+
+  const brandLd = {
+    "@context": "https://schema.org",
+    "@type": "Brand",
+    name: "Cats Can Dance",
+    slogan: "Wear the culture.",
+    url: "https://catscandance.com",
+    logo: "https://catscandance.com/ccd-logo.png",
+    category: "Streetwear",
+  };
+
+  const storeLd = {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    name: "Cats Can Dance Shop",
+    url: "https://catscandance.com/shop",
+    image: "https://catscandance.com/og-image.png",
+    description:
+      "Online shop for Cats Can Dance — limited streetwear drops, music merchandise and collectibles from Bangalore, India.",
+    areaServed: { "@type": "Country", name: "India" },
+    paymentAccepted: ["Credit Card", "UPI", "Debit Card"],
+  };
+
+  const itemListLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    numberOfItems: products.length,
+    itemListElement: products.slice(0, 20).map((p, i) => {
+      const variant = p.node.variants.edges[0]?.node;
+      const image = p.node.images.edges[0]?.node?.url;
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        url: `https://catscandance.com/product/${p.node.handle}`,
+        item: {
+          "@type": "Product",
+          name: p.node.title,
+          url: `https://catscandance.com/product/${p.node.handle}`,
+          image,
+          brand: { "@type": "Brand", name: "Cats Can Dance" },
+          category: "Streetwear",
+          offers: variant
+            ? {
+                "@type": "Offer",
+                price: variant.price.amount,
+                priceCurrency: variant.price.currencyCode,
+                availability: "https://schema.org/InStock",
+                url: `https://catscandance.com/product/${p.node.handle}`,
+              }
+            : undefined,
+        },
+      };
+    }),
+  };
+
   return (
     <>
-      <SEO title="Shop — Cats Can Dance" description="Limited drops, made for the dance floor." path="/shop" />
+      <SEO
+        title="Cats Can Dance Shop — Limited Streetwear Drops & Music Collectibles | Bangalore"
+        description="Limited streetwear drops, cat-graphic tees, hoodies and music collectibles from Cats Can Dance. Bangalore streetwear brand. Heavyweight cotton, screen-printed in India, no restocks."
+        path="/shop"
+        jsonLd={[collectionLd, brandLd, storeLd, ...(products.length ? [itemListLd] : [])]}
+      />
       <main className="bg-cream text-ink">
         <Nav />
-        <PageHero eyebrow="SHOP" title="WEAR THE CULTURE." bg="bg-magenta" eyebrowColor="text-acid-yellow">
-          <p className="font-display text-cream text-2xl mt-4">Limited drops. Made for the floor.</p>
+        <PageHero eyebrow="SHOP" title="DROPS & COLLECTIBLES." bg="bg-magenta" eyebrowColor="text-acid-yellow">
+          <p className="font-display text-cream text-2xl mt-4">
+            Limited streetwear drops & music collectibles. Made for the floor in Bangalore.
+          </p>
         </PageHero>
 
         <section className="container py-16 md:py-24 relative">
           <div className="absolute top-8 right-4 md:right-8 z-10">
             <CartDrawer />
           </div>
+
+          <h1 className="sr-only">
+            Cats Can Dance Shop — Limited Streetwear Drops &amp; Music Collectibles in Bangalore, India
+          </h1>
+          <p className="sr-only">
+            Browse the current Cats Can Dance drop. Heavyweight cotton tees, hoodies and caps, plus music collectibles
+            tied to each Episode. Screen-printed in Bangalore. Limited quantities, no restocks.
+          </p>
 
           {loading ? (
             <div className="flex justify-center py-32">
@@ -67,7 +148,9 @@ const Shop = () => {
                         {img && (
                           <img
                             src={img.url}
-                            alt={img.altText || p.node.title}
+                            alt={img.altText || `${p.node.title} — Cats Can Dance limited streetwear drop, Bangalore`}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         )}
