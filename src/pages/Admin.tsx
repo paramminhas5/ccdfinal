@@ -541,13 +541,49 @@ const Admin = () => {
                     />
 
                     <LinkChecklistGroup
-                      title="BACKLINKS / PRESS"
+                      title="BACKLINKS / PRESS (MUSIC)"
                       items={[
                         { label: "Pitch Rolling Stone India", url: "https://rollingstoneindia.com/contact-us/" },
                         { label: "Pitch Wild City", url: "https://wildcity.com/" },
                         { label: "Pitch Homegrown", url: "https://homegrown.co.in/" },
                         { label: "Pitch Mid-day Bangalore + Bangalore Mirror" },
                         { label: "Reach out to local music podcasts / Spotify editorial" },
+                        { label: "Pitch The Hindu MetroPlus (Bangalore)", url: "https://www.thehindu.com/contact-us/" },
+                        { label: "Pitch Insider.in editorial", url: "https://insider.in/" },
+                      ]}
+                    />
+
+                    <LinkChecklistGroup
+                      title="STREETWEAR DIRECTORIES & PRESS"
+                      items={[
+                        { label: "Hypebeast tips", url: "https://hypebeast.com/contact" },
+                        { label: "Highsnobiety submit", url: "https://www.highsnobiety.com/contact/" },
+                        { label: "The Established (India culture)", url: "https://theestablished.com/" },
+                        { label: "Lifestyle Asia India", url: "https://www.lifestyleasia.com/ind/" },
+                        { label: "Grailed seller signup", url: "https://www.grailed.com/sell" },
+                        { label: "Depop India shop", url: "https://www.depop.com/" },
+                        { label: "Sneaker News India tips" },
+                      ]}
+                    />
+
+                    <LinkChecklistGroup
+                      title="EVENT DIRECTORIES (GLOBAL)"
+                      items={[
+                        { label: "Songkick promoter", url: "https://www.songkick.com/" },
+                        { label: "Bandsintown for Promoters", url: "https://artists.bandsintown.com/" },
+                        { label: "JamBase events", url: "https://www.jambase.com/" },
+                        { label: "Eventbrite organiser", url: "https://www.eventbrite.com/organizer/overview/" },
+                        { label: "Allevents.in submit", url: "https://allevents.in/" },
+                        { label: "LBB Bangalore submit", url: "https://lbb.in/bangalore/" },
+                      ]}
+                    />
+
+                    <LinkChecklistGroup
+                      title="LINK-BAIT ASSETS (DONE FOR YOU)"
+                      items={[
+                        { label: "✓ Press kit page (logos, bios, contact)", url: "/press" },
+                        { label: "✓ Embeddable upcoming-events widget — share with venues/blogs", url: "/embed/upcoming" },
+                        { label: "✓ RSS feed for Feedly / Inoreader / AI pipelines", url: "/rss.xml" },
                       ]}
                     />
 

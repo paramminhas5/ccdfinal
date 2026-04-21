@@ -35,12 +35,49 @@ const ProductDetail = () => {
   const variant = product?.variants?.edges?.find((e: any) => e.node.id === selectedVariantId)?.node;
   const img = product?.images?.edges?.[0]?.node;
 
+  const productLd = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.title,
+        description: product.description,
+        image: img?.url ? [img.url] : undefined,
+        sku: variant?.id,
+        brand: { "@type": "Brand", name: "Cats Can Dance" },
+        category: "Streetwear",
+        audience: { "@type": "PeopleAudience", suggestedGender: "unisex" },
+        url: `https://catscandance.com/product/${handle}`,
+        additionalProperty: [
+          { "@type": "PropertyValue", name: "Edition", value: "Limited drop" },
+          { "@type": "PropertyValue", name: "Origin", value: "Screen-printed in Bangalore, India" },
+        ],
+        offers: variant
+          ? {
+              "@type": "Offer",
+              price: variant.price.amount,
+              priceCurrency: variant.price.currencyCode,
+              availability: "https://schema.org/InStock",
+              url: `https://catscandance.com/product/${handle}`,
+            }
+          : undefined,
+      }
+    : null;
+
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareText = product ? `${product.title} — Cats Can Dance` : "";
+
   return (
     <>
       <SEO
-        title={product ? `${product.title} — Cats Can Dance` : "Product"}
-        description={product?.description?.slice(0, 155) || "Cats Can Dance drop"}
+        title={product ? `${product.title} — Cats Can Dance Streetwear Drop` : "Product"}
+        description={
+          product?.description?.slice(0, 155) ||
+          "Limited streetwear drop and music collectible from Cats Can Dance, Bangalore."
+        }
         path={`/product/${handle}`}
+        image={img?.url}
+        type="product"
+        jsonLd={productLd ?? undefined}
       />
       <main className="bg-cream text-ink min-h-screen">
         <Nav />
@@ -61,9 +98,20 @@ const ProductDetail = () => {
           ) : (
             <div className="grid md:grid-cols-2 gap-12">
               <div className="aspect-square border-4 border-ink chunk-shadow bg-acid-yellow overflow-hidden">
-                {img && <img src={img.url} alt={img.altText || product.title} className="w-full h-full object-cover" />}
+                {img && (
+                  <img
+                    src={img.url}
+                    alt={img.altText || `${product.title} — Cats Can Dance limited streetwear drop, Bangalore`}
+                    loading="eager"
+                    fetchPriority="high"
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
               <div>
+                <span className="inline-block bg-magenta text-cream text-xs font-bold px-3 py-1 mb-3">
+                  LIMITED DROP · BANGALORE
+                </span>
                 <h1 className="font-display text-5xl md:text-6xl mb-4 leading-[0.9]">{product.title}</h1>
                 <p className="font-display text-3xl mb-6">
                   {variant?.price.currencyCode} {parseFloat(variant?.price.amount || "0").toFixed(2)}
@@ -109,6 +157,32 @@ const ProductDetail = () => {
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "ADD TO CART"}
                 </Button>
+
+                <div className="flex flex-wrap items-center gap-3 mt-8">
+                  <span className="font-display text-sm text-ink/60">SHARE:</span>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-cream text-ink font-display text-sm px-3 py-1 border-2 border-ink hover:bg-acid-yellow transition-colors"
+                  >
+                    WHATSAPP
+                  </a>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-cream text-ink font-display text-sm px-3 py-1 border-2 border-ink hover:bg-acid-yellow transition-colors"
+                  >
+                    X
+                  </a>
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(shareUrl)}
+                    className="bg-cream text-ink font-display text-sm px-3 py-1 border-2 border-ink hover:bg-acid-yellow transition-colors"
+                  >
+                    COPY LINK
+                  </button>
+                </div>
               </div>
             </div>
           )}

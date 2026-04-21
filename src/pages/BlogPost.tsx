@@ -63,8 +63,10 @@ const BlogPost = () => {
             </p>
             <img
               src={post.cover}
-              alt={`${post.title} — Cats Can Dance, Bangalore`}
-              loading="lazy"
+              alt={`${post.title} — Cats Can Dance, Bangalore underground party & streetwear brand`}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="w-full max-h-[520px] object-cover border-4 border-ink chunk-shadow-lg mb-10"
             />
             <div className="space-y-6">

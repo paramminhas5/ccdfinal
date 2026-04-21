@@ -17,6 +17,8 @@ import Shop from "./pages/Shop.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
 import Blog from "./pages/Blog.tsx";
+import Press from "./pages/Press.tsx";
+import Embed from "./pages/Embed.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -53,6 +55,8 @@ const App = () => (
                 <Route path="/product/:handle" element={<ProductDetail />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/press" element={<Press />} />
+                <Route path="/embed/upcoming" element={<Embed />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </CartSyncProvider>
