@@ -1,4 +1,7 @@
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const BEHOLD_URL = "https://feeds.behold.so/6bt7nDISwk0mUzAQMd9s";
 const CACHE_MS = 15 * 60 * 1000;
