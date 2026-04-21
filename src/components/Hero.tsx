@@ -3,15 +3,19 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import heroCenter from "@/assets/hero-center.svg";
 import catLeft from "@/assets/cat-left.svg";
 import catRight from "@/assets/cat-right.svg";
+import catHeadphones from "@/assets/cat-headphones.png";
+import catHandstand from "@/assets/cat-handstand.png";
 import { useDisco } from "@/contexts/DiscoContext";
 import DiscoBall from "@/components/DiscoBall";
 import Lasers from "@/components/Lasers";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const { disco } = useDisco();
   const reduce = useReducedMotion();
+  const isMobile = useIsMobile();
 
   const leftX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-180%"]);
   const leftY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-30%"]);
@@ -29,7 +33,7 @@ const Hero = () => {
     <>
       <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
         {disco && <Lasers />}
-        {disco && <DiscoBall />}
+        {disco && !isMobile && <DiscoBall />}
 
         <motion.div
           style={{ rotate: starRotA, willChange: "transform" }}
