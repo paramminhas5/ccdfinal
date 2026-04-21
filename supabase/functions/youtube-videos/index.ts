@@ -3,10 +3,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const HANDLE = "ParamMinhas";
+const CHANNEL_ID = "UCmtg0d8E2PXfs3vlQIcGwdQ";
 const CACHE_MS = 10 * 60 * 1000;
 
-let channelIdCache: string | null = null;
 let videosCache: { ts: number; videos: any[] } | null = null;
 
 Deno.serve(async (req) => {
@@ -14,6 +13,7 @@ Deno.serve(async (req) => {
 
   const apiKey = Deno.env.get("YOUTUBE_API_KEY");
   if (!apiKey) {
+    console.error("YOUTUBE_API_KEY not configured");
     return new Response(JSON.stringify({ videos: [], error: "YOUTUBE_API_KEY not configured" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -27,20 +27,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!channelIdCache) {
-      const r = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${HANDLE}&key=${apiKey}`
-      );
-      const j = await r.json();
-      channelIdCache = j.items?.[0]?.id;
-      if (!channelIdCache) throw new Error("Channel not found for handle " + HANDLE);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&order=date&type=video&maxResults=6&key=${apiKey}`;
+    const r = await fetch(url);
+    const j = await r.json();
+
+    if (j.error) {
+      console.error("YouTube API error:", JSON.stringify(j.error));
+      throw new Error(j.error.message);
     }
 
-    const r = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelIdCache}&order=date&type=video&maxResults=6&key=${apiKey}`
-    );
-    const j = await r.json();
-    if (j.error) throw new Error(j.error.message);
+    if (!j.items || j.items.length === 0) {
+      console.error("YouTube returned no items. Full response:", JSON.stringify(j));
+    }
 
     const videos = (j.items || []).map((v: any) => ({
       id: v.id.videoId,
