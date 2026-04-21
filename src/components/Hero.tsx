@@ -57,22 +57,25 @@ const Hero = () => {
           src={heroCenter}
           alt=""
           aria-hidden
+          fetchPriority="high"
+          decoding="sync"
+          loading="eager"
           style={{ y: djY, willChange: "transform" }}
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
         />
 
-        {/* Side cats — bigger and raised */}
+        {/* Side cats — desktop original spot, bigger on mobile */}
         <motion.div
           style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
-          className="absolute bottom-12 md:bottom-16 left-2 md:left-10 z-40 w-24 md:w-72 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          className="absolute bottom-28 md:bottom-4 left-1 md:left-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
         >
-          <img src={catLeft} alt="" className="w-full wiggle" />
+          <img src={catLeft} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
         </motion.div>
         <motion.div
           style={{ x: rightX, y: rightY, rotate: rightRot, willChange: "transform" }}
-          className="absolute bottom-12 md:bottom-16 right-2 md:right-10 z-40 w-24 md:w-72 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          className="absolute bottom-28 md:bottom-4 right-1 md:right-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
         >
-          <img src={catRight} alt="" className="w-full wiggle" />
+          <img src={catRight} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
         </motion.div>
 
         {/* Desktop buttons (absolute) */}

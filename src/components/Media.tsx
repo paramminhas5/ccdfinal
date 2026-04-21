@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { posts } from "@/content/posts";
+
 const press = ["MIXMAG", "RESIDENT ADVISOR", "DAZED", "i-D", "HYPEBEAST", "BOILER ROOM"];
 
 const Media = () => (
@@ -8,7 +11,7 @@ const Media = () => (
         SEEN<br/>EVERYWHERE.
       </h2>
 
-      <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
+      <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-20">
         {press.map((p) => (
           <li
             key={p}
@@ -19,14 +22,31 @@ const Media = () => (
         ))}
       </ul>
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="aspect-video bg-ink border-4 border-ink chunk-shadow grid place-items-center text-cream font-display text-xl"
+      <p className="font-display text-ink text-2xl md:text-3xl mb-4">/ JOURNAL</p>
+      <h2 className="font-display text-ink text-5xl md:text-7xl mb-12 leading-[0.9]">
+        WORDS<br/>FROM US.
+      </h2>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {posts.slice(0, 3).map((p) => (
+          <Link
+            key={p.slug}
+            to={`/blog/${p.slug}`}
+            className="bg-cream border-4 border-ink chunk-shadow flex flex-col hover:-translate-y-1 hover:translate-x-1 transition-transform"
           >
-            ▶ CLIP {i}
-          </div>
+            <div className="aspect-video border-b-4 border-ink overflow-hidden bg-ink">
+              <img src={p.cover} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
+            </div>
+            <div className="p-5 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-ink text-cream text-xs font-bold px-2 py-1">{p.tag}</span>
+                <span className="font-display text-ink/70 text-sm">{p.date}</span>
+              </div>
+              <h3 className="font-display text-2xl text-ink mb-2 leading-tight">{p.title}</h3>
+              <p className="text-ink/80 font-medium text-sm flex-1">{p.excerpt}</p>
+              <span className="mt-4 font-display text-magenta">READ →</span>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
