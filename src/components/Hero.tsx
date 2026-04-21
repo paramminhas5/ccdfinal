@@ -3,15 +3,19 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import heroCenter from "@/assets/hero-center.svg";
 import catLeft from "@/assets/cat-left.svg";
 import catRight from "@/assets/cat-right.svg";
+import catHeadphones from "@/assets/cat-headphones.png";
+import catHandstand from "@/assets/cat-handstand.png";
 import { useDisco } from "@/contexts/DiscoContext";
 import DiscoBall from "@/components/DiscoBall";
 import Lasers from "@/components/Lasers";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const { disco } = useDisco();
   const reduce = useReducedMotion();
+  const isMobile = useIsMobile();
 
   const leftX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-180%"]);
   const leftY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-30%"]);
@@ -29,7 +33,7 @@ const Hero = () => {
     <>
       <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
         {disco && <Lasers />}
-        {disco && <DiscoBall />}
+        {disco && !isMobile && <DiscoBall />}
 
         <motion.div
           style={{ rotate: starRotA, willChange: "transform" }}
@@ -62,6 +66,20 @@ const Hero = () => {
           loading="eager"
           style={{ y: djY, willChange: "transform" }}
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
+        />
+
+        {/* Mobile-only flanking cats around DJ */}
+        <img
+          src={catHeadphones}
+          alt=""
+          aria-hidden
+          className="md:hidden absolute z-30 w-20 left-2 bottom-[42%] -rotate-12 wiggle drop-shadow-[6px_6px_0_hsl(var(--ink))] pointer-events-none"
+        />
+        <img
+          src={catHandstand}
+          alt=""
+          aria-hidden
+          className="md:hidden absolute z-30 w-20 right-2 bottom-[42%] rotate-12 wiggle drop-shadow-[6px_6px_0_hsl(var(--ink))] pointer-events-none"
         />
 
         {/* Side cats — desktop original spot, bigger on mobile */}
