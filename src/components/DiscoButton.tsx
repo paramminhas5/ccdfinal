@@ -1,12 +1,21 @@
 import { motion } from "framer-motion";
 import { useDisco } from "@/contexts/DiscoContext";
+import { playDiscoNow, stopDiscoNow } from "@/hooks/useDiscoAudio";
 
 const DiscoButton = ({ compact = false }: { compact?: boolean }) => {
   const { disco, toggle } = useDisco();
+
+  const handleClick = () => {
+    // Fire imperative play/stop INSIDE the user gesture so iOS allows it.
+    if (!disco) playDiscoNow();
+    else stopDiscoNow();
+    toggle();
+  };
+
   if (compact) {
     return (
       <motion.button
-        onClick={toggle}
+        onClick={handleClick}
         animate={disco ? { rotate: [0, -10, 10, 0] } : {}}
         transition={{ repeat: disco ? Infinity : 0, duration: 0.5 }}
         className={`w-11 h-11 grid place-items-center border-4 border-ink chunk-shadow text-xl hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform ${
@@ -21,7 +30,7 @@ const DiscoButton = ({ compact = false }: { compact?: boolean }) => {
   }
   return (
     <motion.button
-      onClick={toggle}
+      onClick={handleClick}
       animate={disco ? { rotate: [0, -8, 8, 0] } : {}}
       transition={{ repeat: disco ? Infinity : 0, duration: 0.5 }}
       className={`flex items-center gap-2 border-4 border-ink px-4 py-2 chunk-shadow font-display text-lg hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform ${
