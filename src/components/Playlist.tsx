@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import vinyl from "@/assets/vinyl-music.png";
 
@@ -7,16 +7,15 @@ const PLAYLIST_ID = "1cEE860l9GiBvIYVM2BbSS";
 const Playlist = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const spinBase = useTransform(scrollYProgress, [0, 1], [0, 720]);
-  const smoothSpin = useSpring(spinBase, { stiffness: 60, damping: 20 });
+  const spin = useTransform(scrollYProgress, [0, 1], [0, 540]);
 
   return (
     <section ref={ref} id="playlist" className="relative bg-magenta py-24 md:py-32 border-t-4 border-b-4 border-ink overflow-hidden">
       <motion.img
         src={vinyl}
         alt=""
-        style={{ rotate: smoothSpin }}
-        className="absolute -top-20 -right-20 w-80 md:w-[28rem] opacity-90 pointer-events-none"
+        style={{ rotate: spin, willChange: "transform" }}
+        className="absolute -top-20 -right-20 w-80 md:w-[28rem] opacity-90 pointer-events-none transform-gpu"
       />
       <div className="container relative z-10">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ THE PLAYLIST</p>
@@ -24,28 +23,23 @@ const Playlist = () => {
           NOW<br/>SPINNING
         </h2>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ type: "spring", stiffness: 140, damping: 18 }}
-          className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-cream overflow-hidden"
-        >
+        <div className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-cream overflow-hidden animate-fade-in">
           <iframe
             title="Cats Can Dance — Now Spinning"
             src={`https://open.spotify.com/embed/playlist/${PLAYLIST_ID}?utm_source=generator&theme=0`}
             width="100%"
             height={480}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
+            loading="eager"
             className="block w-full h-[380px] md:h-[480px] border-0"
           />
-        </motion.div>
+        </div>
 
         <a
           href={`https://open.spotify.com/playlist/${PLAYLIST_ID}`}
           target="_blank"
           rel="noopener noreferrer"
+          referrerPolicy="no-referrer-when-downgrade"
           className="inline-block mt-6 font-display text-cream text-lg underline decoration-4 decoration-acid-yellow underline-offset-4 hover:text-acid-yellow transition"
         >
           Open in Spotify →

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-const CHANNEL_URL = "https://www.youtube.com/@ParamMinhas";
+const CHANNEL_URL = "https://www.youtube.com/@thesecatscandance";
 
 type Video = {
   id: string;
@@ -48,6 +48,7 @@ const Videos = () => {
             href={CHANNEL_URL}
             target="_blank"
             rel="noopener noreferrer"
+            referrerPolicy="no-referrer-when-downgrade"
             className="bg-magenta text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
           >
             SUBSCRIBE →
