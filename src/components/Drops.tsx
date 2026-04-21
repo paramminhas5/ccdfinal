@@ -18,10 +18,10 @@ const Drops = () => {
   }, []);
 
   return (
-    <section id="drops" className="relative bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain overflow-hidden">
+    <section id="drops" className="relative bg-cream border-b-4 border-ink py-20 md:py-20 bg-grain overflow-hidden">
       <div className="container">
         <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ DROPS · SHOP</p>
-        <h2 className="font-display text-ink text-6xl md:text-8xl mb-12 leading-[0.9]">
+        <h2 className="font-display text-ink text-6xl md:text-7xl mb-12 leading-[0.9]">
           WEAR THE<br />CULTURE.
         </h2>
 

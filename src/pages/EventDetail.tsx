@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import RsvpDialog from "@/components/RsvpDialog";
-import episode1Poster from "@/assets/episode-1-poster.gif";
+import { supabase } from "@/integrations/supabase/client";
 
-const events: Record<string, {
+type EventRow = {
+  slug: string;
   title: string;
   date: string;
   city: string;
@@ -14,36 +15,24 @@ const events: Record<string, {
   blurb: string;
   lineup: string[];
   status: "upcoming" | "past";
-  heroImage?: string;
-  gallery?: string[];
-}> = {
-  "episode-2": {
-    title: "Episode 02",
-    date: "TBA",
-    city: "Bangalore",
-    venue: "TBA",
-    blurb: "Round two. Heavier low-end, deeper crates, the same energy that made Episode 01 sell out by word of mouth.",
-    lineup: ["Headliner: TBA", "Support: TBA", "Surprise b2b set", "Resident: DJ Meowmix"],
-    status: "upcoming",
-  },
-  "episode-1": {
-    title: "Episode 01",
-    date: "TBA",
-    city: "Bangalore",
-    venue: "TBA",
-    blurb: "The one that started it. No flyer, no ads — twenty people whispered the address and the room was full by midnight. The opening b2b ran ninety minutes long and nobody noticed.",
-    lineup: ["Opening b2b — Residents", "Surprise guest set", "DJ Meowmix — close"],
-    status: "past",
-    heroImage: episode1Poster,
-  },
+  poster_url: string | null;
 };
 
 const EventDetail = () => {
   const { slug = "" } = useParams();
   const [open, setOpen] = useState(false);
-  const event = events[slug];
+  const [event, setEvent] = useState<EventRow | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
-  if (!event) {
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("events").select("*").eq("slug", slug).maybeSingle();
+      setEvent((data as unknown as EventRow) ?? null);
+      setLoaded(true);
+    })();
+  }, [slug]);
+
+  if (loaded && !event) {
     return (
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
@@ -52,6 +41,15 @@ const EventDetail = () => {
           <Link to="/events" className="font-display text-magenta underline">← All events</Link>
         </section>
         <Footer />
+      </main>
+    );
+  }
+
+  if (!event) {
+    return (
+      <main className="bg-background text-foreground min-h-screen">
+        <Nav />
+        <section className="container pt-32 pb-16" />
       </main>
     );
   }
@@ -75,9 +73,9 @@ const EventDetail = () => {
             <span className={`inline-block text-xs font-bold px-3 py-1 border-2 border-ink uppercase mb-4 ${
               isUpcoming ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
             }`}>
-              {isUpcoming ? `EPISODE ${slug.split("-")[1]?.padStart(2, "0")} · UPCOMING` : "PAST EPISODE"}
+              {isUpcoming ? `${event.title.toUpperCase()} · UPCOMING` : "PAST EPISODE"}
             </span>
-            <h1 className="font-display text-6xl md:text-8xl mb-6 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
+            <h1 className="font-display text-6xl md:text-7xl mb-6 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
               {event.title.toUpperCase()}
             </h1>
             <div className="grid sm:grid-cols-3 gap-4 max-w-3xl">
@@ -88,17 +86,17 @@ const EventDetail = () => {
           </div>
         </section>
 
-        {event.heroImage && (
+        {event.poster_url && (
           <div className="container pt-12">
             <img
-              src={event.heroImage}
+              src={event.poster_url}
               alt={`${event.title} — ${event.city}`}
               className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
             />
           </div>
         )}
 
-        <section className="container py-16 md:py-24 grid md:grid-cols-2 gap-10 max-w-5xl">
+        <section className="container py-16 md:py-20 grid md:grid-cols-2 gap-10 max-w-5xl">
           <div>
             <h2 className="font-display text-3xl text-ink mb-4">/ THE NIGHT</h2>
             <p className="text-ink/80 font-medium text-lg">{event.blurb}</p>
@@ -106,7 +104,7 @@ const EventDetail = () => {
           <div>
             <h2 className="font-display text-3xl text-ink mb-4">/ LINEUP</h2>
             <ul className="space-y-2">
-              {event.lineup.map((l) => (
+              {(event.lineup ?? []).map((l) => (
                 <li key={l} className="bg-cream border-4 border-ink px-4 py-3 font-medium">{l}</li>
               ))}
             </ul>
@@ -120,23 +118,6 @@ const EventDetail = () => {
             )}
           </div>
         </section>
-
-        {event.gallery && event.gallery.length > 0 && (
-          <section className="container pb-16 md:pb-24 max-w-5xl">
-            <h2 className="font-display text-3xl text-ink mb-6">/ GALLERY</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {event.gallery.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt={`${event.title} photo ${i + 1}`}
-                  loading="lazy"
-                  className="w-full aspect-square object-cover border-4 border-ink chunk-shadow"
-                />
-              ))}
-            </div>
-          </section>
-        )}
 
         <Footer />
       </main>

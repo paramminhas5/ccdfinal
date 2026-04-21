@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import catDancer from "@/assets/cat-dancer.svg";
 
 const About = () => (
-  <section id="about" className="relative bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain overflow-hidden">
+  <section id="about" className="relative bg-cream border-b-4 border-ink py-20 md:py-20 bg-grain overflow-hidden">
     <div className="container grid md:grid-cols-2 gap-12 items-center">
       <div>
         <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ THE BRAND</p>
-        <h2 className="font-display text-5xl md:text-7xl text-ink leading-[0.9] mb-6">
+        <h2 className="font-display text-5xl md:text-6xl text-ink leading-[0.9] mb-6">
           A CULTURE FOR<br/>PEOPLE WHO MOVE.
         </h2>
         <p className="text-ink/80 text-lg md:text-xl font-medium mb-6 max-w-xl">

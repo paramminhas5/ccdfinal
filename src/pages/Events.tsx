@@ -1,62 +1,73 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
+import { supabase } from "@/integrations/supabase/client";
 
-const all = [
-  { slug: "episode-2", title: "Episode 02", city: "Bangalore", venue: "TBA", date: "TBA", status: "upcoming" },
-  { slug: "episode-1", title: "Episode 01", city: "Bangalore", venue: "TBA", date: "TBA", status: "past" },
-];
+type EventRow = {
+  slug: string; title: string; city: string; venue: string; date: string; status: string;
+};
 
-const Events = () => (
-  <>
-    <SEO
-      title="Events — Cats Can Dance"
-      description="All Cats Can Dance editions, past and upcoming. RSVP for Episode 02."
-      path="/events"
-    />
-    <main className="bg-background text-foreground min-h-screen">
-      <Nav />
-      <PageHero
-        eyebrow="EVENTS"
-        title="EVERY EDITION."
-        bg="bg-lime"
-        textColor="text-ink"
-        eyebrowColor="text-magenta"
-        shadow={false}
-      >
-        <p className="text-ink/80 font-medium text-lg max-w-2xl">
-          The cult underground series. Every drop, every floor, every city.
-        </p>
-      </PageHero>
-      <section className="container py-16 md:py-24">
-        <div className="grid gap-6 max-w-4xl">
-          {all.map((e) => (
-            <Link
-              key={e.slug}
-              to={`/events/${e.slug}`}
-              className={`block border-4 border-ink chunk-shadow p-6 md:p-8 hover:-translate-y-1 hover:translate-x-1 transition-transform ${
-                e.status === "upcoming" ? "bg-magenta text-cream" : "bg-cream text-ink"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className={`text-xs font-bold px-3 py-1 border-2 border-ink uppercase ${
-                  e.status === "upcoming" ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
-                }`}>
-                  {e.status === "upcoming" ? "UPCOMING · RSVP" : "PAST"}
-                </span>
-                <span className="font-display text-lg">{e.date}</span>
-              </div>
-              <h2 className="font-display text-4xl md:text-6xl mb-2">{e.title.toUpperCase()}</h2>
-              <p className="font-medium opacity-90">{e.city} · {e.venue}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-      <Footer />
-    </main>
-  </>
-);
+const Events = () => {
+  const [all, setAll] = useState<EventRow[]>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("events").select("slug,title,city,venue,date,status").order("sort_order", { ascending: true });
+      if (data) setAll(data as EventRow[]);
+    })();
+  }, []);
+
+  return (
+    <>
+      <SEO
+        title="Events — Cats Can Dance"
+        description="All Cats Can Dance editions, past and upcoming."
+        path="/events"
+      />
+      <main className="bg-background text-foreground min-h-screen">
+        <Nav />
+        <PageHero
+          eyebrow="EVENTS"
+          title="EVERY EDITION."
+          bg="bg-lime"
+          textColor="text-ink"
+          eyebrowColor="text-magenta"
+          shadow={false}
+        >
+          <p className="text-ink/80 font-medium text-lg max-w-2xl">
+            The cult underground series. Every drop, every floor, every city.
+          </p>
+        </PageHero>
+        <section className="container py-16 md:py-20">
+          <div className="grid gap-6 max-w-4xl">
+            {all.map((e) => (
+              <Link
+                key={e.slug}
+                to={`/events/${e.slug}`}
+                className={`block border-4 border-ink chunk-shadow p-6 md:p-8 hover:-translate-y-1 hover:translate-x-1 transition-transform ${
+                  e.status === "upcoming" ? "bg-magenta text-cream" : "bg-cream text-ink"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`text-xs font-bold px-3 py-1 border-2 border-ink uppercase ${
+                    e.status === "upcoming" ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
+                  }`}>
+                    {e.status === "upcoming" ? "UPCOMING · RSVP" : "PAST"}
+                  </span>
+                  <span className="font-display text-lg">{e.date}</span>
+                </div>
+                <h2 className="font-display text-4xl md:text-6xl mb-2">{e.title.toUpperCase()}</h2>
+                <p className="font-medium opacity-90">{e.city} · {e.venue}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+        <Footer />
+      </main>
+    </>
+  );
+};
 
 export default Events;
