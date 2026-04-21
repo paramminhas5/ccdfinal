@@ -1,66 +1,85 @@
 
 
-# Desktop downscale + admin dashboard for content & contacts
+# Hide bleed-through, moonwalk cat, multi-platform playlists, SEO/GEO ready
 
-## 1. Scale down desktop sections to ~75%
-The "too big" feel on desktop comes from oversized display headlines (`md:text-9xl`), heavy `py-24 md:py-32` section padding, and large container. Rather than touching every component, do it globally + targeted:
+## 1. Hide section behind the Spotify embed
+On the Playlist section, the magenta band and the spinning vinyl are visible around/behind the iframe at certain breakpoints (the iframe has a transparent/dark surround). Fix:
+- Wrap the iframe in a solid `bg-ink` (or `bg-[#121212]` to match Spotify's dark theme) container so nothing bleeds through the embed's rounded edges.
+- Add `isolation-isolate` and bump z-index on the iframe wrapper so the vinyl image cannot peek through.
+- Constrain the vinyl with `max-w-[40vw]` so it never overlaps the embed on tablet widths.
 
-- **Global font shrink on desktop**: in `src/index.css`, add `@media (min-width: 768px) { html { font-size: 14px; } }` (default 16px → 14px ≈ 87.5%). All `rem`-based sizes (Tailwind text/spacing) shrink uniformly. Combined with a tighter container (below) gives ~75% feel without breaking layout.
-- **Tighter container on desktop**: in `tailwind.config.ts`, change container `screens: { "2xl": "1400px" }` to `{ "2xl": "1200px" }` and bump padding to `2.5rem`. Keeps content from sprawling.
-- **Tone down hero & section headlines**: drop `md:text-9xl` → `md:text-8xl` on Hero, About, Playlist, Events, Drops, EarlyAccess, Contact, Media. Drop `md:py-32` → `md:py-20` on the same sections.
-- Mobile is unaffected (breakpoints stay `md:`).
+## 2. Moonwalking brand cat on scroll
+Add a small dancing cat that moonwalks (slides backward while wiggling) across the screen as the user scrolls.
+- New component `src/components/MoonwalkCat.tsx`: fixed-position cat sprite (reuse `cat-headphones.png` or `cat-dancer.svg`) anchored bottom-left of viewport.
+- Use Framer Motion `useScroll` + `useTransform`: as `scrollYProgress` 0→1, translate X from `-10vw` → `110vw` (left to right across the bottom), but flip the sprite horizontally (`scaleX: -1`) so it faces left while moving right = moonwalk illusion.
+- Add a continuous subtle `y` bob (`animate={{ y: [0, -6, 0] }}`) and a slight `rotate` wiggle.
+- Respect `useReducedMotion` (static, hidden).
+- Mobile: smaller (`w-12`), desktop `w-20`.
+- Mount in `src/pages/Index.tsx` only (not on subpages, to stay subtle).
 
-## 2. Admin dashboard — manage Spotify playlists, events, contacts
-Convert `/admin` into a tabbed dashboard. Existing "Early Access" stays as a tab.
+## 3. Multi-platform playlists (Spotify + YouTube + SoundCloud)
+Currently the data model only stores `spotify_id`. Generalize:
+- Extend the `playlists` jsonb shape to `{ id, title, platform: 'spotify'|'youtube'|'soundcloud', url, embed_id }`. Migration: backfill existing rows with `platform='spotify'`, copy `spotify_id` → `embed_id`, build `url` from it.
+- Update the admin "Add playlist" form: a platform dropdown (Spotify / YouTube / SoundCloud) + a single URL field. The edge function / client extracts the right ID:
+  - Spotify: `/playlist/([a-zA-Z0-9]+)/`
+  - YouTube: `[?&]list=([a-zA-Z0-9_-]+)` (also accept full playlist or video URLs)
+  - SoundCloud: store the full URL (SoundCloud embed uses the URL directly via their oEmbed widget endpoint `https://w.soundcloud.com/player/?url=...`)
+- Update `src/components/Playlist.tsx` to render the right iframe per platform:
+  - Spotify: `https://open.spotify.com/embed/playlist/{embed_id}`
+  - YouTube: `https://www.youtube.com/embed/videoseries?list={embed_id}`
+  - SoundCloud: `https://w.soundcloud.com/player/?url={encoded url}&color=%23ff5500&auto_play=false&hide_related=true&visual=true`
+- Selector chips show a small platform glyph next to each title.
+- "Open in …" link adapts to the active platform.
 
-### New backend
-- **DB table `site_settings`** (singleton, single row keyed by `id='main'`):
-  - `playlists jsonb` — array of `{ id, title, spotify_id }` (default seeded with current playlist)
-  - `featured_playlist_id text` — which one to show on home `Playlist` section
-  - `updated_at timestamptz`
-- **DB table `events`**:
-  - `id uuid pk`, `slug text unique`, `title text`, `date text`, `city text`, `venue text`, `blurb text`, `lineup jsonb` (string array), `status text` (`'upcoming' | 'past'`), `poster_url text nullable`, `sort_order int`, `created_at`, `updated_at`
-  - Seed with current `episode-1` and `episode-2` so nothing breaks.
-- **DB table `contact_messages`**:
-  - `id uuid pk`, `name`, `email`, `message text`, `user_agent text`, `created_at`
-  - Public RLS: anonymous INSERT only (matches existing pattern for `early_access_signups`).
+## 4. SEO + GEO discoverability pass
+Make the site genuinely indexable and AI-discoverable (GEO = Generative Engine Optimization).
 
-### New edge functions
-- `contact-submit` — public, validates input, inserts into `contact_messages`. `Contact.tsx` wired to call this instead of just toasting.
-- `admin-content` — password-gated (reuse `ADMIN_PASSWORD` + `x-admin-password` pattern). Supports:
-  - `GET ?type=settings|events|messages` — return rows
-  - `POST { type, action: 'upsert'|'delete', payload }` — write through service role
-  - Returns JSON; mirrors the auth/CSV pattern from `admin-signups`.
+**On-page SEO**
+- Update `index.html`: more specific title (`Cats Can Dance — Dance Music, Pet Culture & Streetwear`), keywords meta, theme-color, `lang` already correct, add `<link rel="alternate" hreflang="x-default" …>`.
+- Add proper OG image: switch `SEO.tsx` `OG` constant to a hosted-from-domain `https://catscandance.com/og-image.png` (1200×630). Add a simple `public/og-image.png` placeholder using the logo on magenta.
+- Add per-page `SEO` calls on every route (audit: `Shop`, `ForArtists`, `ForVenues`, `ForInvestors`, `BlogPost`, `EventDetail` already have them — verify and tighten copy).
+- Heading hygiene: ensure each page has exactly one `<h1>`. Current Hero uses `<h1>` ✓.
 
-### Frontend
-- **`src/pages/Admin.tsx`** — tabs: `Signups` | `Playlists` | `Events` | `Messages`.
-  - **Playlists tab**: list current playlists, add new (title + Spotify URL — auto-extract ID via regex `/playlist/([a-zA-Z0-9]+)/`), set "featured", delete.
-  - **Events tab**: list events, edit inline (title, date, city, venue, blurb, lineup as comma-separated, status, poster URL), add new, delete.
-  - **Messages tab**: read-only table of contact submissions with search + CSV download (mirrors signups).
-- **`src/components/Playlist.tsx`** — fetch `site_settings` on mount; pick featured playlist; if multiple playlists exist, show small selector chips above the iframe. Falls back to current hardcoded ID while loading.
-- **`src/components/Events.tsx`** + **`src/pages/EventDetail.tsx`** + **`src/pages/Events.tsx`** — fetch events from DB instead of hardcoded objects. Episode 01 poster GIF stays referenced via the `poster_url` column (seed value points to the asset path).
-- **`src/components/Contact.tsx`** — submit to `contact-submit` edge function; toast on success/error.
+**Structured data (JSON-LD)**
+- In `index.html`: keep the `Organization` block, add a `WebSite` with `SearchAction`.
+- Inject per-page JSON-LD via `Helmet`:
+  - Events page → `Event` schema for each event (name, startDate, location, performer).
+  - Blog post → `BlogPosting` / `Article`.
+  - Shop product → `Product` with offers.
+  - Org → add `logo`, `sameAs` (instagram, tiktok, spotify artist URL when available), `contactPoint`.
 
-### RLS policies
-- `site_settings`: public SELECT (so frontend can read playlists). No public write — service role only via edge function.
-- `events`: public SELECT. No public write.
-- `contact_messages`: public INSERT only (no SELECT). Admin reads via service-role edge function.
+**GEO / AI-engine readiness**
+- Add `public/llms.txt` (the proposed convention — short, plain-text site map + brand summary) so LLMs that crawl have a curated entry.
+- Add `public/humans.txt` and a tightened `public/robots.txt` (allow all, point to sitemap).
+- Expand `public/sitemap.xml` to include all routes and add `<lastmod>` + `<changefreq>`.
+- Add a `<Sitelinks>`-friendly nav structure (semantic `<nav aria-label="Primary">`).
 
-## 3. Open question
-For events, the current `Episode 02` button on the home page has a hardcoded `RSVP NOW` action wired to `event_rsvps` with slug `episode-2`. Once events are DB-driven, the home hero card will render the **first `upcoming` event** in the table (sorted by `sort_order`). RSVP slug uses the event's `slug` column. If you want a specific event "pinned" as the home hero regardless of order, say so and I'll add a `is_featured` boolean.
+**Performance / Core Web Vitals (ranking factor)**
+- Preconnect to `open.spotify.com`, `i.ytimg.com`, `www.youtube.com`, `w.soundcloud.com`, `fonts.gstatic.com`.
+- Add `<link rel="preload" as="image" href="/src/assets/hero-center.svg">` for LCP.
+- Compress hero PNGs (server-side build optimization is already in place via Vite — no new deps).
+
+**Accessibility (also feeds SEO)**
+- Add `aria-label` to all icon-only buttons in `Nav.tsx` (verify), and `alt` text on every `<img>` (audit: many use `alt=""` for decorative — confirm DJ cat has `alt="Cats Can Dance DJ cat mascot"`).
 
 ## Technical notes
 Files touched:
-- `src/index.css` — global desktop font-size shrink
-- `tailwind.config.ts` — narrower container
-- `src/components/Hero.tsx`, `About.tsx`, `Playlist.tsx`, `Events.tsx`, `Drops.tsx`, `EarlyAccess.tsx`, `Contact.tsx`, `Media.tsx` — headline + padding trim on desktop
-- DB migration — `site_settings`, `events`, `contact_messages` tables + RLS + seed
-- `supabase/functions/contact-submit/index.ts` — NEW
-- `supabase/functions/admin-content/index.ts` — NEW
-- `src/pages/Admin.tsx` — tabbed dashboard
-- `src/components/Playlist.tsx` — DB-driven, multi-playlist selector
-- `src/components/Events.tsx`, `src/pages/Events.tsx`, `src/pages/EventDetail.tsx` — fetch events from DB
-- `src/components/Contact.tsx` — wire to `contact-submit`
+- `src/components/Playlist.tsx` — solid bg around iframe, multi-platform render
+- `src/components/MoonwalkCat.tsx` — NEW
+- `src/pages/Index.tsx` — mount `MoonwalkCat`
+- `src/pages/Admin.tsx` — platform-aware playlist form
+- `supabase/functions/admin-content/index.ts` — accept new playlist shape
+- DB migration — backfill `playlists` jsonb to new shape
+- `index.html` — title, meta, JSON-LD `WebSite`, preconnects, preload
+- `src/components/SEO.tsx` — domain-hosted OG image, optional JSON-LD slot
+- `src/pages/Events.tsx` + `EventDetail.tsx` — `Event` JSON-LD
+- `src/pages/BlogPost.tsx` — `Article` JSON-LD
+- `src/pages/Shop.tsx` + `ProductDetail.tsx` — `Product` JSON-LD
+- `public/sitemap.xml` — full routes + lastmod
+- `public/robots.txt` — allow all + sitemap pointer
+- `public/llms.txt` — NEW (GEO)
+- `public/humans.txt` — NEW
+- `public/og-image.png` — NEW placeholder
 
-No new dependencies. Reuses existing admin password.
+No new npm dependencies. Reuses existing Helmet, Framer Motion, admin password.
 
