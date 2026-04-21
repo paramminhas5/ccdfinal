@@ -68,6 +68,20 @@ const Hero = () => {
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
         />
 
+        {/* Mobile-only flanking cats around DJ */}
+        <img
+          src={catHeadphones}
+          alt=""
+          aria-hidden
+          className="md:hidden absolute z-30 w-20 left-2 bottom-[42%] -rotate-12 wiggle drop-shadow-[6px_6px_0_hsl(var(--ink))] pointer-events-none"
+        />
+        <img
+          src={catHandstand}
+          alt=""
+          aria-hidden
+          className="md:hidden absolute z-30 w-20 right-2 bottom-[42%] rotate-12 wiggle drop-shadow-[6px_6px_0_hsl(var(--ink))] pointer-events-none"
+        />
+
         {/* Side cats — desktop original spot, bigger on mobile */}
         <motion.div
           style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
