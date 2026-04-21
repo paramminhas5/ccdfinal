@@ -9,7 +9,7 @@ const Playlist = () => {
         src={vinyl}
         alt=""
         loading="lazy"
-        className="absolute -top-20 -right-20 w-56 md:w-[28rem] opacity-90 pointer-events-none transform-gpu animate-spin-slow"
+        className="absolute -top-20 -right-20 w-56 md:w-[28rem] opacity-90 pointer-events-none transform-gpu spin-slow"
         style={{ willChange: "transform" }}
       />
       <div className="container relative z-10">
