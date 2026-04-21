@@ -347,14 +347,29 @@ const Admin = () => {
               <TabsContent value="playlists">
                 <div className="bg-cream border-4 border-ink chunk-shadow p-6 mb-6">
                   <h3 className="font-display text-2xl text-ink mb-4">ADD PLAYLIST</h3>
-                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                  <div className="grid sm:grid-cols-3 gap-3 mb-3">
+                    <select
+                      value={newPlPlatform}
+                      onChange={(e) => setNewPlPlatform(e.target.value as Platform)}
+                      className="bg-cream text-ink border-4 border-ink px-4 py-3 font-display focus:outline-none focus:bg-acid-yellow"
+                    >
+                      <option value="spotify">♫ Spotify</option>
+                      <option value="youtube">▶ YouTube</option>
+                      <option value="soundcloud">☁ SoundCloud</option>
+                    </select>
                     <input
                       placeholder="Title (e.g. Summer Mix)"
                       value={newPlTitle} onChange={(e) => setNewPlTitle(e.target.value)}
                       className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
                     />
                     <input
-                      placeholder="Spotify URL or playlist ID"
+                      placeholder={
+                        newPlPlatform === "spotify"
+                          ? "Spotify playlist URL"
+                          : newPlPlatform === "youtube"
+                          ? "YouTube playlist URL (with ?list=…)"
+                          : "SoundCloud track or playlist URL"
+                      }
                       value={newPlUrl} onChange={(e) => setNewPlUrl(e.target.value)}
                       className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
                     />
@@ -367,9 +382,13 @@ const Admin = () => {
                 <div className="space-y-3">
                   {settings?.playlists.map((p) => (
                     <div key={p.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-3 justify-between">
-                      <div>
-                        <p className="font-display text-xl text-ink">{p.title}</p>
-                        <p className="text-ink/60 text-sm font-mono">{p.spotify_id}</p>
+                      <div className="min-w-0">
+                        <p className="font-display text-xl text-ink flex items-center gap-2">
+                          <span aria-hidden>{platformGlyph(p.platform)}</span>
+                          {p.title}
+                          <span className="text-ink/50 text-xs uppercase">{p.platform}</span>
+                        </p>
+                        <p className="text-ink/60 text-sm font-mono truncate max-w-[60ch]">{p.url || p.embed_id}</p>
                       </div>
                       <div className="flex gap-2">
                         {settings.featured_playlist_id === p.id ? (
