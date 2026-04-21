@@ -1,7 +1,15 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import headphones from "@/assets/headphones.svg";
+import { supabase } from "@/integrations/supabase/client";
+
+const ContactSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  email: z.string().trim().email().max(255),
+  message: z.string().trim().min(1).max(2000),
+});
 
 const Contact = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -9,13 +17,34 @@ const Contact = () => {
   const hpY = useTransform(scrollYProgress, [0, 1], [-80, 80]);
   const hpRot = useTransform(scrollYProgress, [0, 1], [-10, 20]);
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const onSubmit = (e: React.FormEvent) => {
+  const [website, setWebsite] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent! We'll be in touch.");
-    setForm({ name: "", email: "", message: "" });
+    if (busy) return;
+    const parsed = ContactSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error("Please fill all fields with valid info.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("contact-submit", {
+        body: { ...parsed.data, website },
+      });
+      if (error || (data as any)?.error) throw new Error("send failed");
+      toast.success("Message sent! We'll be in touch.");
+      setForm({ name: "", email: "", message: "" });
+    } catch {
+      toast.error("Something went wrong. Try again?");
+    } finally {
+      setBusy(false);
+    }
   };
+
   return (
-    <section ref={ref} id="contact" className="relative bg-acid-yellow py-24 md:py-32 border-b-4 border-ink overflow-hidden">
+    <section ref={ref} id="contact" className="relative bg-acid-yellow py-20 md:py-20 border-b-4 border-ink overflow-hidden">
       <motion.img
         src={headphones}
         alt=""
@@ -30,7 +59,7 @@ const Contact = () => {
           transition={{ type: "spring", stiffness: 160, damping: 18 }}
         >
           <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ CONTACT US</p>
-          <h2 className="font-display text-ink text-6xl md:text-8xl mb-8 leading-none">
+          <h2 className="font-display text-ink text-6xl md:text-7xl mb-8 leading-none">
             SAY<br/>HELLO.
           </h2>
           <p className="text-ink/80 text-lg md:text-xl mb-6 max-w-md">
@@ -50,10 +79,20 @@ const Contact = () => {
         >
           <input
             type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            className="hidden"
+            aria-hidden
+          />
+          <input
+            type="text"
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Your name"
+            maxLength={100}
             className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
           />
           <input
@@ -62,6 +101,7 @@ const Contact = () => {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             placeholder="your@email.com"
+            maxLength={255}
             className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
           />
           <textarea
@@ -70,13 +110,15 @@ const Contact = () => {
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
             placeholder="What's up?"
+            maxLength={2000}
             className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow resize-none"
           />
           <button
             type="submit"
-            className="w-full bg-ink text-cream font-display text-xl py-4 hover:bg-magenta transition-colors"
+            disabled={busy}
+            className="w-full bg-ink text-cream font-display text-xl py-4 hover:bg-magenta transition-colors disabled:opacity-60"
           >
-            SEND IT →
+            {busy ? "SENDING…" : "SEND IT →"}
           </button>
         </motion.form>
       </div>

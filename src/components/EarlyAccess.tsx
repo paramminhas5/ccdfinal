@@ -57,7 +57,7 @@ const EarlyAccess = () => {
   };
 
   return (
-    <section ref={ref} id="early-access" className="relative bg-electric-blue py-24 md:py-32 border-b-4 border-ink overflow-hidden">
+    <section ref={ref} id="early-access" className="relative bg-electric-blue py-20 md:py-20 border-b-4 border-ink overflow-hidden">
       <Confetti active={burst} />
       <motion.div style={{ rotate: orbit1 }} className="absolute top-1/2 left-1/2 -mt-40 -ml-40 w-80 h-80 pointer-events-none" aria-hidden>
         <img src={note} alt="" className="absolute top-0 left-1/2 -translate-x-1/2 w-16" />

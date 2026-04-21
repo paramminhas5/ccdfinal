@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       early_access_signups: {
         Row: {
           created_at: string
@@ -65,6 +92,75 @@ export type Database = {
           name?: string
           plus_ones?: number
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          blurb: string
+          city: string
+          created_at: string
+          date: string
+          id: string
+          lineup: Json
+          poster_url: string | null
+          slug: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          venue: string
+        }
+        Insert: {
+          blurb?: string
+          city: string
+          created_at?: string
+          date: string
+          id?: string
+          lineup?: Json
+          poster_url?: string | null
+          slug: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          venue: string
+        }
+        Update: {
+          blurb?: string
+          city?: string
+          created_at?: string
+          date?: string
+          id?: string
+          lineup?: Json
+          poster_url?: string | null
+          slug?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          venue?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          featured_playlist_id: string | null
+          id: string
+          playlists: Json
+          updated_at: string
+        }
+        Insert: {
+          featured_playlist_id?: string | null
+          id: string
+          playlists?: Json
+          updated_at?: string
+        }
+        Update: {
+          featured_playlist_id?: string | null
+          id?: string
+          playlists?: Json
+          updated_at?: string
         }
         Relationships: []
       }

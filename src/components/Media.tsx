@@ -4,10 +4,10 @@ import { posts } from "@/content/posts";
 const press = ["MIXMAG", "RESIDENT ADVISOR", "DAZED", "i-D", "HYPEBEAST", "BOILER ROOM"];
 
 const Media = () => (
-  <section id="media" className="relative bg-orange border-b-4 border-ink py-24 md:py-32 overflow-hidden">
+  <section id="media" className="relative bg-orange border-b-4 border-ink py-20 md:py-20 overflow-hidden">
     <div className="container">
       <p className="font-display text-ink text-2xl md:text-3xl mb-4">/ MEDIA</p>
-      <h2 className="font-display text-ink text-6xl md:text-8xl mb-12 leading-[0.9]">
+      <h2 className="font-display text-ink text-6xl md:text-7xl mb-12 leading-[0.9]">
         SEEN<br/>EVERYWHERE.
       </h2>
 
@@ -23,7 +23,7 @@ const Media = () => (
       </ul>
 
       <p className="font-display text-ink text-2xl md:text-3xl mb-4">/ JOURNAL</p>
-      <h2 className="font-display text-ink text-5xl md:text-7xl mb-12 leading-[0.9]">
+      <h2 className="font-display text-ink text-5xl md:text-6xl mb-12 leading-[0.9]">
         WORDS<br/>FROM US.
       </h2>
 
