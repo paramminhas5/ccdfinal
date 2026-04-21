@@ -1,87 +1,44 @@
-# Polish pass — fix playlist, mobile hero, audio, checkout, headers + add team
 
-## 1. Playlist — kill the jank
+# Hero, cart, audio & playlist tweaks
 
-The scroll-tied vinyl spin runs for the entire viewport range and forces continuous repaints on a large image overlapping a heavy iframe. Mobile especially chokes.
+## 1. Cart button — only show when items in cart
+In `src/components/Nav.tsx` (both desktop `<ul>` and mobile button row), wrap the `<CartDrawer />` in a conditional based on `useCartStore` line count. When `totalItems === 0`, render nothing.
 
-- Drop the `useScroll`/`useTransform` rotation entirely. Replace with a CSS `animate-spin-slow` (already exists as `spin-slow`) so the GPU handles it without React re-rendering on every scroll frame.
-- Add `pointer-events-none` and shrink the vinyl on mobile (`w-56 md:w-[28rem]`) so it doesn't overlap the iframe touch area.
-- Wrap the iframe in a fixed aspect container and add `loading="lazy"` so it doesn't block initial paint.
+- Read `lines` (or equivalent) from `useCartStore` and compute count.
+- Subscribe selector style so Nav re-renders when cart changes.
 
-## 2. Hero DJ cat invisible on mobile
+## 2. Disco audio — invert mute logic
+Right now the mute button starts in "sound on" state but audio doesn't play because of autoplay gating. Fix so that pressing Disco = sound ON immediately, and the mute toggle controls silencing it.
 
-The DJ image is `bottom-0` with the buttons sitting on top of it at `bottom-10`, and at 390px the image is squeezed behind the side cats and the CTA stack.
+- In `useDiscoAudio.ts`, ensure when `disco` flips to `true` we call `el.play()` synchronously inside the same gesture that triggered disco (the Disco button click is itself a user gesture, so this should work without separate priming). Keep the global pointerdown primer as a fallback.
+- Default `muted = false`. When disco turns on and not muted → fade up to TARGET_VOL. When muted → fade to 0 but keep `disco` on.
+- Mute button label/icon already reflects state correctly; just confirm the logic: 🔊 lime = playing, 🔇 cream = muted. Currently correct — the bug is audio never starts. Root cause is likely that the gesture-unlock `play().then(pause)` consumes the user activation but the actual disco play call happens in a `useEffect` after state update, which on iOS counts as non-gesture. Fix: in `DiscoButton`'s `onClick`, after `toggle()`, directly call `audio.play()` via a shared ref exposed from the disco audio hook OR move the play trigger into a ref-based imperative call from DiscoContext.
 
-- Raise the DJ: `bottom-24 md:bottom-0` so it sits above the buttons.
-- Bump mobile size: `w-[78%] max-w-[680px]` → keep, but raise `min-w` so it never collapses below ~280px.
-- Move buttons into normal flow under the hero on mobile (stack BELOW the hero section on `< md`), keep absolute on desktop. Cleanest fix: render buttons in a separate `<div>` directly after the hero `<section>` on mobile, absolute on desktop via responsive classes.
-- Shrink side cats on mobile (`w-16`) so the DJ has breathing room.
+Cleanest approach: expose a `playNow()` from `useDiscoAudio` via a small singleton (module-level audio element + module-level play function), and have `DiscoButton.onClick` invoke it inside the same click handler before/after `toggle()`.
 
-## 3. Disco audio not playing
+## 3. Hero — bigger DJ cat covering text slightly
+In `src/components/Hero.tsx`:
+- DJ image: bump `w-[78%] max-w-[680px]` → `w-[92%] max-w-[820px]` and raise so head overlaps the bottom 1–2 lines of "DANCE". Adjust `bottom-` and remove the parallax scale that shrinks it. On mobile keep `bottom-24` but enlarge to `w-[100%]`.
+- Ensure `z-30` stays above the headline (`z-20`) — already true.
 
-Two problems:
+## 4. Hero — bigger, raised side cats
+- Side cats: mobile `w-16` → `w-24`; desktop `md:w-56` → `md:w-72`.
+- Raise from `bottom-4` → `bottom-12 md:bottom-16` so they sit alongside the DJ cat instead of on the floor.
+- Keep wiggle and parallax exit transforms.
 
-- `disco-loop.mp3` lis not thr file i have added another mp3 file. 
-
-Fixes:
-
-- Clamp `el.volume = Math.max(0, Math.min(1, start + (target - start) * k))` in `useDiscoAudio.ts`.
-- Add a one-time user-gesture unlock: the first click anywhere on the page primes the audio element with `play().then(pause)` so subsequent disco toggles work on iOS/Safari/Chrome autoplay-blocked contexts.
-- Add a visible note in `DiscoMute` if `available === false` (file missing) so the user knows to drop a file in `public/audio/disco-loop.mp3`.
-
-## 4. Shopify checkout opens "weirdly to the end of the page"
-
-The Shopify checkout URL is correct, but `window.open(url, "_blank")` on mobile sometimes scrolls the new tab strangely if the trigger element has lost focus. Real fix: use a real `<a target="_blank">` for the checkout button (anchor-based navigation behaves predictably across browsers and preserves scroll position to top of new tab).
-
-- Replace the `<Button onClick={handleCheckout}>` in `CartDrawer` with an `<a>` styled as a button, `href={checkoutUrl}` prefetched on cart sync, `target="_blank" rel="noopener"`. Disable when no URL.
-- Also fix the React `forwardRef` warnings on `Footer` and `SheetHeader` callsites by passing their content correctly (Footer doesn't need ref; the warning comes from `motion.img` on `Footer` star — replace with plain `<img>` since no animation is applied).
-
-## 5. Instagram title overflowing
-
-`@CATSCAN.DANCE` at `text-8xl` overflows at 390px width.
-
-- Use clamp sizing: `text-5xl sm:text-7xl md:text-8xl` and `break-all` so the handle wraps cleanly.
-- Lowercase visual treatment: keep handle as-is (no uppercase transform) so the dot doesn't push it wider.
-
-## 6. Page titles look weird in black drop-shadow
-
-`PageHero` always applies `drop-shadow-[5px_5px_0_hsl(var(--ink))]` regardless of text color. When the text itself is dark or background is dark, this creates a muddy halo.
-
-- Make shadow optional via prop `shadow?: boolean` (default true) and also expose `shadowColor` so dark-on-light pages can use cream shadow or none.
-- Audit pages: any page using a dark `textColor` gets `shadow={false}`; any page with `bg-magenta` keeps cream-on-ink shadow.
-
-## 7. Add Team section to About page
-
-New `src/components/Team.tsx`:
-
-- Section title `/ THE PACK` + headline "RUN BY HUMANS WHO MOVE."
-- Grid of team member cards (placeholder names/roles/avatars using existing cat SVGs as fun stand-ins until you supply real photos): Founder, Music Director, Brand & Design, Community Lead.
-- Same chunky border + chunk-shadow style as the rest of the site.
-- Mounted in `src/pages/About.tsx` between `What` and `WhyNow`.
-
-## 8. Recommended additional polish (small, fast)
-
-- **Footer**: add `Shop` link to EXPLORE group (currently missing).
-- **Nav**: add Cart icon (CartDrawer trigger) globally so users can checkout from any page, not just `/shop`.
-- **Drops section** on home: link CTA to `/shop` (currently may not).
-- **SEO**: add `/shop` and `/about` to `public/sitemap.xml`.
-- **Runtime cleanup**: silence the React `forwardRef` warning from `SheetHeader` by using a `<div>` wrapper inside `CartDrawer` (cosmetic, but currently spamming console).
+## 5. Playlist — bring back scroll-driven vinyl spin
+Restore Framer Motion scroll rotation in `src/components/Playlist.tsx`, but keep it lightweight:
+- Use `useScroll({ target: ref, offset: ["start end", "end start"] })` and `useTransform` to map progress → `rotate` (0 → 540deg).
+- Apply `willChange: transform` and `transform-gpu`. Keep CSS `spin-slow` removed.
+- Keep the smaller mobile size and `pointer-events-none` so the iframe stays usable.
+- Respect `useReducedMotion` → no rotation.
 
 ## Technical notes
-
 Files touched:
+- `src/components/Nav.tsx` — conditional CartDrawer based on cart count
+- `src/hooks/useDiscoAudio.ts` — expose imperative play, ensure gesture-bound start
+- `src/components/DiscoButton.tsx` — call imperative play on click
+- `src/components/Hero.tsx` — DJ + side cat sizing/positioning
+- `src/components/Playlist.tsx` — restore scroll-driven rotation (lighter version)
 
-- `src/components/Playlist.tsx` — remove framer scroll, use CSS spin
-- `src/components/Hero.tsx` — mobile layout for DJ + buttons
-- `src/hooks/useDiscoAudio.ts` — clamp volume, gesture unlock
-- `src/components/DiscoMute.tsx` — show "audio missing" hint
-- `src/components/CartDrawer.tsx` — anchor-based checkout, ref fix
-- `src/components/Instagram.tsx` — responsive title wrapping
-- `src/components/PageHero.tsx` — optional shadow prop
-- `src/pages/About.tsx`, `src/pages/ForVenues.tsx`, `src/pages/ForArtists.tsx`, `src/pages/ForInvestors.tsx`, `src/pages/Events.tsx`, `src/pages/Shop.tsx` — pass `shadow={false}` where needed
-- `src/components/Team.tsx` — NEW
-- `src/components/Footer.tsx` — add Shop link, replace `motion.img` with `img`
-- `src/components/Nav.tsx` — global cart trigger
-- `public/sitemap.xml` — add routes
-
-No backend changes. No new dependencies.
+No new dependencies. No backend changes.
