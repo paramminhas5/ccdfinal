@@ -36,14 +36,16 @@ const Nav = () => {
         scrolled ? "bg-cream/95 backdrop-blur border-b-4 border-ink" : "bg-transparent"
       }`}
     >
-      <nav className="container flex items-center justify-between py-4 gap-4">
-        <Link to="/" className="group flex items-center gap-2 font-display text-xl md:text-2xl text-ink leading-none shrink-0">
+      <nav className="container flex items-center justify-between py-3 md:py-4 gap-3 md:gap-4">
+        <Link to="/" className={`group flex items-center gap-2 font-display text-xl md:text-2xl leading-none shrink-0 ${scrolled ? "text-ink" : "text-cream"}`}>
           <img
             src={ccdLogo}
             alt="Cats Can Dance logo"
-            className="h-9 md:h-10 w-auto transition-transform duration-700 group-hover:rotate-[360deg]"
+            style={{ filter: scrolled ? "none" : "invert(1) brightness(1.2)" }}
+            className="h-9 md:h-11 w-auto transition-transform duration-700 group-hover:rotate-[360deg]"
           />
-          <span>CATS<span className="text-magenta">.</span>CAN<span className="text-magenta">.</span>DANCE</span>
+          <span className="hidden sm:inline">CATS<span className="text-magenta">.</span>CAN<span className="text-magenta">.</span>DANCE</span>
+          <span className="sm:hidden">CCD</span>
         </Link>
 
         <ul className="hidden lg:flex items-center gap-6">
@@ -75,14 +77,14 @@ const Nav = () => {
           </li>
         </ul>
 
-        <div className="lg:hidden flex items-center gap-2">
+        <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
           <DiscoMute />
           <DiscoButton compact />
           {hasCart && <CartDrawer />}
           <button
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}
-            className="w-11 h-11 grid place-items-center border-4 border-ink bg-cream chunk-shadow"
+            className="w-10 h-10 sm:w-11 sm:h-11 grid place-items-center border-4 border-ink bg-cream chunk-shadow"
           >
             <span className="font-display text-xl">{open ? "✕" : "☰"}</span>
           </button>
