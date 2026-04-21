@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cats Can Dance — bold cartoon palette */
+    --background: 42 80% 94%;           /* cream */
+    --foreground: 0 0% 6%;              /* near-black ink */
+
+    --hot-pink: 330 100% 72%;
+    --bubblegum: 330 100% 85%;
+    --acid-yellow: 52 100% 56%;
+    --electric-blue: 200 100% 55%;
+    --lime: 80 90% 55%;
+    --orange: 22 100% 58%;
+    --magenta: 320 90% 50%;
+    --cream: 42 80% 94%;
+    --ink: 0 0% 6%;
+
+    --card: 42 80% 94%;
+    --card-foreground: 0 0% 6%;
+    --popover: 42 80% 94%;
+    --popover-foreground: 0 0% 6%;
+    --primary: 0 0% 6%;
+    --primary-foreground: 52 100% 56%;
+    --secondary: 52 100% 56%;
+    --secondary-foreground: 0 0% 6%;
+    --muted: 330 60% 90%;
+    --muted-foreground: 0 0% 25%;
+    --accent: 52 100% 56%;
+    --accent-foreground: 0 0% 6%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 6%;
+    --input: 0 0% 6%;
+    --ring: 0 0% 6%;
+    --radius: 1.25rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  body {
+    cursor: default;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Bowlby One', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 0.9;
+  }
+
+  .ink-stroke {
+    -webkit-text-stroke: 2px hsl(var(--ink));
+  }
+
+  .chunk-shadow {
+    box-shadow: 8px 8px 0 0 hsl(var(--ink));
+  }
+  .chunk-shadow-lg {
+    box-shadow: 14px 14px 0 0 hsl(var(--ink));
+  }
+
+  .border-ink {
+    border-color: hsl(var(--ink));
+  }
+
+  .bg-grain {
+    background-image:
+      radial-gradient(hsl(var(--ink) / 0.08) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+
+  .marquee {
+    animation: marquee 30s linear infinite;
+  }
+  .marquee-speed { animation-duration: 30s; }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .spin-slow {
+    animation: spin 8s linear infinite;
+  }
+
+  .wiggle {
+    animation: wiggle 3s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+}
+
+/* DISCO MODE */
+@keyframes disco-shake {
+  0%, 100% { transform: translate(0,0) rotate(0); }
+  25% { transform: translate(-2px, 1px) rotate(-0.5deg); }
+  75% { transform: translate(2px, -1px) rotate(0.5deg); }
+}
+@keyframes disco-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes disco-strobe {
+  0% { background-color: hsl(var(--electric-blue)); }
+  25% { background-color: hsl(var(--magenta)); }
+  50% { background-color: hsl(var(--lime)); }
+  75% { background-color: hsl(var(--orange)); }
+  100% { background-color: hsl(var(--electric-blue)); }
+}
+@keyframes disco-dance {
+  0%, 100% { transform: rotate(-15deg) translateY(0); }
+  50% { transform: rotate(15deg) translateY(-10px); }
+}
+
+body.disco { animation: disco-strobe 2s linear infinite; }
+body.disco section { animation: disco-shake 0.5s ease-in-out infinite; }
+body.disco .chunk-shadow,
+body.disco .chunk-shadow-lg { animation: disco-pulse 0.5s ease-in-out infinite; }
+body.disco .wiggle { animation: disco-dance 0.4s ease-in-out infinite !important; }
+body.disco .marquee-speed { animation-duration: 6s !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.disco,
+  body.disco section,
+  body.disco .chunk-shadow,
+  body.disco .chunk-shadow-lg,
+  body.disco .wiggle,
+  body.disco .marquee-speed { animation: none !important; }
+}
+
+/* ShinyBall (3D disco ball) */
+@keyframes rotateDiscoBall {
+  0% { transform: rotateX(90deg) rotateZ(0deg); }
+  100% { transform: rotateX(90deg) rotateZ(360deg); }
+}
+@keyframes rotateDiscoBallMiddle {
+  0% { transform: rotateX(90deg) rotateY(0deg); }
+  100% { transform: rotateX(90deg) rotateY(-360deg); }
+}
+@keyframes reflect {
+  0% { opacity: 1; }
+  50% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
+/* Disco mode: full-vibe gradient backgrounds on every section */
+body.disco section {
+  background-image: linear-gradient(135deg,
+    hsl(var(--magenta)) 0%,
+    hsl(var(--electric-blue)) 35%,
+    hsl(var(--lime)) 70%,
+    hsl(var(--orange)) 100%) !important;
+  background-size: 300% 300% !important;
+  animation: disco-shake 0.5s ease-in-out infinite, disco-gradient 4s linear infinite !important;
+}
+@keyframes disco-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
