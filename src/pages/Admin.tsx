@@ -6,7 +6,15 @@ import SEO from "@/components/SEO";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Signup = { id: string; email: string; source: string | null; created_at: string };
-type PlaylistItem = { id: string; title: string; spotify_id: string };
+type Platform = "spotify" | "youtube" | "soundcloud";
+type PlaylistItem = {
+  id: string;
+  title: string;
+  platform: Platform;
+  embed_id: string;
+  url: string;
+  spotify_id?: string;
+};
 type Settings = { id: string; playlists: PlaylistItem[]; featured_playlist_id: string | null };
 type EventRow = {
   id?: string; slug: string; title: string; date: string; city: string; venue: string;
@@ -16,10 +24,36 @@ type Message = { id: string; name: string; email: string; message: string; creat
 
 const PASS_KEY = "ccd_admin_pass";
 
-const extractSpotifyId = (input: string) => {
-  const m = input.match(/playlist\/([a-zA-Z0-9]+)/);
-  return m ? m[1] : input.trim();
+const extractPlaylistInfo = (
+  platform: Platform,
+  input: string
+): { embed_id: string; url: string } => {
+  const trimmed = input.trim();
+  if (platform === "spotify") {
+    const m = trimmed.match(/playlist\/([a-zA-Z0-9]+)/);
+    const id = m ? m[1] : trimmed;
+    return { embed_id: id, url: `https://open.spotify.com/playlist/${id}` };
+  }
+  if (platform === "youtube") {
+    const m = trimmed.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    const id = m ? m[1] : trimmed;
+    return { embed_id: id, url: `https://www.youtube.com/playlist?list=${id}` };
+  }
+  return { embed_id: trimmed, url: trimmed };
 };
+
+const normalizePlaylist = (p: any): PlaylistItem => ({
+  id: p.id,
+  title: p.title,
+  platform: (p.platform as Platform) ?? "spotify",
+  embed_id: p.embed_id ?? p.spotify_id ?? "",
+  url:
+    p.url ??
+    (p.spotify_id ? `https://open.spotify.com/playlist/${p.spotify_id}` : ""),
+});
+
+const platformGlyph = (p: Platform) =>
+  p === "spotify" ? "♫" : p === "youtube" ? "▶" : "☁";
 
 const Admin = () => {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PASS_KEY) ?? "");
