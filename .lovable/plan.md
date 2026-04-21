@@ -1,67 +1,89 @@
 
 
-# Rank for "best parties / events in Bangalore & India" on Google + AI engines
+# SEO + GEO round 2: pre-rendering, content depth, internal links, images
 
-## Strategy
-SEO + GEO (Generative Engine Optimization) tuned around the entity **"Cats Can Dance — Bangalore party & event organisers"**. Three pillars: (1) on-page keyword + entity signals, (2) structured data that Google and LLMs trust, (3) crawlable content surfaces with the right city/country mentions.
+The current setup has the basics (meta, JSON-LD, sitemap, llms.txt). The biggest remaining gaps are: **(1) the site is a SPA so Google sees an empty `<div id="root">` for many crawls, (2) thin content on key pages, (3) no real backlink/local-content surface, (4) no per-page social images, (5) no analytics to measure rankings**. Here's what to do next, ordered by ranking impact.
 
-## 1. Keyword + copy targeting
-Target phrases: *best parties in Bangalore, best events in Bangalore, top event organisers Bangalore, underground dance music India, electronic music events Bangalore, best party organisers India*.
+## 1. Fix the SPA crawl problem (biggest single win)
+Right now Googlebot has to render JS to see anything. AI crawlers (GPTBot, PerplexityBot, ClaudeBot) mostly do **not** render JS — they see a blank page. Fix:
 
-- **`index.html`** — rewrite `<title>` to `Cats Can Dance — Best Parties & Events in Bangalore | Top Event Organisers India` and meta description to a 150-char sentence with "Bangalore", "India", "events", "parties", "dance music".
-- **`Hero.tsx`** — keep the H1 visual but add an SR-only secondary line: `<p class="sr-only">Cats Can Dance is a Bangalore-based event organiser hosting the best dance music parties in India.</p>` so crawlers see the entity + city without breaking the design.
-- **Per-page SEO copy** via `SEO.tsx` titles/descriptions:
-  - `/` — "Best Parties & Events in Bangalore | Cats Can Dance"
-  - `/events` — "Upcoming Parties & Events in Bangalore, India | Cats Can Dance"
-  - `/events/:slug` — already dynamic; ensure city defaults to "Bangalore, India" when missing.
-  - `/about` — "About Cats Can Dance — Bangalore's Underground Event Organisers"
-  - `/for-venues`, `/for-artists`, `/for-investors` — append "| Bangalore, India"
-- **About + Footer** — add a one-line address block: `Bangalore, Karnataka, India` (visible). Required for LocalBusiness schema.
+- **Add `react-snap` or `vite-plugin-prerender`** to pre-render every static route at build time into real HTML files (`/about/index.html`, `/events/index.html`, `/for-venues/index.html`, etc.). Each file ships with the actual H1/copy/JSON-LD already in the markup.
+- Routes to pre-render: `/`, `/about`, `/events`, `/events/episode-1`, `/events/episode-2`, `/shop`, `/for-venues`, `/for-artists`, `/for-investors`, `/blog/inside-episode-01`.
+- Result: AI engines and Google get fully-rendered HTML on first byte. Massive lift for both rankings and AI citations.
 
-## 2. Structured data (JSON-LD)
-Stronger entity signals = better AI engine citations and Google rich results.
+## 2. Add a real `/blog` index + 4-6 pillar articles
+Blog content is the #1 way to rank for long-tail "best X in Bangalore" queries. Create:
 
-- **`index.html`** Organization → upgrade to `["Organization","LocalBusiness","EventVenue"]` with `address` (Bangalore, KA, IN), `areaServed: ["Bangalore","India"]`, `geo` (lat/lng of Bangalore), `sameAs` (IG, TikTok, YouTube, Spotify).
-- **`Events.tsx` / `EventDetail.tsx`** — already inject `Event`; tighten with `eventStatus`, `eventAttendanceMode: OfflineEventAttendanceMode`, `location.address.addressLocality: "Bangalore"`, `location.address.addressCountry: "IN"`, `organizer: { @type: Organization, name: "Cats Can Dance", url }`, and `offers` (free/RSVP).
-- **`Index.tsx`** — add `BreadcrumbList` + `ItemList` of upcoming events on the homepage so Google can show event sitelinks.
-- **`BlogPost.tsx`** — `BlogPosting` with `author`, `publisher`, `mainEntityOfPage`.
-- **`FAQPage` schema** — new small `<FAQ />` block on `/about` answering: "Who organises the best parties in Bangalore?", "Where to find dance music events in Bangalore?", "How do I RSVP to Cats Can Dance events?". Massive GEO win — LLMs love FAQ JSON-LD.
+- `/blog` index page listing all posts (currently only `/blog/inside-episode-01` exists, no index).
+- 6 new pillar posts (markdown in `src/content/posts.ts`):
+  1. "The Best Underground Parties in Bangalore (2026 Guide)"
+  2. "Where to Find Electronic Music Events in Bangalore"
+  3. "Top 10 Event Organisers in India for Dance Music"
+  4. "RSVP Culture: How Bangalore's Party Scene Works"
+  5. "A Guide to Techno & House Nights in Bangalore"
+  6. "Behind the Decks: Bangalore's Rising DJs"
+- Each post: 800-1200 words, internal links to `/events`, `/about`, other posts. `BlogPosting` JSON-LD already exists.
+- Add each new slug to `sitemap.xml` and `llms-full.txt`.
 
-## 3. Crawlable surfaces (sitemap, robots, llms.txt)
-- **`public/sitemap.xml`** — regenerate with all routes + `/events/episode-1`, `/events/episode-2`, all blog slugs, `<lastmod>` = today, `<changefreq>` weekly for `/events`.
-- **`public/robots.txt`** — explicitly `Allow: /`, point to sitemap, add `User-agent: GPTBot / ClaudeBot / PerplexityBot / Google-Extended` with `Allow: /` so AI crawlers index us.
-- **`public/llms.txt`** — rewrite to lead with: *"Cats Can Dance is a Bangalore, India event organiser producing the best underground dance music parties…"* followed by curated link list (events, about, RSVP). LLMs use this as the canonical brand summary.
-- **`public/llms-full.txt`** — NEW, longer markdown of the brand story + every event with date/venue/lineup, so Perplexity/ChatGPT have a single page to cite.
+## 3. Per-page Open Graph images (social CTR → indirect ranking)
+Today every page shares one OG image. Generate route-specific OGs at `/public/og/`:
+- `/og/events.png`, `/og/about.png`, `/og/shop.png`, `/og/for-venues.png`, etc.
+- Each is 1200×630, branded magenta, with the page's H1 baked in. Boosts share CTR on WhatsApp/Twitter/LinkedIn → more clicks → ranking signal.
+- Pass via `<SEO image="/og/events.png" />` (already supported).
 
-## 4. Performance + technical SEO
-- Add `<meta name="geo.region" content="IN-KA">`, `<meta name="geo.placename" content="Bangalore">`, `<meta name="geo.position" content="12.9716;77.5946">`, `<meta name="ICBM" content="12.9716, 77.5946">` in `index.html`.
-- Add `<link rel="alternate" hreflang="en-IN">` alongside `x-default`.
-- Ensure every `<img>` has descriptive alt text including "Bangalore" / "Cats Can Dance" where natural (Hero DJ cat, event posters).
-- Confirm one `<h1>` per route; add semantic `<main>` and `<nav aria-label="Primary">` if missing.
+## 4. Internal linking + breadcrumbs
+- Add a visible breadcrumb component (`Home › Events › Episode 1`) to every non-home page. Wrap with `BreadcrumbList` JSON-LD per page (currently only homepage has it).
+- Add a "Related events" / "Read next" block at the bottom of each event and blog post linking to 3 related URLs. Internal link depth is a known ranking signal.
+- Footer: add a sitemap-style link block (Events / Shop / About / For Artists / For Venues / For Investors / Blog).
 
-## 5. Off-page checklist (manual, surfaced in admin)
-Add a small **"SEO Checklist"** read-only card in `/admin` listing manual tasks (not auto-doable from the app):
-- Submit sitemap to Google Search Console + Bing Webmaster.
-- Create / claim Google Business Profile as "Cats Can Dance — Event Organiser, Bangalore".
-- Get listed on: Insider.in, BookMyShow, Skiddle, RA (Resident Advisor), Paytm Insider.
-- Backlinks: pitch Rolling Stone India, Wild City, Homegrown, Mid-day Bangalore.
-- Consistent NAP (Name/Address/Phone) across IG bio, Linktree, listings.
+## 5. Image SEO
+- Audit every `<img>` for descriptive `alt` text including target keywords ("Cats Can Dance party in Bangalore", "Episode 1 dance music event Bangalore"). Currently many are `alt=""`.
+- Add `loading="lazy"` to below-fold images, `loading="eager" fetchpriority="high"` to hero LCP image.
+- Generate `srcset` for hero / event posters via Vite's `?w=400;800;1200` import suffix to cut LCP on mobile.
+
+## 6. Performance signals (Core Web Vitals)
+- Add `<link rel="preload" as="image" href="/src/assets/cat-dj-hero.svg">` for hero LCP.
+- Self-host the Google fonts already in use (`@fontsource/*`) and drop the `gstatic` preconnect — eliminates a render-blocking round trip.
+- Add `Cache-Control: public, max-age=31536000, immutable` headers via `_headers` file (Lovable static host) for `/assets/*`.
+
+## 7. Analytics + Search Console wiring
+You can't rank what you don't measure. Add:
+- **Google Search Console verification** via a `<meta name="google-site-verification">` field in `index.html` (admin can paste the token in the new SEO Checklist tab and it surfaces in head).
+- **Bing Webmaster** verification meta the same way.
+- **Plausible or Google Analytics 4** (lightweight, privacy-friendly Plausible recommended) to track which queries land where.
+- New `site_settings.seo_verifications` jsonb (`{google, bing, plausible_domain}`) editable from admin.
+
+## 8. Local citations + entity reinforcement (in-app helpers)
+- Expand the admin "SEO Checklist" with **clickable submission links** (Google Business Profile create URL, Bing Places, Insider.in submit form, Skiddle promoter signup, RA promoter signup, Wild City contact).
+- Add a "NAP card" on `/about` (Name / Address / "Contact via Instagram") that exactly mirrors what gets submitted to directories — consistency matters for local SEO.
+- Add an **Events archive page** `/events/past` listing previous episodes with photos + lineup (currently nothing past episode-2). Old event pages are a huge source of "best parties Bangalore [year]" rankings.
+
+## 9. Schema additions
+- `ItemList` of upcoming events on the `/events` page (Google can pull this into a carousel).
+- `MusicEvent` instead of generic `Event` for episodes (more specific = better rich result eligibility).
+- `VideoObject` JSON-LD on the Videos section pulling from the existing YouTube data.
+- `Review` / `AggregateRating` on `/about` if/when testimonials are added (admin form).
+
+## 10. AI engine optimisation extras
+- Rewrite `llms.txt` to follow the **exact spec** at llmstxt.org (H1 brand name, blockquote summary, sectioned link lists). Current file is close but not strictly compliant.
+- Add `/api/brand.json` (a static JSON file in `public/`) with brand name, tagline, locations, upcoming events, FAQ — a single endpoint Perplexity/ChatGPT plugins can ingest cleanly.
 
 ## Files touched
-- `index.html` — title, meta, geo tags, JSON-LD upgrade
-- `src/components/SEO.tsx` — accept richer JSON-LD (already does), keep
-- `src/components/Hero.tsx` — SR-only entity line
-- `src/components/About.tsx` — visible Bangalore address line + FAQ block
-- `src/components/Footer.tsx` — address line
-- `src/pages/Index.tsx` — homepage `BreadcrumbList` + `ItemList` JSON-LD
-- `src/pages/Events.tsx`, `src/pages/EventDetail.tsx` — tightened `Event` schema (city/country/organizer/offers)
-- `src/pages/About.tsx` — FAQPage JSON-LD
-- `src/pages/BlogPost.tsx` — fuller BlogPosting schema
-- `src/pages/Admin.tsx` — new "SEO Checklist" tab (static, read-only)
-- `public/sitemap.xml` — regenerate full
-- `public/robots.txt` — AI crawler allowlist
-- `public/llms.txt` — Bangalore-led rewrite
-- `public/llms-full.txt` — NEW long-form brand + events doc
+- `vite.config.ts` + new `package.json` dep `vite-plugin-prerender` — pre-rendering
+- `src/content/posts.ts` — 6 new pillar articles
+- `src/pages/Blog.tsx` — NEW blog index
+- `src/components/Breadcrumbs.tsx` — NEW reusable breadcrumb (visible + JSON-LD)
+- `src/components/Footer.tsx` — sitemap link block
+- `public/og/*.png` — NEW per-route social images
+- `public/_headers` — NEW cache headers
+- `public/llms.txt` — strict-spec rewrite
+- `public/brand.json` — NEW
+- `public/sitemap.xml` — add new blog + past events URLs
+- `index.html` — verification meta slots, font self-host, hero preload
+- `src/pages/Admin.tsx` — SEO Checklist v2 (verification token inputs, submission links)
+- DB migration — `site_settings.seo_verifications` jsonb
+- `src/pages/Events.tsx` + new `/events/past` route — `MusicEvent` + `ItemList` schema
+- All page components — alt-text audit, internal-link blocks
 
-No new dependencies. No backend changes.
+No design/visual changes. No backend behaviour changes beyond storing verification tokens.
 
