@@ -34,7 +34,9 @@ const Shop = () => {
       <SEO title="Shop — Cats Can Dance" description="Limited drops, made for the dance floor." path="/shop" />
       <main className="bg-cream text-ink">
         <Nav />
-        <PageHero kicker="/ SHOP" title="WEAR THE CULTURE." subtitle="Limited drops. Made for the floor." />
+        <PageHero eyebrow="SHOP" title="WEAR THE CULTURE." bg="bg-magenta" eyebrowColor="text-acid-yellow">
+          <p className="font-display text-cream text-2xl mt-4">Limited drops. Made for the floor.</p>
+        </PageHero>
 
         <section className="container py-16 md:py-24 relative">
           <div className="absolute top-8 right-4 md:right-8 z-10">
