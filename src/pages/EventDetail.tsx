@@ -121,6 +121,23 @@ const EventDetail = () => {
           </div>
         </section>
 
+        {event.gallery && event.gallery.length > 0 && (
+          <section className="container pb-16 md:pb-24 max-w-5xl">
+            <h2 className="font-display text-3xl text-ink mb-6">/ GALLERY</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {event.gallery.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`${event.title} photo ${i + 1}`}
+                  loading="lazy"
+                  className="w-full aspect-square object-cover border-4 border-ink chunk-shadow"
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         <Footer />
       </main>
       <RsvpDialog open={open} onOpenChange={setOpen} eventSlug={slug} eventTitle={`Cats Can Dance ${event.title}`} />
