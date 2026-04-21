@@ -7,10 +7,10 @@ const groups = [
     links: [
       { to: "/", label: "Home" },
       { to: "/about", label: "About" },
+      { to: "/events", label: "Events" },
       { to: "/shop", label: "Shop" },
+      { to: "/blog", label: "Blog" },
       { to: "/#playlist", label: "Playlist" },
-      { to: "/#events", label: "Events" },
-      { to: "/#drops", label: "Drops" },
     ],
   },
   {
