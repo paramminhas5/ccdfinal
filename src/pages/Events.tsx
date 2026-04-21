@@ -24,6 +24,7 @@ const Events = () => (
         bg="bg-lime"
         textColor="text-ink"
         eyebrowColor="text-magenta"
+        shadow={false}
       >
         <p className="text-ink/80 font-medium text-lg max-w-2xl">
           The cult underground series. Every drop, every floor, every city.

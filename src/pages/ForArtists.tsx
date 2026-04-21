@@ -26,6 +26,7 @@ const ForArtists = () => (
       bg="bg-orange"
       textColor="text-ink"
       eyebrowColor="text-cream"
+      shadow={false}
     />
     <Marquee bg="bg-magenta" />
     <section className="bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain">

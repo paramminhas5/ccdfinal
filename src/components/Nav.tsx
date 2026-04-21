@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
 import DiscoButton from "@/components/DiscoButton";
 import DiscoMute from "@/components/DiscoMute";
+import { CartDrawer } from "@/components/CartDrawer";
 
 const links = [
   { to: "/", label: "Home" },
@@ -54,6 +55,7 @@ const Nav = () => {
           ))}
           <li><DiscoMute /></li>
           <li><DiscoButton compact /></li>
+          <li><CartDrawer /></li>
           <li>
             <Link
               to="/#early-access"
@@ -67,6 +69,7 @@ const Nav = () => {
         <div className="lg:hidden flex items-center gap-2">
           <DiscoMute />
           <DiscoButton compact />
+          <CartDrawer />
           <button
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}

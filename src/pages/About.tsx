@@ -4,6 +4,7 @@ import PageHero from "@/components/PageHero";
 import Why from "@/components/Why";
 import WhyNow from "@/components/WhyNow";
 import What from "@/components/What";
+import Team from "@/components/Team";
 import SectionReveal from "@/components/SectionReveal";
 import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
@@ -24,6 +25,7 @@ const About = () => (
     <SectionReveal><Why /></SectionReveal>
     <Marquee bg="bg-acid-yellow" />
     <SectionReveal><What /></SectionReveal>
+    <SectionReveal><Team /></SectionReveal>
     <WhyNow />
     <Footer />
   </main>
