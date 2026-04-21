@@ -1,47 +1,41 @@
 
-# Logo integration + production polish
 
-## 1. Add logo to Nav and Footer with hover spin
-- Copy `user-uploads://CCDLOGO_2-2.png` → `src/assets/ccd-logo.png`.
-- **Nav** (`src/components/Nav.tsx`): place a `<img>` (h-10) to the LEFT of the wordmark inside the home `<Link>`. Add `transition-transform duration-700 group-hover:rotate-[360deg]` and make the parent link `group`. Keeps wordmark; logo spins one full turn on hover.
-- **Footer** (`src/components/Footer.tsx`): replace the two decorative `star.png` images with the new logo, larger (w-24 / w-20). Wrap in a `group` div with `hover:rotate-[360deg] transition-transform duration-1000` (auto-spinnable on hover; remove the existing `spin-slow` to avoid conflict).
-- Update `index.html` favicon to use the new logo (convert by referencing `/ccd-logo.png` copied also to `public/`).
+# Mobile hero cats, smoother disco, scroll-to-top fix
 
-## 2. Replace Episode 01 poster with uploaded GIF
-- Copy `user-uploads://ccdep01_gif_1.gif` → `src/assets/episode-1-poster.gif`.
-- Update import in `src/components/Events.tsx`, `src/pages/EventDetail.tsx`, and `src/content/posts.ts` to point at the new GIF. GIF will animate inline as the poster on the past-episode card, the event detail hero, and the blog cover.
+## 1. Add the two new cats flanking the DJ on mobile
+- Copy `user-uploads://Clip_path_group-1.png` → `src/assets/cat-headphones.png` (the dancing cat with headphones).
+- Copy `user-uploads://Clip_path_group-3.png` → `src/assets/cat-handstand.png` (the upside-down cat).
+- In `src/components/Hero.tsx`, add two new `<img>` elements, **mobile-only** (`md:hidden`), positioned over the top-left and top-right of the DJ cat:
+  - Headphones cat: top-left of DJ, `w-20`, slight rotation `-12deg`, with chunky ink shadow.
+  - Handstand cat: top-right of DJ, `w-20`, slight rotation `12deg`.
+  - Both placed `absolute` with `z-30` (same layer as DJ) just above the headline, around `top-[55%]`, with small `wiggle` animation.
+- Existing `cat-left` / `cat-right` SVGs stay untouched on desktop.
 
-## 3. Production-readiness polish
-Small high-impact items:
+## 2. Smoother scroll with disco mode on mobile
+The disco-mode jank on mobile comes from heavy compositing: `Lasers` runs 6 animated gradient bars + 8 large radial blobs with `mix-blend-screen`, plus the `DiscoBall` builds ~200 absolutely-positioned 3D-transformed tiles. On mobile GPUs this kills scroll FPS.
 
-- **OG / social preview**: replace the Lovable-default `og:image` URL in `index.html` with the new logo (`/ccd-logo.png`) so Instagram/WhatsApp/Twitter shares look on-brand. Set `twitter:site` to `@catscandance` (or remove if no handle yet).
-- **Favicon**: switch `/favicon.svg` reference to the new PNG logo (`<link rel="icon" type="image/png" href="/ccd-logo.png">`).
-- **404 page**: confirm `NotFound.tsx` is themed (chunky-border, Nav, Footer) — fix if it's still the default plain version.
-- **Robots / sitemap sanity**: ensure `public/robots.txt` references the sitemap and `sitemap.xml` lists all live routes (`/`, `/about`, `/shop`, `/events`, `/events/episode-1`, `/events/episode-2`, `/blog/inside-episode-01`, `/for-venues`, `/for-artists`, `/for-investors`).
-- **Domain in SEO**: `SEO.tsx` likely hardcodes a placeholder; check it uses `https://catscandance.com` as canonical base.
-- **Console hygiene**: silence the console-spamming `forwardRef` warning from `SheetHeader` in `CartDrawer` (cosmetic but visible to anyone opening devtools on launch).
-- **Image perf**: add `loading="lazy"` + explicit `width`/`height` on the press logos and Instagram thumbnails to reduce CLS.
-- **Disco audio**: confirm `public/audio/disco-loop.mp3` exists (else the disco button silently no-ops on first launch). If still missing, leave the existing "audio missing" hint visible.
+Fixes:
+- **Disable `mix-blend-screen` on mobile** in `Lasers.tsx` (keep `screen` only `md:` and up). Reduce laser count to 4 and spotlight count to 4 on mobile.
+- **Cap laser height** to `100vh` (currently `120vh`) and remove `boxShadow` glow on mobile (huge paint cost).
+- **Skip DiscoBall entirely on mobile** — render only on `md` and up. The lasers + body strobe still sell the effect.
+- Ensure both effects use `position: fixed`-style isolation by adding `will-change: transform` and `contain: paint` on their root, and verify `pointer-events-none` (already set) so they don't intercept touch.
+- In `Hero.tsx`, gate `<DiscoBall />` and the heavy laser config behind a `useIsMobile()` check.
 
-## 4. Open question
-The uploaded logo is a black circle with a white cat — on the cream Nav background it'll look great, but on dark sections (Footer is already dark `bg-ink`) the black circle disappears into the background. Two options for the Footer logo:
-- (a) Keep as-is → only the white cat silhouette shows (looks intentional, "knockout" style).
-- (b) Add a cream/yellow circular background behind it so the full logo is visible.
+## 3. Scroll-to-top on route navigation
+Currently navigating between pages (e.g., clicking a Nav link to `/about`) preserves the previous scroll position because React Router doesn't auto-reset scroll. Result: the new page lands mid-section.
 
-I'll go with **(a) knockout style** unless you say otherwise — it matches the brand's bold aesthetic.
+- Create a small `ScrollToTop` component that listens to `useLocation().pathname` changes and calls `window.scrollTo({ top: 0, behavior: "instant" })` on every change. Skip when the URL has a `#hash` (so anchor links still work).
+- Mount it inside `<BrowserRouter>` in `src/App.tsx`, just above `<Routes>`.
+- Also ensure the in-page anchor links (`#events`, `#early-access` from Hero) on the home page still scroll smoothly via existing Lenis — no change needed there.
 
 ## Technical notes
 Files touched:
-- `src/assets/ccd-logo.png` — NEW (copied from upload)
-- `src/assets/episode-1-poster.gif` — NEW (copied from upload)
-- `public/ccd-logo.png` — NEW (for favicon + OG)
-- `src/components/Nav.tsx` — logo img + group hover spin
-- `src/components/Footer.tsx` — logo replaces stars, hover spin
-- `src/components/Events.tsx`, `src/pages/EventDetail.tsx`, `src/content/posts.ts` — switch poster to GIF
-- `index.html` — favicon + og:image
-- `src/components/SEO.tsx` — verify canonical base
-- `src/components/CartDrawer.tsx` — fix forwardRef warning
-- `public/sitemap.xml` — full route list
-- `src/pages/NotFound.tsx` — theme check (only edit if unstyled)
+- `src/assets/cat-headphones.png` — NEW (from upload)
+- `src/assets/cat-handstand.png` — NEW (from upload)
+- `src/components/Hero.tsx` — add two mobile-only flanking cats, gate DiscoBall behind `useIsMobile`
+- `src/components/Lasers.tsx` — lighter mobile config (fewer elements, no glow, no blend-mode)
+- `src/components/ScrollToTop.tsx` — NEW small component
+- `src/App.tsx` — mount `<ScrollToTop />` inside `<BrowserRouter>`
 
 No backend, no new dependencies.
+
