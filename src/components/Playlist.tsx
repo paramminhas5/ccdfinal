@@ -3,8 +3,52 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import vinyl from "@/assets/vinyl-music.png";
 import { supabase } from "@/integrations/supabase/client";
 
-type PlaylistItem = { id: string; title: string; spotify_id: string };
-const FALLBACK: PlaylistItem = { id: "main", title: "Now Spinning", spotify_id: "1cEE860l9GiBvIYVM2BbSS" };
+type Platform = "spotify" | "youtube" | "soundcloud";
+type PlaylistItem = {
+  id: string;
+  title: string;
+  platform: Platform;
+  embed_id: string;
+  url: string;
+  // legacy
+  spotify_id?: string;
+};
+
+const FALLBACK: PlaylistItem = {
+  id: "main",
+  title: "Now Spinning",
+  platform: "spotify",
+  embed_id: "1cEE860l9GiBvIYVM2BbSS",
+  url: "https://open.spotify.com/playlist/1cEE860l9GiBvIYVM2BbSS",
+};
+
+const normalize = (p: any): PlaylistItem => ({
+  id: p.id,
+  title: p.title,
+  platform: (p.platform as Platform) ?? "spotify",
+  embed_id: p.embed_id ?? p.spotify_id ?? "",
+  url:
+    p.url ??
+    (p.spotify_id ? `https://open.spotify.com/playlist/${p.spotify_id}` : ""),
+});
+
+const platformGlyph = (p: Platform) =>
+  p === "spotify" ? "♫" : p === "youtube" ? "▶" : "☁";
+
+const platformLabel = (p: Platform) =>
+  p === "spotify" ? "Spotify" : p === "youtube" ? "YouTube" : "SoundCloud";
+
+const buildEmbedSrc = (p: PlaylistItem) => {
+  if (p.platform === "spotify") {
+    return `https://open.spotify.com/embed/playlist/${p.embed_id}?utm_source=generator&theme=0`;
+  }
+  if (p.platform === "youtube") {
+    return `https://www.youtube.com/embed/videoseries?list=${p.embed_id}`;
+  }
+  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(
+    p.url
+  )}&color=%23ff5500&auto_play=false&hide_related=true&visual=true`;
+};
 
 const Playlist = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,7 +66,8 @@ const Playlist = () => {
         .select("playlists, featured_playlist_id")
         .eq("id", "main")
         .maybeSingle();
-      const list = ((data?.playlists as unknown) as PlaylistItem[]) ?? [];
+      const raw = ((data?.playlists as unknown) as any[]) ?? [];
+      const list = raw.map(normalize).filter((p) => p.embed_id || p.url);
       if (list.length) {
         setPlaylists(list);
         const featured = data?.featured_playlist_id;
@@ -44,7 +89,7 @@ const Playlist = () => {
         alt=""
         loading="lazy"
         style={{ rotate, willChange: "transform" }}
-        className="absolute -top-20 -right-20 w-56 md:w-[28rem] opacity-90 pointer-events-none transform-gpu"
+        className="absolute -top-20 -right-20 w-56 md:w-[28rem] max-w-[40vw] opacity-90 pointer-events-none transform-gpu z-0"
       />
       <div className="container relative z-10">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ THE PLAYLIST</p>
@@ -58,38 +103,44 @@ const Playlist = () => {
               <button
                 key={p.id}
                 onClick={() => setActiveId(p.id)}
-                className={`font-display text-sm md:text-base px-4 py-2 border-4 border-ink transition-colors ${
+                className={`font-display text-sm md:text-base px-4 py-2 border-4 border-ink transition-colors flex items-center gap-2 ${
                   p.id === activeId ? "bg-acid-yellow text-ink" : "bg-cream text-ink hover:bg-acid-yellow"
                 }`}
               >
+                <span aria-hidden>{platformGlyph(p.platform)}</span>
                 {p.title}
               </button>
             ))}
           </div>
         )}
 
-        <div className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-cream overflow-hidden relative z-20">
+        <div
+          className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-ink overflow-hidden relative z-20 isolate"
+          style={{ isolation: "isolate" }}
+        >
           <iframe
-            key={active?.spotify_id}
+            key={`${active?.platform}-${active?.embed_id || active?.url}`}
             title={`Cats Can Dance — ${active?.title ?? "Playlist"}`}
-            src={`https://open.spotify.com/embed/playlist/${active?.spotify_id}?utm_source=generator&theme=0`}
+            src={buildEmbedSrc(active)}
             width="100%"
             height={480}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
-            className="block w-full h-[380px] md:h-[480px] border-0"
+            className="block w-full h-[380px] md:h-[480px] border-0 bg-ink relative z-30"
           />
         </div>
 
-        <a
-          href={`https://open.spotify.com/playlist/${active?.spotify_id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="inline-block mt-6 font-display text-cream text-lg underline decoration-4 decoration-acid-yellow underline-offset-4 hover:text-acid-yellow transition"
-        >
-          Open in Spotify →
-        </a>
+        {active?.url && (
+          <a
+            href={active.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="inline-block mt-6 font-display text-cream text-lg underline decoration-4 decoration-acid-yellow underline-offset-4 hover:text-acid-yellow transition"
+          >
+            Open in {platformLabel(active.platform)} →
+          </a>
+        )}
       </div>
     </section>
   );
