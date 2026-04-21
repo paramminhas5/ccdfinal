@@ -489,75 +489,90 @@ const Admin = () => {
 
               {/* SEO CHECKLIST */}
               <TabsContent value="seo">
-                <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-5">
-                  <div>
-                    <h3 className="font-display text-2xl text-ink mb-1">SEO + GEO CHECKLIST</h3>
-                    <p className="text-ink/70 font-medium">
-                      Manual tasks to rank for "best parties / events in Bangalore & India" on Google and AI engines (ChatGPT, Perplexity, Gemini).
+                <div className="space-y-6">
+                  <div className="bg-cream border-4 border-ink chunk-shadow p-6">
+                    <h3 className="font-display text-2xl text-ink mb-1">SEARCH CONSOLE & ANALYTICS</h3>
+                    <p className="text-ink/70 font-medium mb-5">
+                      Paste verification tokens — they'll appear in the page &lt;head&gt; site-wide.
                     </p>
+                    <VerificationForm
+                      value={settings?.seo_verifications ?? {}}
+                      onSave={saveVerifications}
+                    />
                   </div>
 
-                  <ChecklistGroup
-                    title="SEARCH ENGINES"
-                    items={[
-                      "Submit https://catscandance.com/sitemap.xml to Google Search Console",
-                      "Submit sitemap to Bing Webmaster Tools",
-                      "Verify ownership in Google Search Console (DNS or HTML tag)",
-                      "Request indexing for /, /events, /about after each big update",
-                    ]}
-                  />
+                  <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-5">
+                    <div>
+                      <h3 className="font-display text-2xl text-ink mb-1">SEO + GEO CHECKLIST</h3>
+                      <p className="text-ink/70 font-medium">
+                        Manual tasks to rank for "best parties / events in Bangalore & India" on Google and AI engines (ChatGPT, Perplexity, Gemini).
+                      </p>
+                    </div>
 
-                  <ChecklistGroup
-                    title="GOOGLE BUSINESS / MAPS"
-                    items={[
-                      "Create / claim Google Business Profile: 'Cats Can Dance — Event Organiser, Bangalore'",
-                      "Category: Event Planner + Performing Arts Group",
-                      "Add photos from Episodes, hours, contact, website link",
-                      "Collect 5★ reviews from attendees after each Episode",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="SEARCH ENGINES"
+                      items={[
+                        { label: "Google Search Console — submit sitemap.xml", url: "https://search.google.com/search-console" },
+                        { label: "Bing Webmaster Tools — submit sitemap", url: "https://www.bing.com/webmasters" },
+                        { label: "Verify ownership in GSC (DNS or HTML tag)", url: "https://search.google.com/search-console" },
+                        { label: "Request indexing for /, /events, /about after each big update", url: "https://search.google.com/search-console" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="LOCAL LISTINGS (INDIA)"
-                    items={[
-                      "List Cats Can Dance on Insider.in",
-                      "List on BookMyShow Events",
-                      "List on Paytm Insider",
-                      "Create Resident Advisor (RA) promoter profile",
-                      "List on Skiddle (international reach)",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="GOOGLE BUSINESS / MAPS"
+                      items={[
+                        { label: "Create Google Business Profile: 'Cats Can Dance — Event Organiser, Bangalore'", url: "https://business.google.com/create" },
+                        { label: "Bing Places — claim & list", url: "https://www.bingplaces.com/" },
+                        { label: "Add photos from Episodes, hours, contact, website link", url: "https://business.google.com/" },
+                        { label: "Collect 5★ reviews from attendees after each Episode" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="BACKLINKS / PRESS"
-                    items={[
-                      "Pitch Rolling Stone India",
-                      "Pitch Wild City (wildcity.com)",
-                      "Pitch Homegrown (homegrown.co.in)",
-                      "Pitch Mid-day Bangalore + Bangalore Mirror",
-                      "Reach out to local music podcasts / Spotify editorial",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="LOCAL LISTINGS (INDIA)"
+                      items={[
+                        { label: "List on Insider.in (organiser signup)", url: "https://insider.in/organisers" },
+                        { label: "List on BookMyShow Events", url: "https://in.bookmyshow.com/list-your-show" },
+                        { label: "List on Paytm Insider", url: "https://insider.in/" },
+                        { label: "Create Resident Advisor promoter profile", url: "https://ra.co/promoters" },
+                        { label: "List on Skiddle (international reach)", url: "https://www.skiddle.com/promotioncentre/" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="CONSISTENCY (NAP)"
-                    items={[
-                      "Same Name + Address + Email across IG bio, Linktree, listings",
-                      "Use 'Cats Can Dance — Bangalore' wording consistently",
-                      "Link back to https://catscandance.com from every listing",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="BACKLINKS / PRESS"
+                      items={[
+                        { label: "Pitch Rolling Stone India", url: "https://rollingstoneindia.com/contact-us/" },
+                        { label: "Pitch Wild City", url: "https://wildcity.com/" },
+                        { label: "Pitch Homegrown", url: "https://homegrown.co.in/" },
+                        { label: "Pitch Mid-day Bangalore + Bangalore Mirror" },
+                        { label: "Reach out to local music podcasts / Spotify editorial" },
+                      ]}
+                    />
 
-                  <ChecklistGroup
-                    title="AI / GEO READY (DONE FOR YOU)"
-                    items={[
-                      "✓ /llms.txt — AI crawler brand summary",
-                      "✓ /llms-full.txt — long-form brand + events",
-                      "✓ robots.txt allows GPTBot / ClaudeBot / PerplexityBot / Google-Extended",
-                      "✓ JSON-LD: Organization, LocalBusiness, Event, FAQ, BlogPosting",
-                      "✓ Geo meta tags + Bangalore address in Footer",
-                    ]}
-                  />
+                    <LinkChecklistGroup
+                      title="CONSISTENCY (NAP)"
+                      items={[
+                        { label: "Same Name + Address + Email across IG bio, Linktree, listings" },
+                        { label: "Use 'Cats Can Dance — Bangalore' wording consistently" },
+                        { label: "Link back to https://catscandance.com from every listing" },
+                      ]}
+                    />
+
+                    <LinkChecklistGroup
+                      title="AI / GEO READY (DONE FOR YOU)"
+                      items={[
+                        { label: "✓ /llms.txt — AI crawler brand summary", url: "/llms.txt" },
+                        { label: "✓ /llms-full.txt — long-form brand + events", url: "/llms-full.txt" },
+                        { label: "✓ /brand.json — single-file brand summary for AI agents", url: "/brand.json" },
+                        { label: "✓ robots.txt allows GPTBot / ClaudeBot / PerplexityBot / Google-Extended", url: "/robots.txt" },
+                        { label: "✓ JSON-LD: Organization, LocalBusiness, MusicEvent, FAQ, BlogPosting, ItemList, BreadcrumbList" },
+                        { label: "✓ Geo meta tags + Bangalore address in Footer" },
+                        { label: "✓ Pillar blog posts targeting 'best parties Bangalore'", url: "/blog" },
+                      ]}
+                    />
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
