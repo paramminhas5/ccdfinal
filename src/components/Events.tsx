@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import RsvpDialog from "@/components/RsvpDialog";
 
 const pastEpisodes = [
-  { slug: "episode-1", date: "MAR 22", city: "BROOKLYN", venue: "House of Yes", tag: "EPISODE 01" },
+  { slug: "episode-1", date: "TBA", city: "BANGALORE", venue: "TBA", tag: "EPISODE 01" },
 ];
 
 const Events = () => {
@@ -44,7 +44,7 @@ const Events = () => {
             </div>
             <div>
               <p className="font-display text-acid-yellow text-sm mb-1">/ CITY</p>
-              <p className="font-display text-2xl">BROOKLYN</p>
+              <p className="font-display text-2xl">BANGALORE</p>
             </div>
             <div>
               <p className="font-display text-acid-yellow text-sm mb-1">/ VENUE</p>

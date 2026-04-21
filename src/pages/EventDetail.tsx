@@ -13,11 +13,13 @@ const events: Record<string, {
   blurb: string;
   lineup: string[];
   status: "upcoming" | "past";
+  heroImage?: string;
+  gallery?: string[];
 }> = {
   "episode-2": {
     title: "Episode 02",
     date: "TBA",
-    city: "Brooklyn",
+    city: "Bangalore",
     venue: "TBA",
     blurb: "Round two. Heavier low-end, deeper crates, the same energy that made Episode 01 sell out by word of mouth.",
     lineup: ["Headliner: TBA", "Support: TBA", "Surprise b2b set", "Resident: DJ Meowmix"],
@@ -25,12 +27,14 @@ const events: Record<string, {
   },
   "episode-1": {
     title: "Episode 01",
-    date: "Mar 22",
-    city: "Brooklyn",
-    venue: "House of Yes",
+    date: "TBA",
+    city: "Bangalore",
+    venue: "TBA",
     blurb: "The one that started it. Sold out, no flyer.",
-    lineup: ["Luna Beats", "Whisker Funk", "DJ Meowmix"],
+    lineup: ["TBA"],
     status: "past",
+    // heroImage: "/images/episode-1-hero.jpg",
+    // gallery: ["/images/episode-1-1.jpg", "/images/episode-1-2.jpg"],
   },
 };
 
