@@ -1,28 +1,53 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import catDancer from "@/assets/cat-dancer.svg";
 
-const About = () => (
-  <section id="about" className="relative bg-cream border-b-4 border-ink py-20 md:py-20 bg-grain overflow-hidden">
-    <div className="container grid md:grid-cols-2 gap-12 items-center">
-      <div>
-        <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ THE BRAND</p>
-        <h2 className="font-display text-5xl md:text-6xl text-ink leading-[0.9] mb-6">
-          A CULTURE FOR<br/>PEOPLE WHO MOVE.
-        </h2>
-        <p className="text-ink/80 text-lg md:text-xl font-medium mb-6 max-w-xl">
-          Cats Can Dance is dance music, pet culture and streetwear in one club.
-          Drops, parties, playlists and a community that shows up.
-        </p>
-        <Link
-          to="/about"
-          className="inline-block bg-ink text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-        >
-          READ THE STORY →
-        </Link>
+const About = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-30%", "60%"]);
+  const rot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-6, 6]);
+
+  return (
+    <section
+      ref={ref}
+      id="about"
+      className="relative bg-cream border-b-4 border-ink py-16 md:py-20 bg-grain overflow-hidden"
+    >
+      <div className="container grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+        <div>
+          <p className="font-display text-magenta text-xl sm:text-2xl md:text-3xl mb-3 md:mb-4">/ THE BRAND</p>
+          <h2 className="font-display text-ink leading-[0.95] mb-5 md:mb-6 break-words text-4xl sm:text-5xl md:text-6xl">
+            A CULTURE FOR PEOPLE WHO MOVE.
+          </h2>
+          <p className="text-ink/80 text-base sm:text-lg md:text-xl font-medium mb-6 max-w-xl">
+            Cats Can Dance is dance music, pet culture and streetwear in one club.
+            Drops, parties, playlists and a community that shows up.
+          </p>
+          <Link
+            to="/about"
+            className="inline-block bg-ink text-cream font-display text-base sm:text-lg px-5 sm:px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+          >
+            READ THE STORY →
+          </Link>
+        </div>
+
+        <div className="relative h-44 sm:h-56 md:h-72 w-full overflow-hidden">
+          <motion.img
+            src={catDancer}
+            alt=""
+            aria-hidden
+            style={{ x, rotate: rot }}
+            animate={reduce ? undefined : { y: [0, -6, 0] }}
+            transition={reduce ? undefined : { duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-1/2 -translate-y-1/2 w-2/3 sm:w-1/2 md:w-2/3 max-w-[260px] md:max-w-sm"
+          />
+        </div>
       </div>
-      <img src={catDancer} alt="" className="w-full max-w-sm mx-auto wiggle" />
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export default About;
