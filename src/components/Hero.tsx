@@ -49,6 +49,14 @@ const Hero = () => {
 
   const flankBase = "absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] wiggle w-24 md:w-40";
 
+  // Each flank cat is independently positionable — tweak `pos` per-cat to nudge.
+  const FLANK_CATS = [
+    { id: "cap",        src: catCap,        pos: "top-[28%] left-[6%] md:top-[26%] md:left-[14%]",   x: tlX, rot: tlRot },
+    { id: "hpDance",    src: catHpDance,    pos: "top-[28%] right-[6%] md:top-[26%] md:right-[14%]", x: trX, rot: trRot },
+    { id: "headphones", src: catHeadphones, pos: "top-[52%] left-[6%] md:top-[54%] md:left-[14%]",   x: blX, rot: blRot },
+    { id: "handstand",  src: catHandstand,  pos: "top-[52%] right-[6%] md:top-[54%] md:right-[14%]", x: brX, rot: brRot },
+  ];
+
   return (
     <>
       <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
@@ -94,39 +102,17 @@ const Hero = () => {
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
         />
 
-        {/* Four flank cats bracketing the wordmark — same size on all breakpoints */}
-        {/* Top-left: cap */}
-        <motion.img
-          src={catCap}
-          alt=""
-          aria-hidden
-          style={{ x: tlX, rotate: tlRot, opacity: flankOpacity, willChange: "transform" }}
-          className={`${flankBase} top-[18%] left-[2%] md:top-[16%] md:left-[8%]`}
-        />
-        {/* Top-right: headphones dance */}
-        <motion.img
-          src={catHpDance}
-          alt=""
-          aria-hidden
-          style={{ x: trX, rotate: trRot, opacity: flankOpacity, willChange: "transform" }}
-          className={`${flankBase} top-[18%] right-[2%] md:top-[16%] md:right-[8%]`}
-        />
-        {/* Bottom-left: headphones */}
-        <motion.img
-          src={catHeadphones}
-          alt=""
-          aria-hidden
-          style={{ x: blX, rotate: blRot, opacity: flankOpacity, willChange: "transform" }}
-          className={`${flankBase} top-[48%] left-[2%] md:top-[50%] md:left-[8%]`}
-        />
-        {/* Bottom-right: handstand */}
-        <motion.img
-          src={catHandstand}
-          alt=""
-          aria-hidden
-          style={{ x: brX, rotate: brRot, opacity: flankOpacity, willChange: "transform" }}
-          className={`${flankBase} top-[48%] right-[2%] md:top-[50%] md:right-[8%]`}
-        />
+        {/* Four flank cats bracketing the wordmark — each independently positionable via FLANK_CATS */}
+        {FLANK_CATS.map((c) => (
+          <motion.img
+            key={c.id}
+            src={c.src}
+            alt=""
+            aria-hidden
+            style={{ x: c.x, rotate: c.rot, opacity: flankOpacity, willChange: "transform" }}
+            className={`${flankBase} ${c.pos}`}
+          />
+        ))}
 
         {/* Big bottom side cats */}
         <motion.div
