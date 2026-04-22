@@ -510,6 +510,11 @@ const Admin = () => {
                 </div>
               </TabsContent>
 
+              {/* BLOG */}
+              <TabsContent value="blog">
+                <BlogTab />
+              </TabsContent>
+
               {/* SEO CHECKLIST */}
               <TabsContent value="seo">
                 <div className="space-y-6">
