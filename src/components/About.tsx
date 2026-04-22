@@ -7,14 +7,14 @@ const About = () => {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-10%", "40%"]);
-  const rot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-6, 6]);
+  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-5%", "25%"]);
+  const rot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-3, 3]);
 
   return (
     <section
       ref={ref}
       id="about"
-      className="relative bg-cream border-b-4 border-ink py-16 md:py-20 bg-grain overflow-hidden"
+      className="relative bg-cream border-b-4 border-ink py-16 md:py-20 bg-grain overflow-x-clip"
     >
       <div className="container grid md:grid-cols-2 gap-10 md:gap-12 items-center">
         <div>
@@ -34,7 +34,7 @@ const About = () => {
           </Link>
         </div>
 
-        <div className="relative h-56 sm:h-64 md:h-72 w-full overflow-hidden">
+        <div className="relative h-56 sm:h-64 md:h-72 w-full overflow-visible pointer-events-none">
           <motion.img
             src={catDancer}
             alt=""
@@ -42,7 +42,7 @@ const About = () => {
             style={{ x, rotate: rot }}
             animate={reduce ? undefined : { y: [0, -6, 0] }}
             transition={reduce ? undefined : { duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 -translate-y-1/2 w-1/2 sm:w-1/2 md:w-2/3 max-w-[240px] md:max-w-sm"
+            className="absolute top-1/2 -translate-y-1/2 left-2 w-2/5 sm:w-1/2 md:w-2/3 max-w-[160px] md:max-w-sm pointer-events-none"
           />
         </div>
       </div>

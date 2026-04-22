@@ -29,15 +29,15 @@ const Footer = () => {
     <section className="relative bg-ink text-cream py-24 md:py-32 overflow-hidden">
       <div
         aria-hidden="true"
-        className="absolute top-10 right-10 w-24 h-24 rounded-full bg-cream border-4 border-ink chunk-shadow grid place-items-center transition-transform duration-1000 hover:rotate-[-360deg]"
+        className="absolute top-8 right-8 w-14 h-14 rounded-full bg-cream border-2 border-ink chunk-shadow grid place-items-center transition-transform duration-700 hover:rotate-[-360deg]"
       >
-        <img src={ccdLogo} alt="" loading="lazy" className="w-16" />
+        <img src={ccdLogo} alt="" loading="lazy" className="w-9" />
       </div>
       <div
         aria-hidden="true"
-        className="absolute bottom-20 left-10 w-20 h-20 rounded-full bg-cream border-4 border-ink chunk-shadow grid place-items-center transition-transform duration-1000 hover:rotate-[-360deg]"
+        className="absolute bottom-16 left-8 w-12 h-12 rounded-full bg-cream border-2 border-ink chunk-shadow grid place-items-center transition-transform duration-700 hover:rotate-[-360deg]"
       >
-        <img src={ccdLogo} alt="" loading="lazy" className="w-12" />
+        <img src={ccdLogo} alt="" loading="lazy" className="w-7" />
       </div>
 
       <div className="container">
@@ -82,7 +82,7 @@ const Footer = () => {
         </div>
 
         <p className="mt-16 text-cream/70 text-sm font-display text-center tracking-wide">
-          BANGALORE · KARNATAKA · INDIA
+          BANGALORE
         </p>
         <p className="mt-2 text-cream/50 text-sm font-medium text-center">© Cats Can Dance — so can you.</p>
       </div>

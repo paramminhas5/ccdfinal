@@ -1,12 +1,17 @@
 import { useParams, Link, Navigate } from "react-router-dom";
+import { useSyncExternalStore } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BlogCover from "@/components/BlogCover";
-import { getPost, getRelatedPosts } from "@/content/posts";
+import { getPost, getRelatedPosts, subscribePosts, getAllPosts } from "@/content/posts";
+import { useDynamicPosts } from "@/hooks/useDynamicPosts";
 
 const BlogPost = () => {
+  useDynamicPosts();
+  // Re-render when dynamic posts arrive
+  useSyncExternalStore(subscribePosts, getAllPosts, getAllPosts);
   const { slug = "" } = useParams();
   const post = getPost(slug);
 
@@ -56,14 +61,14 @@ const BlogPost = () => {
                 { label: post.title },
               ]}
             />
-            <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-4">{post.tag}</span>
+            <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-4">{post.category || post.tag}</span>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl text-ink mb-4 leading-[0.95] break-words">{post.title}</h1>
             <p className="font-display text-ink/70 text-sm mb-1">
               {post.date} · {post.author}
             </p>
             <p className="font-display text-ink/50 text-xs mb-8 italic">Honest, by humans, from Bangalore.</p>
             <div className="aspect-video w-full border-4 border-ink chunk-shadow-lg mb-10 overflow-hidden">
-              <BlogCover title={post.title} tag={post.tag} kicker={post.kicker} issue={post.issue} color={post.coverColor} size="lg" className="border-0" />
+              <BlogCover title={post.title} coverTitle={post.coverTitle} category={post.category} tag={post.tag} issue={post.issue} color={post.coverColor} size="lg" className="border-0" />
             </div>
 
             {post.tldr && post.tldr.length > 0 && (
