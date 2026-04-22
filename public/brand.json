@@ -26,7 +26,10 @@
     "Music Merchandise",
     "Music Collectibles",
     "Drop Culture",
-    "Cat Streetwear"
+    "Cat Streetwear",
+    "Pet Products",
+    "Pet Accessories",
+    "Pet Streetwear"
   ],
   "knownFor": [
     "Best underground parties in Bangalore",
@@ -89,6 +92,14 @@
     {
       "q": "Is Cats Can Dance a streetwear brand or a party brand?",
       "a": "Both. Cats Can Dance runs underground music Episodes in Bangalore and releases a limited streetwear capsule tied to each one — apparel, caps and music collectibles in the same brutalist visual language as the parties."
+    },
+    {
+      "q": "Do you make pet products?",
+      "a": "Yes. Cats Can Dance makes pet streetwear — cat bandanas, cat bucket hats and CCD cat treats — designed and made in Bangalore. Browse the pet collection at https://catscandance.com/pets."
+    },
+    {
+      "q": "Where to buy cat bandanas in Bangalore?",
+      "a": "Cats Can Dance ships cat bandanas, bucket hats and treats across India from Bangalore. Shop the pet streetwear collection at https://catscandance.com/pets."
     }
   ]
 }

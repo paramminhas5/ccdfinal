@@ -7,8 +7,17 @@ const About = () => {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-5%", "25%"]);
-  const rot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-3, 3]);
+
+  // Mobile uses a tighter range; we let CSS hide one of these motion images per breakpoint
+  const xMobile = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-20%", "120%"]);
+  const xDesktop = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-10%", "150%"]);
+  const rot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-6, 6]);
+  // Step-y bob synced to scroll — looks like walking
+  const bob = useTransform(
+    scrollYProgress,
+    [0, 0.25, 0.5, 0.75, 1],
+    reduce ? [0, 0, 0, 0, 0] : [0, -8, 0, -8, 0]
+  );
 
   return (
     <section
@@ -34,15 +43,22 @@ const About = () => {
           </Link>
         </div>
 
-        <div className="relative h-56 sm:h-64 md:h-72 w-full overflow-visible pointer-events-none">
+        <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-visible pointer-events-none">
+          {/* Mobile cat (smaller range) */}
           <motion.img
             src={catDancer}
             alt=""
             aria-hidden
-            style={{ x, rotate: rot }}
-            animate={reduce ? undefined : { y: [0, -6, 0] }}
-            transition={reduce ? undefined : { duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 -translate-y-1/2 left-2 w-2/5 sm:w-1/2 md:w-2/3 max-w-[160px] md:max-w-sm pointer-events-none"
+            style={{ x: xMobile, y: bob, rotate: rot }}
+            className="md:hidden absolute top-1/2 -translate-y-1/2 left-0 w-3/4 max-w-[220px] pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          />
+          {/* Desktop cat (wider range, larger) */}
+          <motion.img
+            src={catDancer}
+            alt=""
+            aria-hidden
+            style={{ x: xDesktop, y: bob, rotate: rot }}
+            className="hidden md:block absolute top-1/2 -translate-y-1/2 left-0 w-2/3 max-w-sm pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))]"
           />
         </div>
       </div>

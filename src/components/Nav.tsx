@@ -10,6 +10,8 @@ import ccdLogo from "@/assets/ccd-logo.png";
 const links = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
+  { to: "/shop", label: "Shop" },
+  { to: "/pets", label: "Pets" },
   { to: "/media", label: "Media" },
   { to: "/for-venues", label: "Venue Partners" },
   { to: "/for-artists", label: "For Artists" },

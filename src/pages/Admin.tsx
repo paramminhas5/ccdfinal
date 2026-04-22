@@ -3,7 +3,29 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Nav from "@/components/Nav";
 import SEO from "@/components/SEO";
+import BlogCover from "@/components/BlogCover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type Category = "GUIDES" | "CULTURE" | "ARTISTS" | "JOURNAL" | "DROPS" | "PETS";
+type DraftPost = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: Category;
+  coverTitle: string;
+  coverColor: string;
+  tag: string;
+  tldr: string[];
+  quickPicks: { title: string; items: string[] };
+  pullQuote: string;
+  whatWedSkip: string;
+  body: string[];
+  seoTitle: string;
+  metaDescription: string;
+  dateISO: string;
+  date?: string;
+  author?: string;
+};
 
 type Signup = { id: string; email: string; source: string | null; created_at: string };
 type Platform = "spotify" | "youtube" | "soundcloud";
@@ -328,6 +350,7 @@ const Admin = () => {
                 <TabsTrigger value="playlists" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PLAYLISTS</TabsTrigger>
                 <TabsTrigger value="events" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENTS</TabsTrigger>
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
+                <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
               </TabsList>
 
@@ -485,6 +508,11 @@ const Admin = () => {
                     <p className="text-ink/60 py-8 text-center">No messages.</p>
                   )}
                 </div>
+              </TabsContent>
+
+              {/* BLOG */}
+              <TabsContent value="blog">
+                <BlogTab />
               </TabsContent>
 
               {/* SEO CHECKLIST */}

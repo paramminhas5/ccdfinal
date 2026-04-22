@@ -14,6 +14,7 @@ import Admin from "./pages/Admin.tsx";
 import Events from "./pages/Events.tsx";
 import EventDetail from "./pages/EventDetail.tsx";
 import Shop from "./pages/Shop.tsx";
+import Pets from "./pages/Pets.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
 import Blog from "./pages/Blog.tsx";
@@ -53,6 +54,7 @@ const App = () => (
                 <Route path="/events" element={<Events />} />
                 <Route path="/events/:slug" element={<EventDetail />} />
                 <Route path="/shop" element={<Shop />} />
+                <Route path="/pets" element={<Pets />} />
                 <Route path="/product/:handle" element={<ProductDetail />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
