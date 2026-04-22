@@ -19,6 +19,7 @@ const Hero = () => {
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
 
+  // Big bottom side cats (existing)
   const leftX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-180%"]);
   const leftY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-30%"]);
   const leftRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, -45]);
@@ -28,13 +29,25 @@ const Hero = () => {
 
   const djY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "18%"]);
 
-  const raverX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-40%"]);
-  const raverRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, -15]);
-  const streetX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "40%"]);
-  const streetRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 15]);
+  // Four flank cats around the wordmark — drift outward + fade
+  const tlX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-120%"]);
+  const tlRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-12, -40]);
+  const trX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "120%"]);
+  const trRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [12, 40]);
+  const blX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-120%"]);
+  const blRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-12, -40]);
+  const brX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "120%"]);
+  const brRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [12, 40]);
+  const flankOpacity = useTransform(scrollYProgress, [0, 0.6], reduce ? [1, 1] : [1, 0]);
+
+  // Headline scales up as cats fly out
+  const titleScale = useTransform(scrollYProgress, [0, 1], reduce ? [1, 1] : [1, 1.25]);
+  const titleY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-6%"]);
 
   const starRotA = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 360]);
   const starRotB = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, -360]);
+
+  const flankBase = "absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] wiggle w-24 md:w-40";
 
   return (
     <>
@@ -58,9 +71,12 @@ const Hero = () => {
         </motion.div>
 
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 text-center pointer-events-none">
-          <h1 className="font-display text-[18vw] md:text-[14vw] leading-[0.85] text-cream drop-shadow-[6px_6px_0_hsl(var(--ink))] -mt-4 md:-mt-6">
+          <motion.h1
+            style={{ scale: titleScale, y: titleY, transformOrigin: "center center", willChange: "transform" }}
+            className="font-display text-[18vw] md:text-[14vw] leading-[0.85] text-cream drop-shadow-[6px_6px_0_hsl(var(--ink))] -mt-4 md:-mt-6"
+          >
             CATS<br/>CAN<br/>DANCE
-          </h1>
+          </motion.h1>
           <p className="sr-only">
             Cats Can Dance is a Bangalore-based event organiser hosting the best underground dance music parties and electronic events in Bangalore, India.
           </p>
@@ -78,37 +94,41 @@ const Hero = () => {
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
         />
 
-        {/* Flanking cats tucked into the wordmark edges */}
+        {/* Four flank cats bracketing the wordmark — same size on all breakpoints */}
+        {/* Top-left: cap */}
         <motion.img
           src={catCap}
           alt=""
           aria-hidden
-          style={{ x: raverX, rotate: raverRot, willChange: "transform" }}
-          className="absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-[34%] left-[-4%] w-28 -rotate-12 md:top-[28%] md:left-[6%] md:w-44 wiggle"
+          style={{ x: tlX, rotate: tlRot, opacity: flankOpacity, willChange: "transform" }}
+          className={`${flankBase} top-[18%] left-[2%] md:top-[16%] md:left-[8%]`}
         />
+        {/* Top-right: headphones dance */}
         <motion.img
           src={catHpDance}
           alt=""
           aria-hidden
-          style={{ x: streetX, rotate: streetRot, willChange: "transform" }}
-          className="absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-[44%] right-[-4%] w-28 rotate-12 md:top-[36%] md:right-[6%] md:w-44 wiggle"
+          style={{ x: trX, rotate: trRot, opacity: flankOpacity, willChange: "transform" }}
+          className={`${flankBase} top-[18%] right-[2%] md:top-[16%] md:right-[8%]`}
         />
-
-        {/* Mobile-only flanking cats around DJ */}
-        <img
+        {/* Bottom-left: headphones */}
+        <motion.img
           src={catHeadphones}
           alt=""
           aria-hidden
-          className="md:hidden absolute z-30 w-16 left-2 bottom-[28%] -rotate-12 wiggle drop-shadow-[6px_6px_0_hsl(var(--ink))] pointer-events-none"
+          style={{ x: blX, rotate: blRot, opacity: flankOpacity, willChange: "transform" }}
+          className={`${flankBase} top-[48%] left-[2%] md:top-[50%] md:left-[8%]`}
         />
-        <img
+        {/* Bottom-right: handstand */}
+        <motion.img
           src={catHandstand}
           alt=""
           aria-hidden
-          className="md:hidden absolute z-30 w-16 right-2 bottom-[28%] rotate-12 wiggle drop-shadow-[6px_6px_0_hsl(var(--ink))] pointer-events-none"
+          style={{ x: brX, rotate: brRot, opacity: flankOpacity, willChange: "transform" }}
+          className={`${flankBase} top-[48%] right-[2%] md:top-[50%] md:right-[8%]`}
         />
 
-        {/* Side cats — desktop original spot, bigger on mobile */}
+        {/* Big bottom side cats */}
         <motion.div
           style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
           className="absolute bottom-28 md:bottom-4 left-1 md:left-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
@@ -122,7 +142,7 @@ const Hero = () => {
           <img src={catRight} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
         </motion.div>
 
-        {/* Desktop buttons (absolute) */}
+        {/* Desktop buttons */}
         <div className="hidden md:flex absolute inset-x-0 bottom-16 z-50 flex-row gap-3 justify-center px-4">
           <a href="#early-access" className="bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-center">
             JOIN THE PACK
@@ -132,7 +152,7 @@ const Hero = () => {
           </a>
         </div>
 
-        {/* Mobile buttons (absolute, above DJ feet, below DJ image visually since DJ raised) */}
+        {/* Mobile buttons */}
         <div className="md:hidden absolute inset-x-0 bottom-6 z-50 flex flex-col gap-3 justify-center px-6">
           <a href="#early-access" className="bg-magenta text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow text-center">
             JOIN THE PACK
