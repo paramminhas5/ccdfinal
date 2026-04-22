@@ -7,7 +7,7 @@ const About = () => {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-30%", "60%"]);
+  const x = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-10%", "40%"]);
   const rot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [-6, 6]);
 
   return (
@@ -19,7 +19,7 @@ const About = () => {
       <div className="container grid md:grid-cols-2 gap-10 md:gap-12 items-center">
         <div>
           <p className="font-display text-magenta text-xl sm:text-2xl md:text-3xl mb-3 md:mb-4">/ THE BRAND</p>
-          <h2 className="font-display text-ink leading-[0.95] mb-5 md:mb-6 break-words text-4xl sm:text-5xl md:text-6xl">
+          <h2 className="font-display text-ink leading-[0.95] mb-5 md:mb-6 break-words text-[2rem] sm:text-5xl md:text-6xl">
             A CULTURE FOR PEOPLE WHO MOVE.
           </h2>
           <p className="text-ink/80 text-base sm:text-lg md:text-xl font-medium mb-6 max-w-xl">
@@ -34,7 +34,7 @@ const About = () => {
           </Link>
         </div>
 
-        <div className="relative h-44 sm:h-56 md:h-72 w-full overflow-hidden">
+        <div className="relative h-56 sm:h-64 md:h-72 w-full overflow-hidden">
           <motion.img
             src={catDancer}
             alt=""
@@ -42,7 +42,7 @@ const About = () => {
             style={{ x, rotate: rot }}
             animate={reduce ? undefined : { y: [0, -6, 0] }}
             transition={reduce ? undefined : { duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 -translate-y-1/2 w-2/3 sm:w-1/2 md:w-2/3 max-w-[260px] md:max-w-sm"
+            className="absolute top-1/2 -translate-y-1/2 w-1/2 sm:w-1/2 md:w-2/3 max-w-[240px] md:max-w-sm"
           />
         </div>
       </div>

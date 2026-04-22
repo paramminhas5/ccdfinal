@@ -136,9 +136,16 @@ const EventDetail = () => {
         </section>
 
         {event.poster_url && (() => {
-          const src = event.poster_url!.startsWith("http") || event.poster_url!.startsWith("/")
-            ? event.poster_url!
-            : `/${event.poster_url}`;
+          const raw = event.poster_url!.trim();
+          let src = raw;
+          if (!raw.startsWith("http") && !raw.startsWith("/")) {
+            try {
+              const { data } = supabase.storage.from("event-posters").getPublicUrl(raw);
+              src = data?.publicUrl ?? `/${raw}`;
+            } catch {
+              src = `/${raw}`;
+            }
+          }
           return (
             <div className="container pt-12">
               <img
@@ -146,8 +153,21 @@ const EventDetail = () => {
                 alt={`${event.title} — Cats Can Dance dance music event in ${event.city || "Bangalore"}`}
                 loading="lazy"
                 decoding="async"
+                referrerPolicy="no-referrer"
                 className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
-                onError={(ev) => { (ev.currentTarget as HTMLImageElement).style.display = "none"; }}
+                onError={(ev) => {
+                  const img = ev.currentTarget as HTMLImageElement;
+                  if (import.meta.env.DEV) console.warn("[poster] failed", src);
+                  img.style.display = "none";
+                  const parent = img.parentElement;
+                  if (parent && !parent.querySelector("[data-poster-fallback]")) {
+                    const div = document.createElement("div");
+                    div.setAttribute("data-poster-fallback", "");
+                    div.className = "w-full aspect-video grid place-items-center bg-lime text-ink font-display text-4xl border-4 border-ink chunk-shadow-lg text-center px-6";
+                    div.textContent = `★ ${event.title}`;
+                    parent.appendChild(div);
+                  }
+                }}
               />
             </div>
           );

@@ -27,22 +27,18 @@ const groups = [
 const Footer = () => {
   return (
     <section className="relative bg-ink text-cream py-24 md:py-32 overflow-hidden">
-      <img
-        src={ccdLogo}
-        alt=""
+      <div
         aria-hidden="true"
-        loading="lazy"
-        style={{ filter: "invert(1) brightness(1.2)" }}
-        className="absolute top-10 right-10 w-24 transition-transform duration-1000 hover:rotate-[360deg]"
-      />
-      <img
-        src={ccdLogo}
-        alt=""
+        className="absolute top-10 right-10 w-24 h-24 rounded-full bg-cream border-4 border-ink chunk-shadow grid place-items-center transition-transform duration-1000 hover:rotate-[-360deg]"
+      >
+        <img src={ccdLogo} alt="" loading="lazy" className="w-16" />
+      </div>
+      <div
         aria-hidden="true"
-        loading="lazy"
-        style={{ filter: "invert(1) brightness(1.2)" }}
-        className="absolute bottom-20 left-10 w-20 transition-transform duration-1000 hover:rotate-[360deg]"
-      />
+        className="absolute bottom-20 left-10 w-20 h-20 rounded-full bg-cream border-4 border-ink chunk-shadow grid place-items-center transition-transform duration-1000 hover:rotate-[-360deg]"
+      >
+        <img src={ccdLogo} alt="" loading="lazy" className="w-12" />
+      </div>
 
       <div className="container">
         <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-6 text-center">/ JOIN THE PARTY</p>

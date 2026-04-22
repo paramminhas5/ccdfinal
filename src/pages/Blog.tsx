@@ -51,7 +51,7 @@ const Blog = () => {
                 className="bg-cream border-4 border-ink chunk-shadow flex flex-col hover:-translate-y-1 hover:translate-x-1 transition-transform overflow-hidden"
               >
                 <div className="aspect-video border-b-4 border-ink overflow-hidden">
-                  <BlogCover title={p.title} tag={p.tag} color={p.coverColor} className="border-0" />
+                  <BlogCover title={p.title} tag={p.tag} kicker={p.kicker} issue={p.issue} color={p.coverColor} className="border-0" />
                 </div>
                 <div className="p-5 sm:p-6">
                   <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-3">{p.tag}</span>

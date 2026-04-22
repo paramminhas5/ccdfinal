@@ -36,7 +36,7 @@ const Media = () => (
             className="bg-cream border-4 border-ink chunk-shadow flex flex-col hover:-translate-y-1 hover:translate-x-1 transition-transform"
           >
             <div className="aspect-video border-b-4 border-ink overflow-hidden">
-              <BlogCover title={p.title} tag={p.tag} color={p.coverColor} size="sm" className="border-0" />
+              <BlogCover title={p.title} tag={p.tag} kicker={p.kicker} issue={p.issue} color={p.coverColor} size="sm" className="border-0" />
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-3">

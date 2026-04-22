@@ -18,6 +18,21 @@ type EventRow = {
   sort_order: number;
 };
 
+const resolvePosterUrl = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  if (v.startsWith("/")) return v;
+  // Treat as Supabase Storage object in the `event-posters` bucket
+  try {
+    const { data } = supabase.storage.from("event-posters").getPublicUrl(v);
+    return data?.publicUrl ?? `/${v}`;
+  } catch {
+    return `/${v}`;
+  }
+};
+
 const Events = () => {
   const [rsvpOpen, setRsvpOpen] = useState(false);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -98,8 +113,8 @@ const Events = () => {
             <p className="font-display text-ink text-xl mb-4">/ PAST EPISODES</p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {past.map((e) => {
-                const src = e.poster_url ? (e.poster_url.startsWith("http") || e.poster_url.startsWith("/") ? e.poster_url : `/${e.poster_url}`) : null;
-                const isGif = !!src && src.toLowerCase().endsWith(".gif");
+                const src = resolvePosterUrl(e.poster_url);
+                const isGif = !!src && src.toLowerCase().includes(".gif");
                 return (
                 <Link
                   key={e.slug}
@@ -113,11 +128,24 @@ const Events = () => {
                         alt={`${e.title} poster`}
                         loading="lazy"
                         decoding="async"
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
-                        onError={(ev) => { (ev.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        onError={(ev) => {
+                          const img = ev.currentTarget as HTMLImageElement;
+                          if (import.meta.env.DEV) console.warn("[poster] failed", src);
+                          img.style.display = "none";
+                          const parent = img.parentElement;
+                          if (parent && !parent.querySelector("[data-poster-fallback]")) {
+                            const div = document.createElement("div");
+                            div.setAttribute("data-poster-fallback", "");
+                            div.className = "w-full h-full grid place-items-center bg-lime text-ink font-display text-2xl text-center px-4";
+                            div.innerHTML = `★ ${e.title}`;
+                            parent.appendChild(div);
+                          }
+                        }}
                       />
                     ) : (
-                      <div className="w-full h-full grid place-items-center font-display text-cream text-3xl">★</div>
+                      <div className="w-full h-full grid place-items-center bg-lime text-ink font-display text-3xl">★ {e.title}</div>
                     )}
                     {isGif && (
                       <span className="absolute top-2 right-2 bg-acid-yellow text-ink text-[10px] font-bold px-2 py-0.5 border-2 border-ink uppercase">GIF</span>
