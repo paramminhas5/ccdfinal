@@ -482,8 +482,7 @@ export const getAllPosts = (): Post[] => {
 export const posts: Post[] = new Proxy([] as Post[], {
   get(_t, prop) {
     const all = getAllPosts();
-    // @ts-expect-error — index access by any string/number
-    return all[prop];
+    return (all as any)[prop];
   },
   has(_t, prop) {
     const all = getAllPosts();

@@ -63,7 +63,7 @@ const BlogPost = () => {
             </p>
             <p className="font-display text-ink/50 text-xs mb-8 italic">Honest, by humans, from Bangalore.</p>
             <div className="aspect-video w-full border-4 border-ink chunk-shadow-lg mb-10 overflow-hidden">
-              <BlogCover title={post.title} tag={post.tag} kicker={post.kicker} issue={post.issue} color={post.coverColor} size="lg" className="border-0" />
+              <BlogCover title={post.title} coverTitle={post.coverTitle} category={post.category} tag={post.tag} issue={post.issue} color={post.coverColor} size="lg" className="border-0" />
             </div>
 
             {post.tldr && post.tldr.length > 0 && (
