@@ -66,8 +66,8 @@ const revenue = ["Ticket sales", "Product drops", "Membership", "Brand partnersh
 
 const What = () => {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const titleX = useTransform(scrollYProgress, [0, 1], [-80, 80]);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const titleX = useTransform(scrollYProgress, [0, 1], [0, 120]);
   return (
     <section ref={ref} id="what" className="relative bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain overflow-hidden">
       <div className="container">

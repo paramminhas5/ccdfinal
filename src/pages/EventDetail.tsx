@@ -7,6 +7,10 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import RsvpDialog from "@/components/RsvpDialog";
 import { supabase } from "@/integrations/supabase/client";
 
+const RECAP_MEDIA: Record<string, string> = {
+  "episode-1": "/episodes/episode-01.gif",
+};
+
 type EventRow = {
   slug: string;
   title: string;
@@ -172,6 +176,19 @@ const EventDetail = () => {
             </div>
           );
         })()}
+
+        {event.status === "past" && RECAP_MEDIA[slug] && (
+          <div className="container pt-12">
+            <h2 className="font-display text-3xl md:text-4xl text-ink mb-4">/ THE NIGHT, IN MOTION</h2>
+            <img
+              src={RECAP_MEDIA[slug]}
+              alt={`${event.title} recap`}
+              loading="lazy"
+              decoding="async"
+              className="w-full max-h-[600px] object-contain bg-ink border-4 border-ink chunk-shadow-lg"
+            />
+          </div>
+        )}
 
         <section className="container py-16 md:py-20 grid md:grid-cols-2 gap-10 max-w-5xl">
           <div>
