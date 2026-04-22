@@ -10,6 +10,7 @@ const DiscoButton = ({ compact = false }: { compact?: boolean }) => {
     if (!disco) playDiscoNow();
     else stopDiscoNow();
     toggle();
+    try { window.dispatchEvent(new Event("disco:toggle")); } catch {}
   };
 
   if (compact) {
