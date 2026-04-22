@@ -3,6 +3,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import BlogCover from "@/components/BlogCover";
 import { getPost, getRelatedPosts } from "@/content/posts";
 
 const BlogPost = () => {
@@ -18,7 +19,7 @@ const BlogPost = () => {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
-    image: [post.cover],
+    image: ["https://catscandance.com/og-image.png"],
     datePublished: post.date,
     dateModified: post.date,
     inLanguage: "en-IN",
@@ -41,13 +42,12 @@ const BlogPost = () => {
         title={`${post.title} — Cats Can Dance`}
         description={post.excerpt}
         path={`/blog/${post.slug}`}
-        image={post.cover}
         type="article"
         jsonLd={articleLd}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
-        <article className="pt-32 pb-16">
+        <article className="pt-28 md:pt-32 pb-16">
           <div className="container max-w-3xl">
             <Breadcrumbs
               items={[
@@ -57,21 +57,16 @@ const BlogPost = () => {
               ]}
             />
             <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-4">{post.tag}</span>
-            <h1 className="font-display text-5xl md:text-7xl text-ink mb-4 leading-[0.9]">{post.title}</h1>
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl text-ink mb-4 leading-[0.95] break-words">{post.title}</h1>
             <p className="font-display text-ink/70 text-sm mb-8">
               {post.date} · {post.author}
             </p>
-            <img
-              src={post.cover}
-              alt={`${post.title} — Cats Can Dance, Bangalore underground party & streetwear brand`}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              className="w-full max-h-[520px] object-cover border-4 border-ink chunk-shadow-lg mb-10"
-            />
+            <div className="aspect-video w-full border-4 border-ink chunk-shadow-lg mb-10 overflow-hidden">
+              <BlogCover title={post.title} tag={post.tag} color={post.coverColor} size="lg" className="border-0" />
+            </div>
             <div className="space-y-6">
               {post.body.map((p, i) => (
-                <p key={i} className="text-ink/85 font-medium text-lg leading-relaxed">
+                <p key={i} className="text-ink/85 font-medium text-base sm:text-lg leading-relaxed">
                   {p}
                 </p>
               ))}
@@ -79,7 +74,7 @@ const BlogPost = () => {
 
             {related.length > 0 && (
               <aside className="mt-16 pt-10 border-t-4 border-ink">
-                <h2 className="font-display text-3xl text-ink mb-6">/ READ NEXT</h2>
+                <h2 className="font-display text-2xl sm:text-3xl text-ink mb-6">/ READ NEXT</h2>
                 <ul className="grid gap-4 sm:grid-cols-3">
                   {related.map((r) => (
                     <li key={r.slug}>

@@ -97,15 +97,30 @@ const Events = () => {
           <div>
             <p className="font-display text-ink text-xl mb-4">/ PAST EPISODES</p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {past.map((e) => (
+              {past.map((e) => {
+                const src = e.poster_url ? (e.poster_url.startsWith("http") || e.poster_url.startsWith("/") ? e.poster_url : `/${e.poster_url}`) : null;
+                const isGif = !!src && src.toLowerCase().endsWith(".gif");
+                return (
                 <Link
                   key={e.slug}
                   to={`/events/${e.slug}`}
                   className="bg-cream border-4 border-ink chunk-shadow overflow-hidden hover:-translate-y-1 hover:translate-x-1 transition-transform block"
                 >
-                  <div className="aspect-video bg-ink border-b-4 border-ink overflow-hidden">
-                    {e.poster_url && (
-                      <img src={e.poster_url} alt={`${e.title} poster`} className="w-full h-full object-cover" loading="lazy" />
+                  <div className="relative aspect-video bg-ink border-b-4 border-ink overflow-hidden">
+                    {src ? (
+                      <img
+                        src={src}
+                        alt={`${e.title} poster`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                        onError={(ev) => { (ev.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full grid place-items-center font-display text-cream text-3xl">★</div>
+                    )}
+                    {isGif && (
+                      <span className="absolute top-2 right-2 bg-acid-yellow text-ink text-[10px] font-bold px-2 py-0.5 border-2 border-ink uppercase">GIF</span>
                     )}
                   </div>
                   <div className="p-5">
@@ -114,7 +129,8 @@ const Events = () => {
                     <p className="text-ink/70 font-medium text-sm">{e.venue} · {e.date}</p>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
             <Link
               to="/events"

@@ -5,7 +5,7 @@ import Marquee from "@/components/Marquee";
 import About from "@/components/About";
 import Playlist from "@/components/Playlist";
 import Events from "@/components/Events";
-import Media from "@/components/Media";
+// Media moved to its own page at /media
 import Drops from "@/components/Drops";
 import Instagram from "@/components/Instagram";
 import Videos from "@/components/Videos";
@@ -50,7 +50,6 @@ const Index = () => {
         <SectionReveal><Playlist /></SectionReveal>
         <SectionReveal><Events /></SectionReveal>
         <Marquee bg="bg-orange" />
-        <SectionReveal><Media /></SectionReveal>
         <SectionReveal><Drops /></SectionReveal>
         <SectionReveal><Instagram /></SectionReveal>
         <SectionReveal><Videos /></SectionReveal>

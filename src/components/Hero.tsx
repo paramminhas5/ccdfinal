@@ -50,6 +50,20 @@ const Hero = () => {
           <Star />
         </motion.div>
 
+        {/* Cohesive cats sitting just under the stars */}
+        <img
+          src={catHeadphones}
+          alt=""
+          aria-hidden
+          className="absolute z-10 top-[180px] left-3 md:top-[230px] md:left-24 w-12 md:w-20 -rotate-6 wiggle drop-shadow-[4px_4px_0_hsl(var(--ink))] pointer-events-none"
+        />
+        <img
+          src={catHandstand}
+          alt=""
+          aria-hidden
+          className="absolute z-10 top-[200px] right-3 md:top-[260px] md:right-28 w-12 md:w-20 rotate-6 wiggle drop-shadow-[4px_4px_0_hsl(var(--ink))] pointer-events-none"
+        />
+
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 text-center pointer-events-none">
           <h1 className="font-display text-[18vw] md:text-[14vw] leading-[0.85] text-cream drop-shadow-[6px_6px_0_hsl(var(--ink))] -mt-4 md:-mt-6">
             CATS<br/>CAN<br/>DANCE

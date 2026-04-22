@@ -10,13 +10,13 @@ const groups = [
       { to: "/events", label: "Events" },
       { to: "/shop", label: "Shop" },
       { to: "/blog", label: "Blog" },
-      { to: "/#playlist", label: "Playlist" },
+      { to: "/media", label: "Media" },
     ],
   },
   {
     title: "PARTNERS",
     links: [
-      { to: "/for-venues", label: "For Venues" },
+      { to: "/for-venues", label: "Venue Partners" },
       { to: "/for-artists", label: "For Artists" },
       { to: "/for-investors", label: "For Investors" },
       { to: "/press", label: "Press Kit" },

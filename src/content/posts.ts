@@ -1,20 +1,24 @@
 // Edit this file to add/edit blog posts. Each post supports a slug, title,
-// excerpt, cover image, tag, date, author, and a body (array of paragraph strings
-// or simple HTML strings — rendered as paragraphs).
+// excerpt, cover color (rendered via BlogCover SVG), tag, date, author, and a body.
+
+export type CoverColor =
+  | "cream"
+  | "acid-yellow"
+  | "lime"
+  | "magenta"
+  | "electric-blue"
+  | "orange";
 
 export type Post = {
   slug: string;
   title: string;
   excerpt: string;
-  cover: string;
+  coverColor: CoverColor;
   tag: string;
   date: string;
   author: string;
   body: string[];
 };
-
-// Each post gets its own AI-generated hero image at /public/blog/<slug>.png.
-const img = (slug: string) => `/blog/${slug}.png`;
 
 export const posts: Post[] = [
   {
@@ -22,7 +26,7 @@ export const posts: Post[] = [
     title: "The Best Underground Parties in Bangalore (2026 Guide)",
     excerpt:
       "From basements in Indiranagar to warehouses in Whitefield — a working guide to where Bangalore actually dances when the lights go down.",
-    cover: img("best-underground-parties-bangalore-2026"),
+    coverColor: "magenta",
     tag: "GUIDE",
     date: "JAN 14, 2026",
     author: "The Pack",
@@ -42,7 +46,7 @@ export const posts: Post[] = [
     title: "Where to Find Electronic Music Events in Bangalore",
     excerpt:
       "Insider.in, Instagram, word of mouth — the actual sources Bangalore promoters use to fill rooms in 2026.",
-    cover: img("where-to-find-electronic-music-events-bangalore"),
+    coverColor: "acid-yellow",
     tag: "GUIDE",
     date: "JAN 21, 2026",
     author: "The Pack",
@@ -61,7 +65,7 @@ export const posts: Post[] = [
     title: "Top 10 Event Organisers in India for Dance Music",
     excerpt:
       "From Bangalore to Mumbai to Goa — the independent crews shaping India's dance music scene right now.",
-    cover: img("top-event-organisers-india-dance-music"),
+    coverColor: "electric-blue",
     tag: "FEATURE",
     date: "JAN 28, 2026",
     author: "The Pack",
@@ -81,7 +85,7 @@ export const posts: Post[] = [
     title: "RSVP Culture: How Bangalore's Party Scene Works",
     excerpt:
       "Why the best nights in Bangalore aren't sold by the ticket — and what RSVP actually means in 2026.",
-    cover: img("rsvp-culture-bangalore-party-scene"),
+    coverColor: "lime",
     tag: "ESSAY",
     date: "FEB 4, 2026",
     author: "The Pack",
@@ -99,7 +103,7 @@ export const posts: Post[] = [
     title: "A Guide to Techno & House Nights in Bangalore",
     excerpt:
       "Where the city actually plays techno and house in 2026 — by tempo, by neighbourhood, by what time you should arrive.",
-    cover: img("guide-techno-house-nights-bangalore"),
+    coverColor: "orange",
     tag: "GUIDE",
     date: "FEB 11, 2026",
     author: "The Pack",
@@ -117,7 +121,7 @@ export const posts: Post[] = [
     title: "Behind the Decks: Bangalore's Rising DJs",
     excerpt:
       "Six artists from Bangalore reshaping how the city sounds at 2am — and where to catch them next.",
-    cover: img("behind-the-decks-bangalore-rising-djs"),
+    coverColor: "cream",
     tag: "ARTISTS",
     date: "FEB 18, 2026",
     author: "The Pack",
@@ -136,7 +140,7 @@ export const posts: Post[] = [
     title: "Inside Episode 01: How Bangalore Showed Up",
     excerpt:
       "No flyer, no ads, just a whisper. Here's what happened when Cats Can Dance dropped its first night in Bangalore.",
-    cover: img("inside-episode-01"),
+    coverColor: "magenta",
     tag: "JOURNAL",
     date: "MAY 12, 2025",
     author: "The Pack",
@@ -154,7 +158,7 @@ export const posts: Post[] = [
     title: "Inside the Cats Can Dance Streetwear Drop",
     excerpt:
       "How a Bangalore streetwear label turns a music night into a wearable archive — limited drops, cat graphics, no restocks.",
-    cover: img("streetwear-drop-cats-can-dance"),
+    coverColor: "electric-blue",
     tag: "STREETWEAR",
     date: "FEB 25, 2026",
     author: "The Pack",
@@ -173,7 +177,7 @@ export const posts: Post[] = [
     title: "The Rise of Music Merch as Collectibles in India",
     excerpt:
       "Why a 2026 hoodie from a Bangalore party brand is the new vinyl — and how India's music merch culture finally caught up.",
-    cover: img("music-merch-collectibles-india"),
+    coverColor: "acid-yellow",
     tag: "CULTURE",
     date: "MAR 4, 2026",
     author: "The Pack",
@@ -191,7 +195,7 @@ export const posts: Post[] = [
     title: "How Bangalore's Underground Brands Build Cult Followings",
     excerpt:
       "From RSVP nights to limited streetwear drops — the playbook independent Bangalore brands are using to build real loyalty.",
-    cover: img("bangalore-underground-brands-cult"),
+    coverColor: "lime",
     tag: "CULTURE",
     date: "MAR 11, 2026",
     author: "The Pack",
@@ -211,7 +215,7 @@ export const posts: Post[] = [
     title: "Limited Drops 101: Why Scarcity Sells",
     excerpt:
       "A field guide to drop culture for India's emerging streetwear and music brands — written from inside the room.",
-    cover: img("limited-drops-101-scarcity-sells"),
+    coverColor: "orange",
     tag: "STREETWEAR",
     date: "MAR 18, 2026",
     author: "The Pack",

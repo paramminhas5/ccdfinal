@@ -88,11 +88,17 @@
   }
 
   .marquee {
-    animation: marquee 30s linear infinite;
+    animation: marquee 18s linear infinite;
   }
-  .marquee-speed { animation-duration: 30s; }
+  .marquee-speed { animation-duration: 18s; }
   @media (max-width: 768px) {
-    .marquee-speed { animation-duration: 15s; }
+    .marquee-speed { animation-duration: 9s; }
+  }
+
+  .headline-responsive {
+    font-size: clamp(2.25rem, 9vw, 5rem);
+    line-height: 0.9;
+    word-break: break-word;
   }
   @keyframes marquee {
     from { transform: translateX(0); }
