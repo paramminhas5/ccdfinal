@@ -1,6 +1,6 @@
 // Edit this file to add/edit blog posts. Each post supports a slug, title,
-// excerpt, cover color, kicker, issue, tag, date, author, body and optional
-// human-readable structure (tldr, quickPicks, pullQuote, whatWedSkip).
+// excerpt, cover color, category, optional brief coverTitle, tag, date,
+// author, body and optional human-readable structure.
 
 export type CoverColor =
   | "cream"
@@ -9,6 +9,8 @@ export type CoverColor =
   | "magenta"
   | "electric-blue"
   | "orange";
+
+export type Category = "GUIDES" | "CULTURE" | "ARTISTS" | "JOURNAL" | "DROPS";
 
 export type QuickPicks = {
   title: string;
@@ -20,8 +22,10 @@ export type Post = {
   title: string;
   excerpt: string;
   coverColor: CoverColor;
-  /** Short 2-3 word label shown big on the cover tile */
-  kicker?: string;
+  /** High-level category — drives the cover chip */
+  category?: Category;
+  /** Brief 4-7 word version of the title shown on the cover tile */
+  coverTitle?: string;
   /** Optional explicit issue number; otherwise derived from index */
   issue?: number;
   tag: string;
@@ -42,10 +46,11 @@ const rawPosts: Post[] = [
   {
     slug: "best-underground-parties-bangalore-2026",
     title: "The Best Underground Parties in Bangalore (2026 Guide)",
+    coverTitle: "Underground Parties in Bangalore",
+    category: "GUIDES",
     excerpt:
       "From basements in Indiranagar to warehouses in Whitefield — a working guide to where Bangalore actually dances when the lights go down.",
     coverColor: "magenta",
-    kicker: "UNDERGROUND",
     tag: "GUIDE",
     date: "JAN 14, 2026",
     author: "The Pack",
@@ -79,10 +84,11 @@ const rawPosts: Post[] = [
   {
     slug: "where-to-find-electronic-music-events-bangalore",
     title: "Where to Find Electronic Music Events in Bangalore",
+    coverTitle: "Find Electronic Events in Bangalore",
+    category: "GUIDES",
     excerpt:
       "Insider.in, Instagram, word of mouth — the actual sources Bangalore promoters use to fill rooms in 2026.",
     coverColor: "acid-yellow",
-    kicker: "SOURCES",
     tag: "GUIDE",
     date: "JAN 21, 2026",
     author: "The Pack",
@@ -114,10 +120,11 @@ const rawPosts: Post[] = [
   {
     slug: "top-event-organisers-india-dance-music",
     title: "Top 10 Event Organisers in India for Dance Music",
+    coverTitle: "Top Event Organisers in India",
+    category: "GUIDES",
     excerpt:
       "From Bangalore to Mumbai to Goa — the independent crews shaping India's dance music scene right now.",
     coverColor: "electric-blue",
-    kicker: "TOP 10",
     tag: "FEATURE",
     date: "JAN 28, 2026",
     author: "The Pack",
@@ -152,10 +159,11 @@ const rawPosts: Post[] = [
   {
     slug: "rsvp-culture-bangalore-party-scene",
     title: "RSVP Culture: How Bangalore's Party Scene Works",
+    coverTitle: "RSVP Culture in Bangalore",
+    category: "CULTURE",
     excerpt:
       "Why the best nights in Bangalore aren't sold by the ticket — and what RSVP actually means in 2026.",
     coverColor: "lime",
-    kicker: "RSVP",
     tag: "ESSAY",
     date: "FEB 4, 2026",
     author: "The Pack",
@@ -186,10 +194,11 @@ const rawPosts: Post[] = [
   {
     slug: "guide-techno-house-nights-bangalore",
     title: "A Guide to Techno & House Nights in Bangalore",
+    coverTitle: "Techno & House Nights, Bangalore",
+    category: "GUIDES",
     excerpt:
       "Where the city actually plays techno and house in 2026 — by tempo, by neighbourhood, by what time you should arrive.",
     coverColor: "orange",
-    kicker: "TECHNO/HOUSE",
     tag: "GUIDE",
     date: "FEB 11, 2026",
     author: "The Pack",
@@ -221,10 +230,11 @@ const rawPosts: Post[] = [
   {
     slug: "behind-the-decks-bangalore-rising-djs",
     title: "Behind the Decks: Bangalore's Rising DJs",
+    coverTitle: "Bangalore's Rising DJs",
+    category: "ARTISTS",
     excerpt:
       "Six artists from Bangalore reshaping how the city sounds at 2am — and where to catch them next.",
     coverColor: "cream",
-    kicker: "DECKS",
     tag: "ARTISTS",
     date: "FEB 18, 2026",
     author: "The Pack",
@@ -256,10 +266,11 @@ const rawPosts: Post[] = [
   {
     slug: "inside-episode-01",
     title: "Inside Episode 01: How Bangalore Showed Up",
+    coverTitle: "Inside Episode 01",
+    category: "JOURNAL",
     excerpt:
       "No flyer, no ads, just a whisper. Here's what happened when Cats Can Dance dropped its first night in Bangalore.",
     coverColor: "magenta",
-    kicker: "EP 01",
     tag: "JOURNAL",
     date: "MAY 12, 2025",
     author: "The Pack",
@@ -282,10 +293,11 @@ const rawPosts: Post[] = [
   {
     slug: "streetwear-drop-cats-can-dance",
     title: "Inside the Cats Can Dance Streetwear Drop",
+    coverTitle: "Inside the Streetwear Drop",
+    category: "DROPS",
     excerpt:
       "How a Bangalore streetwear label turns a music night into a wearable archive — limited drops, cat graphics, no restocks.",
     coverColor: "electric-blue",
-    kicker: "DROP",
     tag: "STREETWEAR",
     date: "FEB 25, 2026",
     author: "The Pack",
@@ -317,10 +329,11 @@ const rawPosts: Post[] = [
   {
     slug: "music-merch-collectibles-india",
     title: "The Rise of Music Merch as Collectibles in India",
+    coverTitle: "Music Merch as Collectibles",
+    category: "CULTURE",
     excerpt:
       "Why a 2026 hoodie from a Bangalore party brand is the new vinyl — and how India's music merch culture finally caught up.",
     coverColor: "acid-yellow",
-    kicker: "MERCH",
     tag: "CULTURE",
     date: "MAR 4, 2026",
     author: "The Pack",
@@ -351,10 +364,11 @@ const rawPosts: Post[] = [
   {
     slug: "bangalore-underground-brands-cult",
     title: "How Bangalore's Underground Brands Build Cult Followings",
+    coverTitle: "Building Cult Followings",
+    category: "CULTURE",
     excerpt:
       "From RSVP nights to limited streetwear drops — the playbook independent Bangalore brands are using to build real loyalty.",
     coverColor: "lime",
-    kicker: "BRANDS",
     tag: "CULTURE",
     date: "MAR 11, 2026",
     author: "The Pack",
@@ -386,10 +400,11 @@ const rawPosts: Post[] = [
   {
     slug: "limited-drops-101-scarcity-sells",
     title: "Limited Drops 101: Why Scarcity Sells",
+    coverTitle: "Limited Drops 101",
+    category: "DROPS",
     excerpt:
       "A field guide to drop culture for India's emerging streetwear and music brands — written from inside the room.",
     coverColor: "orange",
-    kicker: "SCARCITY",
     tag: "STREETWEAR",
     date: "MAR 18, 2026",
     author: "The Pack",
@@ -422,12 +437,68 @@ const rawPosts: Post[] = [
 ];
 
 // Auto-assign issue numbers based on order so covers always show "№ 01"…"№ 11"
-export const posts: Post[] = rawPosts.map((p, i) => ({
+const staticPosts: Post[] = rawPosts.map((p, i) => ({
   ...p,
   issue: p.issue ?? i + 1,
 }));
 
-export const getPost = (slug: string) => posts.find((p) => p.slug === slug);
+// ============================================================================
+// AI-published posts (loaded from Lovable Cloud at runtime). The static posts
+// above always render; published posts are merged in by the loader hook below.
+// ============================================================================
+
+let dynamicPosts: Post[] = [];
+const subscribers = new Set<() => void>();
+
+const notify = () => {
+  for (const fn of subscribers) fn();
+};
+
+/** Subscribe to dynamic-post changes. Returns an unsubscribe function. */
+export const subscribePosts = (fn: () => void): (() => void) => {
+  subscribers.add(fn);
+  return () => {
+    subscribers.delete(fn);
+  };
+};
+
+export const setDynamicPosts = (next: Post[]) => {
+  // Newest first; assign continuing issue numbers after the static ones.
+  const baseIssue = staticPosts.length;
+  dynamicPosts = next.map((p, i) => ({
+    ...p,
+    issue: p.issue ?? baseIssue + next.length - i,
+  }));
+  notify();
+};
+
+export const getAllPosts = (): Post[] => {
+  // Dynamic (newest, AI-published) first, then static.
+  return [...dynamicPosts, ...staticPosts];
+};
+
+// Backwards-compatible default export — current code uses `posts`.
+// We expose a Proxy-like getter via a function to avoid mutation issues.
+export const posts: Post[] = new Proxy([] as Post[], {
+  get(_t, prop) {
+    const all = getAllPosts();
+    // @ts-expect-error — index access by any string/number
+    return all[prop];
+  },
+  has(_t, prop) {
+    const all = getAllPosts();
+    return prop in all;
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getAllPosts());
+  },
+  getOwnPropertyDescriptor(_t, prop) {
+    const all = getAllPosts();
+    return Reflect.getOwnPropertyDescriptor(all, prop);
+  },
+}) as Post[];
+
+export const getPost = (slug: string) => getAllPosts().find((p) => p.slug === slug);
 
 export const getRelatedPosts = (slug: string, limit = 3) =>
-  posts.filter((p) => p.slug !== slug).slice(0, limit);
+  getAllPosts().filter((p) => p.slug !== slug).slice(0, limit);
