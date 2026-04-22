@@ -1,88 +1,110 @@
-# Brand polish: brutalist palette, smarter blog, paw hint, hero cats, GIF fix
+# Pets section, AI blog generator, smarter covers, fixes
 
-A focused fix-up batch. No deps.
+Six things this batch. No new dependencies.
 
-## 1. Apply the Brutalist palette
+## 1. Footer fixes
 
-Replace the current cream-based theme tokens in `src/index.css` `:root` with the supplied **Brutalist** HSL set so the site adopts: stone background `#E7E5E4`, hot-red `#DC2626`, lime `#A3E635`, electric blue `#2563EB`, ink near-black. Update every token (`--background`, `--cream`, `--ink`, `--electric-blue`, `--lime`, `--magenta` → reuse hot-red, `--acid-yellow`, `--orange`, plus shadcn aliases). All existing `bg-cream`, `bg-ink`, `bg-electric-blue` classes will pick up the new colors automatically.
+- Make the two decorative logo medallions smaller and less weird: shrink from `w-24 / w-20` → `w-14 / w-12`, lighter border (`border-2`), drop the heavy `chunk-shadow` to `chunk-shadow` (existing) but smaller circles read as "stickers" not "billboards".
+- Remove `KARNATAKA · INDIA` line — keep just `BANGALORE` (less spammy, cleaner).
 
-## 2. Brand section — fix cat clipping
+## 2. About — stop the cat from clipping
 
-`src/components/About.tsx`: the headline "A CULTURE FOR PEOPLE WHO MOVE." overflows on 390px viewports because `text-4xl` + long word "CULTURE". Drop to `text-[2rem]` mobile / keep `md:text-6xl`, ensure `leading-[0.95]`, and switch the right column from `h-44` to `h-56` mobile so the walking cat has room and isn't clipped at top/bottom. Cap cat width at `w-1/2` mobile and tighten the `x` transform range to `["-10%", "40%"]` so it stays inside the column.
+The `motion.img` is positioned `top-1/2 -translate-y-1/2` inside an `overflow-hidden` column with `w-1/2 sm:w-1/2 md:w-2/3` — the rotate + walk bounce push the cat past the column on mobile.
 
-## 3. Hero — remove duplicate cats under stars; resize bottom flanking cats
+- Change column from `overflow-hidden` → `overflow-visible` so the cat can breathe.
+- Cap `max-w-[160px]` on mobile and reduce rotate range to `[-3, 3]`.
+- Tighten x range to `["-5%", "25%"]` on mobile (full range only `md+`).
+- Add `pointer-events-none` so it never blocks taps.
 
-`src/components/Hero.tsx`:
+## 3. Smarter blog covers (categories + brief headline, not gibberish)
 
-- **Delete** the two top "cohesive cats sitting just under the stars" (lines 53-65) — they duplicate the bottom flanking cats and crowd the headline.
-- The mobile-only flanking cats around the DJ (`catHeadphones` + `catHandstand`): change `bottom-[42%]` → `bottom-[28%]` to move them lower, and unify size to `w-16` so they match the desktop bottom cats' visual weight.
-- Stars stay as is.
+Right now covers show `№ 03` + a one-word kicker like "TOP 10" — no context, confusing. Rewrite `BlogCover.tsx`:
 
-## 4. Disco hint → occasional paw popup
+- **Top row**: small **CATEGORY chip** (left) + tiny `№ 03` issue tag (right). Categories: `GUIDES`, `CULTURE`, `ARTISTS`, `JOURNAL`, `DROPS` (extend `Post.tag` enum).
+- **Middle**: **the actual post title, shortened** to 4-7 words (new optional `coverTitle` field, falls back to `title` truncated). Wrapped, 3 lines max, big `font-display`.
+- **Bottom**: paw + `CATS · CAN · DANCE`.
+- Drop the "kicker" entirely — that's what was confusing.
+- Update `posts.ts`: add `category` and `coverTitle` per post; remove `kicker`.
+- `Blog.tsx` & `Media.tsx` show category chip too so users can scan.
 
-Rewrite `src/components/DiscoHint.tsx`:
+## 4. Pet section — both `/pets` page AND filter on `/shop`
 
-- Show once on first visit ~2s after load with a **paw 🐾 + "press me ✨"** bubble pointing to the disco button. Auto-dismiss after **5s**.
-- After that, **re-appear occasionally**: every 60-90s of active session time, show for 4s, then hide (max 3 reappearances per session, none if user has clicked the disco button).
-- Track in `sessionStorage`: `ccd:disco-hint-count` and `ccd:disco-clicked`. Listen for a custom `disco:toggle` event dispatched from `DiscoButton.tsx` to mark "clicked".
-- Bubble uses `bg-magenta` (now hot-red), shows a paw glyph (SVG or emoji), bounces in, fades out. Hidden under `prefers-reduced-motion` after the first appearance.
-- Edit `src/components/DiscoButton.tsx` to dispatch `window.dispatchEvent(new Event("disco:toggle"))` on click.
+**Shopify seed (3 placeholder products)**:
 
-## 5. GIF poster not loading — debug + fix
+- `Cat Bucket Hat` — black, embroidered paw, "₹ 1,200" placeholder
+- `Cat Bandana` — magenta, screen-print, "₹ 600"
+- `CCD Cat Treats` — small bag, "₹ 400"
+Each tagged `pets,pet,cat` and `product_type: Pet`. Created via `shopify--create_product` so they're real, purchasable, and Shopify-managed. Placeholder images use existing brand SVGs (`cat-headphones`, `cat-dancer`, etc.) — user can swap photos later.
 
-The `onError` handler in `Events.tsx`/`EventDetail.tsx` hides the broken `<img>` silently, masking the cause. Likely culprits: the stored `poster_url` is a Supabase Storage path missing the public-bucket URL prefix, OR a CORS/mime issue.
+**Shop page**: Add a **filter row** at top — `ALL / STREETWEAR / PETS` chips that filter the rendered grid by `product_type` / `tags`. Default = ALL.
 
-- In `src/components/Events.tsx` and `src/pages/EventDetail.tsx`: when `poster_url` is non-empty and not a full URL and not starting with `/`, treat it as a Supabase Storage object and resolve via `supabase.storage.from('event-posters').getPublicUrl(path).data.publicUrl`.
-- Replace silent `display:none` `onError` with a brand fallback tile (lime block + ★ + event title) so a broken URL is still visually present.
-- Add `crossOrigin="anonymous"` and `referrerPolicy="no-referrer"` on the `<img>` to dodge hotlink blocks.
-- Add a tiny console warning `console.warn("[poster] failed", src)` in dev so the real URL is visible when the user reports it.
+**New `/pets` page** (`src/pages/Pets.tsx`):
 
-## 6. Footer logo — solid circle behind, no inverted weirdness
+- `PageHero` "PETS THAT PARTY" with subline "Streetwear for the floor — and your floor pet."
+- Pulls Shopify products tagged `pets` via Storefront API `query: "tag:pets"`.
+- Same brutalist card grid as Shop.
+- Heavy SEO: `Product` + `CollectionPage` JSON-LD, keyword-rich H1/H2 ("Pet streetwear India", "cat bandanas Bangalore", "cat treats India"), SR-only paragraph.
+- Linked from Nav (under "Shop" submenu or beside it), Footer, sitemap.
+- New SEO meta: `Pet streetwear, cat bandana India, pet bucket hat, cat treats Bangalore`.
 
-`src/components/Footer.tsx`: the two decorative `ccdLogo` images use `filter: invert(1)` which produces washed colors on the new stone background. Replace both with: a solid `bg-cream` (now stone) **circle** wrapper (`rounded-full w-24 h-24 grid place-items-center`), original (un-inverted) logo inside at `w-16`, with a 4px ink border + chunk-shadow. Rotates `-360deg` on hover instead of `+360deg` ("the other way"). Looks like a coaster sticker.
+## 5. AI blog generator in Admin (3 questions → preview → publish)
 
-## 7. Blog covers — stop mirroring the headline
+**Backend**: New edge function `admin-generate-blog`:
 
-Currently `BlogCover` repeats the post `title` huge inside the cover, then `<h2>` repeats it again right next to it → visual stutter. Refactor `src/components/BlogCover.tsx`:
+- Accepts `{ topic, targetKeyword, angle, password }`.
+- Validates admin password (same pattern as other admin functions).
+- Calls Lovable AI Gateway (`google/gemini-2.5-pro` for quality) with a system prompt that produces SEO-heavy posts in CCD voice + the new structured shape (`title`, `excerpt`, `tag`, `category`, `coverTitle`, `coverColor`, `tldr[]`, `quickPicks{}`, `pullQuote`, `whatWedSkip`, `body[]`, `seoTitle`, `metaDescription`, `slug`).
+- Uses tool-calling for structured JSON (no string parsing).
+- Returns the generated draft as JSON.
 
-- Cover shows: tag chip (top-left), large issue number (e.g. `№ 01`, `№ 02`…) in `Bowlby One`, brand wordmark + paw, and a **2-3 word "kicker"** instead of the full title (e.g. "RSVP CULTURE", "DROPS 101", "EPISODE 01").
-- Add a `kicker?: string` and `issue?: number` to `Post` type; if `kicker` absent, derive from first 1-2 keywords of `tag` + post index.
-- Update `posts.ts` to add a `kicker` for each post (keep it punchy: "UNDERGROUND", "SOURCES", "TOP 10", "RSVP", "TECHNO/HOUSE", "DECKS", "EP 01", "DROP", "MERCH", "BRANDS", "SCARCITY").
-- Auto-assign `issue` by array index.
-- Result: cover is a graphic tile, not a duplicate of the headline.
+**Frontend**: New **"BLOG"** tab in `Admin.tsx`:
 
-## 8. Blog posts — better, more human content
+1. **Step 1 — 3 questions form predetermined from research** :
+  - Topic (e.g. "best Bangalore record stores")
+  - Target keyword (e.g. "Bangalore record stores 2026")
+  - Angle / personal hook (1-2 sentences from you, optional but improves humanness)
+2. Click **GENERATE** → loading state → shows generated draft.
+3. **Step 2 — preview & edit**: All fields editable inline. Live `BlogCover` preview. Edit any field including body paragraphs.
+4. **Step 3 — publish**: Click **PUBLISH** → POST to a new edge function `admin-publish-blog` which appends to `posts` jsonb in `site_settings` (new column `blog_posts jsonb default '[]'`). Reads merged with static `src/content/posts.ts` at runtime.
 
-The current 11 posts read like SEO filler. Two-pronged fix without losing SEO weight:
+`**Blog.tsx` / `BlogPost.tsx**` updated to load union of static posts + `site_settings.blog_posts` so AI-published posts appear instantly without redeploy.
 
-- **Rewrite tone**: make every post feel first-person, opinionated, and specific. Shorter sentences. Real Bangalore detail (neighbourhoods, times, prices, anecdotes). No "in 2026" filler or list-mode cadence. Keep length 700-1000 words. Keep the SEO target keyword in title + first paragraph + once mid-body, naturally. Search the web. 
-- **Add structure that humans actually read**: each post gets:
-  - A **TL;DR** (3 bullet sentences) at the top — most people only read this.  
-  Seach for latest articles and news and aggregate them 
-  - A **"Quick picks"** sidebar block (3 named places/nights/artists) inline.
-  - A **pull-quote** mid-post in big display type.
-  - A **"What we'd skip"** honesty section near the end (builds trust, very rare in SEO-bait posts).
-  - Author signature block at the bottom: "— Written by The Pack, on the floor in Bangalore."
-- Rewrite all 11 existing posts in `src/content/posts.ts` against this template. Update `BlogPost.tsx` to render the new structured fields (`tldr: string[]`, `quickPicks?: { title: string; items: string[] }`, `pullQuote?: string`, `whatWedSkip?: string`) with brutalist styling.
-- Add an "Editor's note" line under the byline on `BlogPost.tsx`: "Honest, by humans, from Bangalore." — a small trust signal that also helps with E-E-A-T (Google's experience/authority ranking).
+**DB migration**: add `site_settings.blog_posts jsonb not null default '[]'`.
 
-## 9. Sitemap + types
+## 6. Rewrite 4 posts with your real human input
 
-- `posts.ts` type updated with optional `kicker`, `issue`, `tldr`, `quickPicks`, `pullQuote`, `whatWedSkip`.
-- No sitemap change needed (slugs unchanged).
+After this batch ships, in the **next turn** I'll ask you 3-4 quick questions per post (one post at a time so it's not overwhelming), then rewrite using your real names/venues/anecdotes:
+
+- Best Underground Parties in Bangalore — names of venues / promoters / nights you'd actually recommend
+- Top 10 Event Organisers in India — real crew names per city
+- Behind the Decks: Bangalore's Rising DJs — the 6 DJs you'd vouch for
+- Inside Episode 01 — where it was, who played, what happened, one anecdote
+
+This keeps the SEO weight while making the content actually true.
+
+## 7. SEO expansion — pet products + streetwear
+
+- `index.html`: add `pet streetwear India, cat bandana, cat bucket hat, cat treats Bangalore` to keywords; add `Brand` JSON-LD entry for "pet products".
+- `brand.json`: add `categories: [...,"Pet Products","Pet Accessories"]` + 2 FAQ ("Do you make pet products?", "Where to buy cat bandanas in Bangalore?").
+- `llms.txt` + `llms-full.txt`: new **Pets** section with `/pets` URL and product list.
+- `sitemap.xml`: add `/pets` + each pet product URL with `image:image`.
 
 ## Files touched
 
-- `src/index.css` — Brutalist palette tokens
-- `src/components/About.tsx` — headline sizing + cat column height/transform
-- `src/components/Hero.tsx` — remove duplicate top cats; lower mobile flanking cats
-- `src/components/DiscoHint.tsx` — paw + occasional reappear logic
-- `src/components/DiscoButton.tsx` — dispatch `disco:toggle`
-- `src/components/Events.tsx` + `src/pages/EventDetail.tsx` — Supabase storage URL resolve, fallback tile, `crossOrigin`
-- `src/components/Footer.tsx` — solid-circle logo medallions, reverse rotate
-- `src/components/BlogCover.tsx` — kicker + issue layout (no title repeat)
-- `src/content/posts.ts` — type extended, all 11 posts rewritten with TL;DR / quickPicks / pullQuote / whatWedSkip / kicker
-- `src/pages/BlogPost.tsx` — render new structured fields
-- `src/pages/Blog.tsx` — minor: hide repeated `<h2>` title since cover now carries identity? Keep the `<h2>` (needed for SEO + a11y), but cover no longer repeats it visually
+- `src/components/Footer.tsx` — smaller medallions, drop Karnataka
+- `src/components/About.tsx` — overflow-visible, tighter cat motion
+- `src/components/BlogCover.tsx` — rewrite (category + brief title)
+- `src/content/posts.ts` — add `category`, `coverTitle`; drop `kicker`
+- `src/pages/Blog.tsx`, `src/pages/BlogPost.tsx`, `src/components/Media.tsx` — show category, load from static + DB union
+- `src/pages/Shop.tsx` — ALL/STREETWEAR/PETS filter chips
+- `src/pages/Pets.tsx` — NEW page
+- `src/components/Nav.tsx`, `src/components/Footer.tsx` — Pets link
+- `src/pages/Admin.tsx` — new BLOG tab (3-step wizard)
+- `supabase/functions/admin-generate-blog/index.ts` — NEW edge function (Lovable AI)
+- `supabase/functions/admin-publish-blog/index.ts` — NEW edge function
+- DB migration — `site_settings.blog_posts jsonb default '[]'`
+- Shopify — create 3 pet placeholder products
+- `index.html`, `public/brand.json`, `public/llms.txt`, `public/llms-full.txt`, `public/sitemap.xml` — pet SEO
+- `src/App.tsx` — `/pets` route
 
-No DB or backend changes. No new dependencies.
+No design system overhaul. No new npm packages. Real Shopify products (no mocks).
