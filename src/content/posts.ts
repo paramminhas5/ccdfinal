@@ -448,7 +448,12 @@ const staticPosts: Post[] = rawPosts.map((p, i) => ({
 // ============================================================================
 
 let dynamicPosts: Post[] = [];
+let mergedPosts: Post[] = staticPosts;
 const subscribers = new Set<() => void>();
+
+const rebuildMergedPosts = () => {
+  mergedPosts = dynamicPosts.length > 0 ? [...dynamicPosts, ...staticPosts] : staticPosts;
+};
 
 const notify = () => {
   for (const fn of subscribers) fn();
@@ -465,16 +470,21 @@ export const subscribePosts = (fn: () => void): (() => void) => {
 export const setDynamicPosts = (next: Post[]) => {
   // Newest first; assign continuing issue numbers after the static ones.
   const baseIssue = staticPosts.length;
-  dynamicPosts = next.map((p, i) => ({
+  const nextDynamicPosts = next.map((p, i) => ({
     ...p,
     issue: p.issue ?? baseIssue + next.length - i,
   }));
+
+  const hasChanged = JSON.stringify(nextDynamicPosts) !== JSON.stringify(dynamicPosts);
+  if (!hasChanged) return;
+
+  dynamicPosts = nextDynamicPosts;
+  rebuildMergedPosts();
   notify();
 };
 
 export const getAllPosts = (): Post[] => {
-  // Dynamic (newest, AI-published) first, then static.
-  return [...dynamicPosts, ...staticPosts];
+  return mergedPosts;
 };
 
 // Backwards-compatible default export — current code uses `posts`.
