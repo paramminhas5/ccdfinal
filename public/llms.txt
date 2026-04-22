@@ -15,6 +15,13 @@
 
 - [All drops](https://catscandance.com/shop): The current Cats Can Dance streetwear capsule. Heavyweight cotton tees, hoodies, caps. Screen-printed in Bangalore. No restocks.
 
+## Pets
+
+- [Pet streetwear](https://catscandance.com/pets): Cat bandanas, cat bucket hats and CCD cat treats — pet streetwear made in Bangalore.
+- Cat Bucket Hat: https://catscandance.com/product/cat-bucket-hat
+- Cat Bandana: https://catscandance.com/product/cat-bandana
+- CCD Cat Treats: https://catscandance.com/product/ccd-cat-treats
+
 ## Brand machine-readable
 
 - [brand.json](https://catscandance.com/brand.json): Single-file canonical brand summary for AI agents.

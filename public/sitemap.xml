@@ -14,6 +14,17 @@
       <image:title>Cats Can Dance — limited streetwear drops</image:title>
     </image:image>
   </url>
+  <url>
+    <loc>https://catscandance.com/pets</loc>
+    <changefreq>weekly</changefreq><priority>0.8</priority><lastmod>2026-04-22</lastmod>
+    <image:image>
+      <image:loc>https://catscandance.com/og-image.png</image:loc>
+      <image:title>Cats Can Dance — pet streetwear, cat bandanas, bucket hats &amp; treats</image:title>
+    </image:image>
+  </url>
+  <url><loc>https://catscandance.com/product/cat-bucket-hat</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>2026-04-22</lastmod></url>
+  <url><loc>https://catscandance.com/product/cat-bandana</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>2026-04-22</lastmod></url>
+  <url><loc>https://catscandance.com/product/ccd-cat-treats</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>2026-04-22</lastmod></url>
   <url><loc>https://catscandance.com/press</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>2026-04-22</lastmod></url>
   <url><loc>https://catscandance.com/media</loc><changefreq>monthly</changefreq><priority>0.7</priority><lastmod>2026-04-22</lastmod></url>
   <url><loc>https://catscandance.com/blog</loc><changefreq>weekly</changefreq><priority>0.9</priority><lastmod>2026-04-22</lastmod></url>
