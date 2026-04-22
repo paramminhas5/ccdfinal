@@ -1,102 +1,93 @@
 
 
-# Streetwear SEO expansion + per-post blog imagery + discovery push
+# Mobile polish, Venue Partners rewrite, Media → page, blog covers, hero cats, scroll-walking cat, disco hint
 
-Three things in this batch: (1) lock the hero blue to `#2463eb` in the theme so it's permanent, (2) widen SEO to cover **streetwear / drops / collectibles** alongside parties, (3) give every blog post its own AI-generated hero image, (4) ship a discovery + backlink engine.
+A focused batch of fixes and small features. No new dependencies.
 
-## 1. Lock hero blue to `#2463eb`
-- Update `--electric-blue` in `src/index.css` to the HSL of `#2463eb` so the `bg-electric-blue` token matches everywhere.
-- Remove the inline `bg-[#2463eb]` override on `Hero.tsx` once the token is correct (cleaner, future-proof).
+## 1. Replace AI-looking blog covers with simple branded ones
+The 11 generated PNGs in `public/blog/` look obviously AI. Replace with **plain SVG covers** (no AI generation): brand-colored backgrounds (alternating cream / acid-yellow / lime / magenta / electric-blue / orange), bold ink border, the post tag chip, post title in `Bowlby One`, a tiny ★ or paw motif, and "CATS CAN DANCE" wordmark. Each one ~1200×630 SVG, file-size tiny.
 
-## 2. SEO expansion: streetwear, drops, collectibles
-Right now every meta tag, JSON-LD, llms.txt and sitemap entry talks only about parties/events. Add a parallel keyword spine.
+- New component `BlogCover.tsx` that renders the SVG-style cover from `{title, tag, color}` props (used as the cover everywhere a post is shown — `Blog`, `BlogPost` hero, `Media`).
+- Update `src/content/posts.ts` so each post has `coverColor` instead of pointing at the PNG. Drop the `img(slug)` helper.
+- Delete the 11 AI PNGs in `public/blog/`.
+- For OG image (social shares) we keep a single static branded `/og/blog.png` fallback — no per-post OG image needed for now.
 
-**Target keywords**: *Bangalore streetwear brand, India streetwear drops, limited edition merch India, music collectibles India, party merch Bangalore, cat streetwear, underground streetwear India, drop culture India*.
+## 2. About section — fix overflow on mobile
+The big `text-5xl/6xl` headline with hard `<br/>` overflows narrow widths.
+- Reduce mobile size to `text-4xl`, drop the forced `<br/>` on mobile (use `sm:` for the break), add `break-words` and tighten `leading`.
+- Make the cat-dancer image cap at `w-2/3` on mobile so the row doesn't push width.
 
-- **`index.html`** — extend `<meta name="keywords">`, description, and Organization JSON-LD `category` array with `["Streetwear Brand","Apparel","Limited Drops","Music Merchandise","Collectibles"]`. Add a second JSON-LD node `@type: "Brand"` with `slogan`, `category: "Streetwear"`.
-- **`src/pages/Shop.tsx`** — rewrite SEO title to `Cats Can Dance Shop — Limited Streetwear Drops & Collectibles | Bangalore` + description. Add `ItemList` JSON-LD of products (name, image, price) and `CollectionPage` schema. Wrap the page in visible H1 "Drops & Collectibles".
-- **`src/pages/ProductDetail.tsx`** — already has `Product` schema; extend with `brand`, `category: "Streetwear"`, `audience: { @type: "PeopleAudience", suggestedGender: "unisex" }`, `additionalProperty` for "Limited drop" badge.
-- **`src/components/Drops.tsx`** — add SR-only line: "Limited streetwear drops and collectibles from Cats Can Dance, Bangalore" so the homepage section is crawlable for these terms.
-- **`public/brand.json`** — add `categories: [...existing, "Streetwear", "Limited Drops", "Collectibles"]`, new `products` summary, new `faq` entries ("Where to buy Cats Can Dance merch?", "When is the next drop?").
-- **`public/llms.txt` + `llms-full.txt`** — add a **Shop / Drops** section listing every product URL with one-line descriptions. Lead paragraph extended to "…dance music parties **and a streetwear label of limited drops and collectibles**…".
-- **`public/sitemap.xml`** — add every `/shop/:slug` product URL with `<image:image>` tags (image sitemap extension) so Google Images indexes drops.
+## 3. Contact section — mobile optimisation
+- The big `text-6xl` "SAY HELLO" + the giant decorative headphones image overlap form on small screens.
+- Move headphones to be hidden on mobile (`hidden md:block`).
+- Reduce headline to `text-5xl` on mobile.
+- Make the email link `break-all` so the long address doesn't bust the column.
+- Form: increase tap targets (`py-4`), full-width on mobile already — verify spacing inside `chunk-shadow-lg` (reduce padding `p-4` mobile).
 
-## 3. Unique AI-generated hero image per blog post
-Currently all 7 posts share one image. Generate a distinct one per post via the Lovable AI image script.
+## 4. Mobile audit pass on all sections
+Quick pass through every homepage section for overflow / overlap / tap-target issues:
+- `Hero` — already mobile-tuned, verify CTAs above DJ feet.
+- `Marquee` — fine, just speed bump (see #6).
+- `About`, `Playlist`, `Events`, `Drops`, `Instagram`, `Videos`, `EarlyAccess`, `Footer`, `Catbot` — wrap headings with responsive sizes, ensure no `whitespace-nowrap` on titles, ensure `container` has `px-4` baseline, and decorative absolute-positioned images are `pointer-events-none` and hidden where they crowd content.
+- Add a single shared utility `.headline-responsive` in `index.css` for big page titles to keep this consistent.
 
-- Run the `ai-gateway` skill with `google/gemini-3.1-flash-image-preview` for each of the 7 posts using prompts derived from the post title/topic (e.g. for "Best Underground Parties in Bangalore" → moody Bangalore skyline + neon, brutalist poster collage style consistent with brand).
-- Save to `public/blog/<slug>.png` (1200×630, also reusable as OG image).
-- Update `src/content/posts.ts` so each post has `image: "/blog/<slug>.png"` and `ogImage` matching.
-- `BlogPost.tsx` already passes `image` to `<SEO>`; verify per-post OG works.
-- Add `<img>` with descriptive `alt` like "Underground party in Bangalore by Cats Can Dance" — keyword + entity.
+## 5. Venue Partners rewrite (`src/pages/ForVenues.tsx`)
+- Rename throughout: nav label, page title, SEO title, breadcrumb, footer link → **"Venue Partners"**.
+- `PageHero` title → **"LET'S BUILD MEMORIES TOGETHER"**.
+- Subheadline (new line under hero title) → **"Creating moments people come back for, again and again…"** (remove the existing "people plan their weekend around us" headline below).
+- Body copy → **"We partner with venues to bring the right crowd, stronger spend and recurring moments that grow over time."**
+- Keep the existing **"PARTNER WITH US →"** CTA as is.
+- Update `Nav.tsx`, `Footer.tsx` `groups` array, and any other links from "For Venues" → "Venue Partners".
 
-## 4. Discovery + backlink engine
-SEO is half on-page, half off-page. Make it easy (and trackable) to ship backlinks.
+## 6. Faster marquee
+- `src/index.css` `.marquee-speed` → desktop `18s` (from 30s), mobile `9s` (from 15s). Disco mode stays at 6s.
 
-### a. Outreach helper in admin
-Expand the **SEO Checklist** tab in `src/pages/Admin.tsx` with a new **Backlinks** sub-section:
-- **Pre-written pitch templates** (copy-to-clipboard) for: Wild City, Rolling Stone India, Homegrown, Mid-day Bangalore, The Hindu MetroPlus, Insider.in editorial, Skiddle, Resident Advisor.
-- **Directory submission links** (one-click open): Google Business Profile, Bing Places, Insider.in promoter signup, Skiddle promoter, RA promoter, Songkick, Bandsintown, JamBase, Eventbrite organiser, Allevents.in, Eventil, India Nightlife, LBB Bangalore, Little Black Book.
-- **Streetwear directories**: Hypebeast tips, Highsnobiety submit, Sneaker News India, The Established, Lifestyle Asia India, Grailed seller signup, Depop.
-- **Status tracker**: each row has a `pending / submitted / live` toggle stored in `site_settings.backlinks` jsonb (new column via migration). Lets the team see progress.
+## 7. Two more cats above the stars in Hero (cohesive)
+Add two extra cat sprites positioned just under each spinning star, mirrored, small + wiggling, behind the headline (z-index between stars and headline). Use existing `cat-headphones.png` (left) and `cat-handstand.png` (right) at `w-12 md:w-20`, with ink drop-shadow to match the brand. They sit on top, near the star area, so the top of the hero feels populated.
 
-### b. Auto-generated press kit page
-New route `/press` (`src/pages/Press.tsx`) with:
-- Brand description (3 lengths: 50 / 150 / 500 chars — for press to copy)
-- Logo downloads (PNG light/dark, SVG)
-- Founder bios + headshots
-- Photo gallery from past events (downloadable zip link)
-- Press contact email
-- Linked from footer + `brand.json` + `llms.txt`. Massive backlink magnet — every outlet that covers you needs this page.
+## 8. About section — cat walks on scroll
+Replace the static `cat-dancer.svg` in `About` with a scroll-driven walking cat:
+- Use `useScroll({ target: aboutRef })` + `useTransform` to translate the cat horizontally across the right column as the section scrolls into / out of view.
+- Bobbing `y` animation (`animate={{ y: [0, -4, 0] }}`) for a "walk" feel and a slight rotate.
+- Keep static fallback for `prefers-reduced-motion`.
 
-### c. Embeddable widgets (link-bait)
-- New `/embed/upcoming` route returning a tiny iframe-friendly card listing next 3 events. Other Bangalore blogs / venue sites embed it → each embed = a backlink. Add a "Copy embed code" button in admin.
+## 9. Move Media to its own page
+- Remove `<Media />` from `src/pages/Index.tsx` (and its import).
+- New route `/media` (`src/pages/Media.tsx`) using existing `Media` component wrapped in `Nav`, `PageHero` ("MEDIA & PRESS"), `Footer`, `SEO`, `Breadcrumbs`.
+- Add `/media` to `Footer.tsx` Explore links and to `Nav.tsx` (under a "More" group or directly).
+- Add `/media` to `sitemap.xml`.
 
-### d. Schema additions for discovery surfaces
-- Add `Brand` + `OnlineStore` JSON-LD on `/shop`.
-- Add `Person` schema for founders on `/about` (LinkedIn `sameAs`).
-- Add `WebSite` schema with `potentialAction: SearchAction` on homepage so Google shows a sitelinks search box.
-- Add `Speakable` schema on FAQ + key paragraphs (helps Google Assistant / voice).
+## 10. Fix episode poster GIF not rendering
+The `.gif` poster URL uploaded to events sometimes 404s or isn't being served. Fix the rendering path so GIFs work:
+- In `Events.tsx` and `EventDetail.tsx` — when `poster_url` ends in `.gif`, render `<img>` with `unoptimized`-style attributes (`decoding="async" loading="lazy"`) and add a fallback `onError` that swaps to a brand placeholder so a broken URL is never a blank black box.
+- Verify the asset path: if the value is just a filename, prefix with `/`; if it's a full URL, leave it.
+- Add a small "GIF" badge corner overlay on past-event cards when `.gif` for delight.
 
-### e. Content velocity (long-term ranking)
-- 4 new pillar posts focused on streetwear + culture (added to `src/content/posts.ts`):
-  1. "Inside the Cats Can Dance Streetwear Drop"
-  2. "The Rise of Music Merch as Collectibles in India"
-  3. "How Bangalore's Underground Brands Build Cult Followings"
-  4. "Limited Drops 101: Why Scarcity Sells"
-- Each 800-1200 words, internal-linked to `/shop`, `/events`, other posts. Each gets its own AI image.
-
-### f. Social + share boosters
-- Add `og:image` per blog post (already wired) + `twitter:creator` meta.
-- Add a "Share" button row to every blog post + product (WhatsApp / X / copy link). More shares = more crawlable mentions.
-- Add `<link rel="me" href="https://instagram.com/catscandance">` etc. in `<head>` for Mastodon/IndieWeb verification.
-
-### g. RSS feed
-- New `/rss.xml` static (regenerated when posts change) — picked up by Feedly, Inoreader, NetNewsWire users + AI training pipelines.
-
-## 5. Performance tightening (re-confirm)
-- Audit images audited in round 2 — also serve `<img loading="lazy" decoding="async">` on all blog hero thumbs.
-- Add `Cache-Control` for `/blog/*.png` and `/og/*.png` in `public/_headers`.
+## 11. "Press the disco button" hint
+First-time visitors don't know the 🪩 button does anything. Add a small one-time hint:
+- A floating callout near the disco button in the nav (arrow + text "Press me ✨") shown on first load only.
+- Stored in `localStorage` (`ccd:disco-hint-seen`). Dismiss on click or auto-hide after 8s.
+- Animated bounce-in via Framer Motion. `prefers-reduced-motion` → static.
+- Hidden on `<sm` for now? — keep visible but smaller.
 
 ## Files touched
-- `src/index.css` — `--electric-blue` → `#2463eb` HSL
-- `src/components/Hero.tsx` — drop inline override
-- `index.html` — keywords + Brand schema + WebSite SearchAction + verification slots intact
-- `src/pages/Shop.tsx` + `ProductDetail.tsx` — streetwear copy + schema
-- `src/components/Drops.tsx` — SR-only keyword line
-- `public/brand.json` — extended categories + faq + products
-- `public/llms.txt` + `llms-full.txt` — Shop section + streetwear lead
-- `public/sitemap.xml` — product URLs + image sitemap entries
-- `src/content/posts.ts` — 4 new streetwear posts; image field per post
-- `public/blog/*.png` — NEW, 11 unique AI-generated hero images
-- `src/pages/BlogPost.tsx` — render hero `<img>` with keyword alt
-- `src/pages/Admin.tsx` — Backlinks sub-tab (templates, directories, status)
-- `src/pages/Press.tsx` — NEW press kit page
-- `src/pages/Embed.tsx` — NEW `/embed/upcoming` widget
-- `src/components/Footer.tsx` — Press link
-- `public/rss.xml` — NEW
-- `public/_headers` — cache rules for new assets
-- DB migration — `site_settings.backlinks` jsonb default `'[]'`
+- `src/components/BlogCover.tsx` — NEW (SVG branded cover renderer)
+- `src/content/posts.ts` — drop PNG paths, add `coverColor`
+- `public/blog/*.png` — DELETE (11 files)
+- `src/components/About.tsx` — responsive headline + scroll-walking cat
+- `src/components/Contact.tsx` — mobile sizing, hide headphones on mobile
+- All section components — mobile audit pass (heading sizes, paddings)
+- `src/index.css` — faster marquee + `.headline-responsive` util
+- `src/components/Hero.tsx` — two extra cats under the stars
+- `src/components/Marquee.tsx` — verify speed class
+- `src/pages/ForVenues.tsx` — Venue Partners rewrite (title, sub, body)
+- `src/components/Nav.tsx`, `src/components/Footer.tsx` — rename links, add `/media`
+- `src/pages/Media.tsx` — NEW route page
+- `src/pages/Index.tsx` — remove `Media` from homepage
+- `src/App.tsx` — add `/media` route
+- `public/sitemap.xml` — add `/media`
+- `src/components/Events.tsx`, `src/pages/EventDetail.tsx` — GIF poster fix + onError fallback + GIF badge
+- `src/components/DiscoHint.tsx` — NEW one-time hint, mounted in `Nav`
 
-No new npm dependencies. No design changes beyond the locked-in blue.
+No DB / backend changes. No new dependencies.
 
