@@ -5,6 +5,8 @@ import catLeft from "@/assets/cat-left.svg";
 import catRight from "@/assets/cat-right.svg";
 import catHeadphones from "@/assets/cat-headphones.png";
 import catHandstand from "@/assets/cat-handstand.png";
+import catRaver from "@/assets/cat-raver.png";
+import catStreetwear from "@/assets/cat-streetwear.png";
 import { useDisco } from "@/contexts/DiscoContext";
 import DiscoBall from "@/components/DiscoBall";
 import Lasers from "@/components/Lasers";
@@ -25,6 +27,11 @@ const Hero = () => {
   const rightRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 45]);
 
   const djY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "18%"]);
+
+  const raverX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-40%"]);
+  const raverRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, -15]);
+  const streetX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "40%"]);
+  const streetRot = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 15]);
 
   const starRotA = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, 360]);
   const starRotB = useTransform(scrollYProgress, [0, 1], reduce ? [0, 0] : [0, -360]);
@@ -69,6 +76,22 @@ const Hero = () => {
           loading="eager"
           style={{ y: djY, willChange: "transform" }}
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
+        />
+
+        {/* Two new mid-height flanking cats — desktop & mobile */}
+        <motion.img
+          src={catRaver}
+          alt=""
+          aria-hidden
+          style={{ x: raverX, rotate: raverRot, willChange: "transform" }}
+          className="absolute z-10 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-44 left-2 w-14 md:top-1/3 md:left-2 md:w-28 wiggle"
+        />
+        <motion.img
+          src={catStreetwear}
+          alt=""
+          aria-hidden
+          style={{ x: streetX, rotate: streetRot, willChange: "transform" }}
+          className="absolute z-10 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-44 right-2 w-14 md:top-1/3 md:right-2 md:w-28 wiggle"
         />
 
         {/* Mobile-only flanking cats around DJ */}
