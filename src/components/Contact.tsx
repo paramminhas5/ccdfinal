@@ -44,28 +44,28 @@ const Contact = () => {
   };
 
   return (
-    <section ref={ref} id="contact" className="relative bg-acid-yellow py-20 md:py-20 border-b-4 border-ink overflow-hidden">
+    <section ref={ref} id="contact" className="relative bg-acid-yellow py-16 md:py-20 border-b-4 border-ink overflow-hidden">
       <motion.img
         src={headphones}
         alt=""
         style={{ y: hpY, rotate: hpRot }}
-        className="absolute -top-10 -right-10 w-56 md:w-80"
+        className="hidden md:block absolute -top-10 -right-10 w-56 md:w-80 pointer-events-none"
       />
-      <div className="container relative z-10 grid md:grid-cols-2 gap-12 items-start">
+      <div className="container relative z-10 grid md:grid-cols-2 gap-10 md:gap-12 items-start">
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ type: "spring", stiffness: 160, damping: 18 }}
         >
-          <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ CONTACT US</p>
-          <h2 className="font-display text-ink text-6xl md:text-7xl mb-8 leading-none">
+          <p className="font-display text-magenta text-xl sm:text-2xl md:text-3xl mb-3 md:mb-4">/ CONTACT US</p>
+          <h2 className="font-display text-ink text-5xl sm:text-6xl md:text-7xl mb-6 md:mb-8 leading-none">
             SAY<br/>HELLO.
           </h2>
-          <p className="text-ink/80 text-lg md:text-xl mb-6 max-w-md">
+          <p className="text-ink/80 text-base sm:text-lg md:text-xl mb-6 max-w-md">
             Brand collabs, venue partnerships, press, or just to send us a cat photo. We read everything.
           </p>
-          <a href="mailto:hello@catscandance.com" className="font-display text-2xl md:text-3xl text-ink underline decoration-magenta decoration-4 underline-offset-4">
+          <a href="mailto:hello@catscandance.com" className="font-display text-xl sm:text-2xl md:text-3xl text-ink underline decoration-magenta decoration-4 underline-offset-4 break-all">
             hello@catscandance.com
           </a>
         </motion.div>
@@ -75,7 +75,7 @@ const Contact = () => {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ type: "spring", stiffness: 160, damping: 18, delay: 0.1 }}
-          className="bg-cream border-4 border-ink chunk-shadow-lg p-6 md:p-8 space-y-4"
+          className="bg-cream border-4 border-ink chunk-shadow-lg p-4 sm:p-6 md:p-8 space-y-4"
         >
           <input
             type="text"
