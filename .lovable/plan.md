@@ -1,112 +1,92 @@
-# Hero cats, About cat fix, Pets section, AI blog generator, SEO
 
-Five things, no new deps.
 
-## 1. Hero — add 2 more cats (different ones)
+# Hero cats swap, About tightening, Pet mockups, mobile text fix, BlogTab wiring
 
-`src/components/Hero.tsx`: add two more flanking cats positioned mid-height on the sides (desktop) and tucked near top (mobile), using assets we haven't used yet on the hero: `cat-raver.png` and `cat-streetwear.png`. Each gets gentle scroll motion (different x/rot direction from existing flankers so they feel distinct, not duplicated).
+## 1. Hero — swap mid-flank cats with the two uploaded cats, bigger and tucked into the wordmark
 
-- Desktop: `cat-raver` mid-left at `top-1/3 left-2 w-28`, scroll moves `x: 0→-40%, rot: 0→-15`. `cat-streetwear` mid-right at `top-1/3 right-2 w-28`, mirror.
-- Mobile: smaller `w-14`, anchored just below the stars area at `top-44`, slight wiggle.
-- All `pointer-events-none`, `drop-shadow-[6px_6px_0_hsl(var(--ink))]`, `z-20` (behind the headline `z-30` won't apply — keep z-10 to sit between stars and headline).
+Replace `cat-raver.png` and `cat-streetwear.png` (the awkward tiny corner ones) with the two uploaded cats:
 
-## 2.the brand section cat  — make the cat bigger and actually walk on scroll
+- Copy `user-uploads://fERWBZ0K-2.jpeg` → `src/assets/cat-cap.png` (cap/arms-crossed cat, left side)
+- Copy `user-uploads://tNDbJnao-2.jpeg` → `src/assets/cat-headphones-dance.png` (headphones dancing cat, right side)
 
-Current cat: `w-2/5 sm:w-1/2 md:w-2/3 max-w-[160px]` + `x: ["-5%","25%"]` — so it's tiny and barely moves. Fix:
+In `src/components/Hero.tsx`:
+- Remove the existing `catRaver` / `catStreetwear` `<motion.img>` blocks.
+- Add the two new cats positioned **closer to the wordmark, larger, partially overlapping the "CATS / CAN / DANCE" text** so they read as part of the composition (not corner stickers):
+  - Mobile: `top-[34%] left-[-4%] w-28 -rotate-12`, `top-[44%] right-[-4%] w-28 rotate-12`, `z-30` (in front of headline edges, not center).
+  - Desktop: `top-[28%] left-[6%] w-44`, `top-[36%] right-[6%] w-44`, `z-30`.
+  - Light scroll motion: small `x` drift outward + tiny rotate (keep `useTransform` pattern that's already there).
+  - `drop-shadow-[6px_6px_0_hsl(var(--ink))]`, `pointer-events-none`, `wiggle`.
 
-- Mobile size: `w-3/4 max-w-[220px]`; desktop `md:max-w-sm`.
-- Walk range: `x: ["-20%", "120%"]` mobile, `["-10%", "150%"]` desktop — clearly traverses the column on scroll.
-- Add a step-y bob synced to scroll progress so it looks like it's walking (small vertical sine via `useTransform` with multiple keyframes: `[0,0.25,0.5,0.75,1] → [0, -8, 0, -8, 0]` px).
-- Slight rotate sway: `rot: [-6, 6]` on scroll.
-- Column height bumped to `h-64 sm:h-72 md:h-80`.
+The headline stays `z-20` so cats sit in front at the edges but the bulk of the wordmark remains readable.
 
-## 3. Pets — Shopify products + `/pets` page + Shop filter chips
+## 2. About / brand section — tighter, cat moved up, less empty space
 
-**Shopify seeding** (real products via `shopify--create_product`):
+`src/components/About.tsx`:
+- Drop column heights: `h-64 sm:h-72 md:h-80` → `h-40 sm:h-48 md:h-56`.
+- Reduce section padding: `py-16 md:py-20` → `py-10 md:py-14`.
+- Move cat image up by anchoring `top-0` instead of `top-1/2 -translate-y-1/2`, with `mt-2`.
+- Tighten grid gap: `gap-10 md:gap-12` → `gap-6 md:gap-10`.
+- Keep walking motion (`xMobile/xDesktop`, `bob`, `rot`) — only the box shrinks and the cat moves up so the cat sits visually next to the paragraph instead of floating in dead space.
 
-1. **Cat Bucket Hat** — `product_type: "Pet"`, tags `pets,pet,cat,bucket-hat,streetwear`, ₹1200, image `src/assets/cat-headphones.png`.
-2. **Cat Bandana** — tags `pets,pet,cat,bandana`, ₹600, image `src/assets/cat-dancer.png`.
-3. **CCD Cat Treats** — tags `pets,pet,cat,treats,food`, ₹400, image `src/assets/boombox.png` (placeholder until real photo).
+## 3. Pet product mockups with CCD branding (Apparel + Pet Products)
 
-`**src/pages/Pets.tsx**` (NEW):
+Generate 3 branded mockup PNGs using Lovable AI image gen (Nano Banana via the `ai-gateway` skill), save to `src/assets/`, then update the existing 3 Shopify products via `shopify--update_product` with the new images:
 
-- `PageHero` "PETS THAT PARTY" / "Streetwear for the floor — and your floor pet."
-- Reuses `storefrontApiRequest` with `query: "tag:pets"` to pull only pet-tagged products.
-- Same brutalist card grid + "Add to Cart" as `Shop.tsx` (extract a tiny `ProductCard` shared component to avoid duplication).
-- Heavy SEO: `Product` + `CollectionPage` + `Brand` JSON-LD; H1 "Pet streetwear in India — bandanas, bucket hats & cat treats from Bangalore"; SR-only paragraph hitting `cat bandana India`, `pet bucket hat`, `cat treats Bangalore`, `pet streetwear`.
+- `pet-bucket-hat-mockup.png` — cream cat-sized bucket hat, magenta CCD wordmark patch on front, brutalist studio shot on electric-blue paper backdrop.
+- `pet-bandana-mockup.png` — pink triangle bandana with "CATS CAN DANCE" arched in black ink, on a clean cream surface.
+- `pet-treats-mockup.png` — kraft pouch labeled "CCD CAT TREATS — TUNA & THUNDER", magenta + acid-yellow brutalist label, on cream backdrop.
 
-`**src/pages/Shop.tsx**` — add filter chips at top of grid: `ALL / STREETWEAR / PETS`, default ALL. Filter is client-side on already-fetched products by checking `product.productType === "Pet"` or `tags.includes("pets")` (need to add `productType` + `tags` to the GraphQL query in `src/lib/shopify.ts`).
+Then update the 3 existing Shopify products:
+- "Cat Bucket Hat" → rename to "CCD Cat Bucket Hat (Apparel)" + new image.
+- "Cat Bandana" → "CCD Cat Bandana (Pet Apparel)" + new image.
+- "CCD Cat Treats" → keep title + new image.
 
-`**src/components/Nav.tsx` + `src/components/Footer.tsx**` — add `/pets` link beside `/shop`.
-`**src/App.tsx**` — register `/pets` route.
+Tags already include `pets`, so `/pets` page and Shop PETS filter pick them up automatically.
 
-## 4. AI blog generator — Admin BLOG tab
+Add a small section eyebrow on `src/pages/Pets.tsx`: subtitle becomes "Apparel & pet products — CCD-branded, made for the floor."
 
-**DB**: `site_settings.blog_posts` already exists. No migration needed.
+## 4. Mobile text cut-off — Shop & About hero titles
 
-**Edge function `admin-generate-blog**` (NEW):
+Root cause: `PageHero` uses `text-5xl md:text-8xl` with `drop-shadow filter` on a fixed-line `<h1>`. On 390px viewport, "DROPS & COLLECTIBLES." and similar long titles overflow horizontally and get clipped by `overflow-hidden` on the section.
 
-- Validates `x-admin-password` against `ADMIN_PASSWORD`.
-- Body: `{ category, title?, keyword?, angle? }` — all optional except `category`.
-- The function holds **pre-researched keyword/title library** per category (server-side const map):
-  - GUIDES → titles like "Best Underground Parties Bangalore 2026", keywords `bangalore underground events, techno bangalore`.
-  - CULTURE → "Why Bangalore's Dance Floors Hit Different", keywords `bangalore club culture, electronic music india`.
-  - ARTISTS → "Rising DJs in Bangalore You Should Book Now", keywords `bangalore djs, indian electronic artists`.
-  - JOURNAL → "Inside Episode 02: Notes From The Floor", keywords `cats can dance episode, ccd events`.
-  - DROPS → "Cat Bandana Drop Notes — Limited Run", keywords `cat streetwear india, cat bandana, pet streetwear`.
-  - PETS → "Best Cat Bandanas in India 2026", keywords `cat bandana india, pet bucket hat, cat treats bangalore`.
-- If user leaves title/keyword blank, function picks a fresh one from the library that doesn't collide with already-published slugs (fetched from `site_settings.blog_posts`).
-- Calls Lovable AI (`google/gemini-2.5-pro`) via tool-calling with strict schema returning: `slug, title, excerpt, category, coverTitle, tag, tldr[], quickPicks{title, items[]}, pullQuote, whatWedSkip, body[], seoTitle, metaDescription, dateISO`.
-- System prompt enforces: first-person CCD voice, Bangalore specifics, 700-1000 words, target keyword in title + first paragraph + once mid-body, TL;DR + pull-quote + "what we'd skip" mandatory, byline `— The Pack`.
-- Returns the draft JSON.
+Fix in `src/components/PageHero.tsx`:
+- Change section `overflow-hidden` → `overflow-x-clip` (allows shadow bleed but clips horizontal scroll without cutting visible text).
+- Title: `text-5xl md:text-8xl` → `text-[2.5rem] sm:text-6xl md:text-8xl leading-[0.9] break-words hyphens-auto`.
+- Add `pr-4` to title so the drop-shadow tail doesn't get clipped at the right edge.
+- Container padding stays.
 
-**Edge function `admin-publish-blog**` (NEW):
+Also `About.tsx` H2 already uses `break-words` and responsive sizing — verify nothing else clips post-PageHero fix.
 
-- Validates admin password.
-- Body: full post object (after user edits).
-- Reads `site_settings.blog_posts`, prepends new post (newest first), writes back via service role.
-- Returns success.
+"Scroll outwards post reveal" interpretation: the user wants long titles to **not** be cut on mobile — fixing the overflow + responsive sizing handles this without adding a marquee. (If they wanted an actual marquee, we can swap to one in a follow-up — flagging in the implementation note.)
 
-`**supabase/config.toml**`: add both functions, `verify_jwt = false` since they self-validate.
+## 5. Finish BlogTab wiring in Admin
 
-**Admin UI — new BLOG tab** in `src/pages/Admin.tsx`:
+`src/pages/Admin.tsx` already references `<BlogTab />` at line 515 but the component definition is missing — that's the build error.
 
-- **Step 1 — Compose**: Category dropdown (required), optional Title, optional Target Keyword, optional Angle (textarea). Two buttons: "GENERATE FROM RESEARCH" (uses library) and "GENERATE WITH MY INPUTS".
-- **Step 2 — Preview & Edit**: All returned fields shown as editable inputs/textareas. Live `<BlogCover />` preview using current values (category, coverTitle, issue=auto). TL;DR bullets editable as a list. `body[]` editable as a single textarea split on `\n\n`.
-- **Step 3 — Publish**: PUBLISH button → POSTs to `admin-publish-blog`. On success, toast + reset wizard. Lists last 10 published posts under the wizard with delete (calls `admin-publish-blog?action=delete&slug=...`).
+Append to the bottom of `Admin.tsx` (after the `Admin` default export, before file end):
 
-**Frontend integration**: `useDynamicPosts` already merges DB posts into the static list, so published posts appear instantly on `/blog` and `/blog/:slug`.
+- `function BlogTab()` — self-contained component holding the 3-step wizard:
+  - **Step 1 (Compose)**: Category select (GUIDES/CULTURE/ARTISTS/JOURNAL/DROPS/PETS, required), optional Title, Keyword, Angle. Two buttons: "GENERATE FROM RESEARCH" (sends only category) and "GENERATE WITH MY INPUTS" (sends all fields). Both POST to `admin-generate-blog` edge fn with `x-admin-password` from `localStorage.ccd_admin_pass`.
+  - **Step 2 (Preview & Edit)**: Renders editable inputs/textareas for every field of the returned `DraftPost`. Live `<BlogCover />` preview using current `category`, `coverTitle`. TL;DR bullets editable as a textarea split on `\n`. `body[]` editable as a single textarea joined/split on `\n\n`.
+  - **Step 3 (Publish)**: PUBLISH button POSTs the edited post to `admin-publish-blog`. On success: toast, reset wizard to Step 1.
+  - Below the wizard, a "PUBLISHED POSTS" list (GET `admin-publish-blog`) showing last 10 with delete buttons (`POST admin-publish-blog?action=delete&slug=...`).
 
-## 5. SEO expansion — pets + streetwear
+Loading + error states for both fetches; surface 402/429 from Lovable AI as toast.
 
-- `index.html` `<meta name="keywords">`: append `pet streetwear India, cat bandana India, cat bucket hat, cat treats Bangalore, pet products`.
-- `public/sitemap.xml`: add `<url>` for `/pets` (priority 0.8, weekly).
-- `public/brand.json`: extend `categories` with `Pet Products, Pet Accessories`; add 2 FAQs ("Do you make pet products?", "Where to buy cat bandanas in Bangalore?").
-- `public/llms.txt` + `public/llms-full.txt`: new "Pets" section with `/pets` URL and the 3 product names.
+## 6. Files touched
 
-## 6. Human-input rewrites — next turn
+- `src/assets/cat-cap.png`, `src/assets/cat-headphones-dance.png` — copied from uploads
+- `src/assets/pet-bucket-hat-mockup.png`, `src/assets/pet-bandana-mockup.png`, `src/assets/pet-treats-mockup.png` — generated via AI
+- `src/components/Hero.tsx` — swap + reposition flanking cats
+- `src/components/About.tsx` — tighter section, cat moved up
+- `src/components/PageHero.tsx` — responsive title sizing + overflow fix
+- `src/pages/Pets.tsx` — subtitle copy tweak
+- `src/pages/Admin.tsx` — append `BlogTab` component (fixes build error)
+- Shopify — `update_product` ×3 (new images, refined titles)
 
-After this batch ships, I'll ask 3-4 questions per post (one at a time so it's not overwhelming), then rewrite and replace in `src/content/posts.ts`:
+## 7. Next batch (after this ships)
 
-- **Inside Episode 01** — venue, date, lineup, one anecdote, one regret.
-- **Behind the Decks: Bangalore's Rising DJs** — 5-6 DJs you'd vouch for + a one-line vibe each.
-- **Top 10 Event Organisers in India** — real crew names per city.
-- **Best Underground Parties in Bangalore** — venues, promoters, regular nights.
+Human-input rewrites for "Inside Episode 01" — I'll ask 3 questions one at a time: venue/date, lineup + one anecdote, one regret/thing you'd skip.
 
-## Files touched
+No new npm packages. No DB migration. Edge functions already exist from prior batch.
 
-- `src/components/Hero.tsx` — 2 new cats
-- `src/components/About.tsx` — bigger cat, real walking motion
-- `src/lib/shopify.ts` — add `productType` + `tags` to query
-- `src/pages/Shop.tsx` — filter chips ALL/STREETWEAR/PETS
-- `src/pages/Pets.tsx` — NEW
-- `src/components/Nav.tsx`, `src/components/Footer.tsx` — Pets link
-- `src/App.tsx` — `/pets` route
-- `src/pages/Admin.tsx` — BLOG tab (3-step wizard)
-- `supabase/functions/admin-generate-blog/index.ts` — NEW
-- `supabase/functions/admin-publish-blog/index.ts` — NEW
-- `supabase/config.toml` — register both, `verify_jwt = false`
-- Shopify — create 3 real products
-- `index.html`, `public/sitemap.xml`, `public/brand.json`, `public/llms.txt`, `public/llms-full.txt` — pet SEO
-
-No new npm packages. No DB migration (column already exists).
