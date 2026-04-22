@@ -9,6 +9,7 @@ const groups = [
       { to: "/about", label: "About" },
       { to: "/events", label: "Events" },
       { to: "/shop", label: "Shop" },
+      { to: "/pets", label: "Pets" },
       { to: "/blog", label: "Blog" },
       { to: "/media", label: "Media" },
     ],
