@@ -6,37 +6,37 @@
 
 @layer base {
   :root {
-    /* Cats Can Dance — bold cartoon palette */
-    --background: 42 80% 94%;           /* cream */
-    --foreground: 0 0% 6%;              /* near-black ink */
+    /* Cats Can Dance — Brutalist palette */
+    --background: 20 6% 90%;            /* stone */
+    --foreground: 222 47% 4%;           /* near-black ink */
 
-    --hot-pink: 330 100% 72%;
-    --bubblegum: 330 100% 85%;
-    --acid-yellow: 52 100% 56%;
-    --electric-blue: 222 84% 53%;       /* #2463eb */
-    --lime: 80 90% 55%;
-    --orange: 22 100% 58%;
-    --magenta: 320 90% 50%;
-    --cream: 42 80% 94%;
-    --ink: 0 0% 6%;
+    --hot-pink: 0 72% 51%;
+    --bubblegum: 0 93% 86%;
+    --acid-yellow: 84 81% 56%;          /* lime-yellow */
+    --electric-blue: 221 83% 53%;       /* #2563EB */
+    --lime: 142 76% 73%;
+    --orange: 21 90% 53%;
+    --magenta: 0 72% 51%;               /* hot red #DC2626 */
+    --cream: 20 6% 90%;                 /* stone */
+    --ink: 222 47% 4%;
 
-    --card: 42 80% 94%;
-    --card-foreground: 0 0% 6%;
-    --popover: 42 80% 94%;
-    --popover-foreground: 0 0% 6%;
-    --primary: 0 0% 6%;
-    --primary-foreground: 52 100% 56%;
-    --secondary: 52 100% 56%;
-    --secondary-foreground: 0 0% 6%;
-    --muted: 330 60% 90%;
-    --muted-foreground: 0 0% 25%;
-    --accent: 52 100% 56%;
-    --accent-foreground: 0 0% 6%;
+    --card: 20 6% 90%;
+    --card-foreground: 222 47% 4%;
+    --popover: 20 6% 90%;
+    --popover-foreground: 222 47% 4%;
+    --primary: 222 47% 4%;
+    --primary-foreground: 84 81% 56%;
+    --secondary: 84 81% 56%;
+    --secondary-foreground: 222 47% 4%;
+    --muted: 20 6% 82%;
+    --muted-foreground: 222 20% 25%;
+    --accent: 84 81% 56%;
+    --accent-foreground: 222 47% 4%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 6%;
-    --input: 0 0% 6%;
-    --ring: 0 0% 6%;
+    --border: 222 47% 4%;
+    --input: 222 47% 4%;
+    --ring: 222 47% 4%;
     --radius: 1.25rem;
   }
 
