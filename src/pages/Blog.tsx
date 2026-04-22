@@ -1,13 +1,17 @@
 import { Link } from "react-router-dom";
+import { useSyncExternalStore } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BlogCover from "@/components/BlogCover";
-import { posts } from "@/content/posts";
+import { getAllPosts, subscribePosts } from "@/content/posts";
+import { useDynamicPosts } from "@/hooks/useDynamicPosts";
 
 const Blog = () => {
+  useDynamicPosts();
+  const posts = useSyncExternalStore(subscribePosts, getAllPosts, getAllPosts);
   const itemListLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -54,7 +58,7 @@ const Blog = () => {
                   <BlogCover title={p.title} coverTitle={p.coverTitle} category={p.category} tag={p.tag} issue={p.issue} color={p.coverColor} className="border-0" />
                 </div>
                 <div className="p-5 sm:p-6">
-                  <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-3">{p.tag}</span>
+                  <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-3">{p.category || p.tag}</span>
                   <h2 className="font-display text-2xl sm:text-3xl text-ink mb-2 leading-[0.95] break-words">{p.title}</h2>
                   <p className="text-ink/70 font-medium mb-3 text-sm sm:text-base">{p.excerpt}</p>
                   <p className="font-display text-ink/60 text-xs sm:text-sm">
