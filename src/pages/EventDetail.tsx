@@ -135,16 +135,23 @@ const EventDetail = () => {
           </div>
         </section>
 
-        {event.poster_url && (
-          <div className="container pt-12">
-            <img
-              src={event.poster_url}
-              alt={`${event.title} — Cats Can Dance dance music event in ${event.city || "Bangalore"}`}
-              loading="lazy"
-              className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
-            />
-          </div>
-        )}
+        {event.poster_url && (() => {
+          const src = event.poster_url!.startsWith("http") || event.poster_url!.startsWith("/")
+            ? event.poster_url!
+            : `/${event.poster_url}`;
+          return (
+            <div className="container pt-12">
+              <img
+                src={src}
+                alt={`${event.title} — Cats Can Dance dance music event in ${event.city || "Bangalore"}`}
+                loading="lazy"
+                decoding="async"
+                className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
+                onError={(ev) => { (ev.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+          );
+        })()}
 
         <section className="container py-16 md:py-20 grid md:grid-cols-2 gap-10 max-w-5xl">
           <div>
