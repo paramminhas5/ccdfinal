@@ -17,6 +17,7 @@ import Shop from "./pages/Shop.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
 import Blog from "./pages/Blog.tsx";
+import MediaPage from "./pages/Media.tsx";
 import Press from "./pages/Press.tsx";
 import Embed from "./pages/Embed.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/product/:handle" element={<ProductDetail />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/media" element={<MediaPage />} />
                 <Route path="/press" element={<Press />} />
                 <Route path="/embed/upcoming" element={<Embed />} />
                 <Route path="*" element={<NotFound />} />

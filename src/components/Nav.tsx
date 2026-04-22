@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
 import DiscoButton from "@/components/DiscoButton";
 import DiscoMute from "@/components/DiscoMute";
+import DiscoHint from "@/components/DiscoHint";
 import { CartDrawer } from "@/components/CartDrawer";
 import { useCartStore } from "@/stores/cartStore";
 import ccdLogo from "@/assets/ccd-logo.png";
@@ -9,7 +10,8 @@ import ccdLogo from "@/assets/ccd-logo.png";
 const links = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
-  { to: "/for-venues", label: "For Venues" },
+  { to: "/media", label: "Media" },
+  { to: "/for-venues", label: "Venue Partners" },
   { to: "/for-artists", label: "For Artists" },
   { to: "/for-investors", label: "For Investors" },
 ];
@@ -65,7 +67,7 @@ const Nav = () => {
             </li>
           ))}
           <li><DiscoMute /></li>
-          <li><DiscoButton compact /></li>
+          <li className="relative"><DiscoButton compact /><DiscoHint /></li>
           {hasCart && <li><CartDrawer /></li>}
           <li>
             <Link
@@ -77,9 +79,9 @@ const Nav = () => {
           </li>
         </ul>
 
-        <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
+        <div className="lg:hidden flex items-center gap-1.5 sm:gap-2 relative">
           <DiscoMute />
-          <DiscoButton compact />
+          <div className="relative"><DiscoButton compact /><DiscoHint /></div>
           {hasCart && <CartDrawer />}
           <button
             aria-label="Toggle menu"
