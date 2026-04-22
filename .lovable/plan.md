@@ -1,110 +1,112 @@
-# Pets section, AI blog generator, smarter covers, fixes
+# Hero cats, About cat fix, Pets section, AI blog generator, SEO
 
-Six things this batch. No new dependencies.
+Five things, no new deps.
 
-## 1. Footer fixes
+## 1. Hero — add 2 more cats (different ones)
 
-- Make the two decorative logo medallions smaller and less weird: shrink from `w-24 / w-20` → `w-14 / w-12`, lighter border (`border-2`), drop the heavy `chunk-shadow` to `chunk-shadow` (existing) but smaller circles read as "stickers" not "billboards".
-- Remove `KARNATAKA · INDIA` line — keep just `BANGALORE` (less spammy, cleaner).
+`src/components/Hero.tsx`: add two more flanking cats positioned mid-height on the sides (desktop) and tucked near top (mobile), using assets we haven't used yet on the hero: `cat-raver.png` and `cat-streetwear.png`. Each gets gentle scroll motion (different x/rot direction from existing flankers so they feel distinct, not duplicated).
 
-## 2. About — stop the cat from clipping
+- Desktop: `cat-raver` mid-left at `top-1/3 left-2 w-28`, scroll moves `x: 0→-40%, rot: 0→-15`. `cat-streetwear` mid-right at `top-1/3 right-2 w-28`, mirror.
+- Mobile: smaller `w-14`, anchored just below the stars area at `top-44`, slight wiggle.
+- All `pointer-events-none`, `drop-shadow-[6px_6px_0_hsl(var(--ink))]`, `z-20` (behind the headline `z-30` won't apply — keep z-10 to sit between stars and headline).
 
-The `motion.img` is positioned `top-1/2 -translate-y-1/2` inside an `overflow-hidden` column with `w-1/2 sm:w-1/2 md:w-2/3` — the rotate + walk bounce push the cat past the column on mobile.
+## 2.the brand section cat  — make the cat bigger and actually walk on scroll
 
-- Change column from `overflow-hidden` → `overflow-visible` so the cat can breathe.
-- Cap `max-w-[160px]` on mobile and reduce rotate range to `[-3, 3]`.
-- Tighten x range to `["-5%", "25%"]` on mobile (full range only `md+`).
-- Add `pointer-events-none` so it never blocks taps.
+Current cat: `w-2/5 sm:w-1/2 md:w-2/3 max-w-[160px]` + `x: ["-5%","25%"]` — so it's tiny and barely moves. Fix:
 
-## 3. Smarter blog covers (categories + brief headline, not gibberish)
+- Mobile size: `w-3/4 max-w-[220px]`; desktop `md:max-w-sm`.
+- Walk range: `x: ["-20%", "120%"]` mobile, `["-10%", "150%"]` desktop — clearly traverses the column on scroll.
+- Add a step-y bob synced to scroll progress so it looks like it's walking (small vertical sine via `useTransform` with multiple keyframes: `[0,0.25,0.5,0.75,1] → [0, -8, 0, -8, 0]` px).
+- Slight rotate sway: `rot: [-6, 6]` on scroll.
+- Column height bumped to `h-64 sm:h-72 md:h-80`.
 
-Right now covers show `№ 03` + a one-word kicker like "TOP 10" — no context, confusing. Rewrite `BlogCover.tsx`:
+## 3. Pets — Shopify products + `/pets` page + Shop filter chips
 
-- **Top row**: small **CATEGORY chip** (left) + tiny `№ 03` issue tag (right). Categories: `GUIDES`, `CULTURE`, `ARTISTS`, `JOURNAL`, `DROPS` (extend `Post.tag` enum).
-- **Middle**: **the actual post title, shortened** to 4-7 words (new optional `coverTitle` field, falls back to `title` truncated). Wrapped, 3 lines max, big `font-display`.
-- **Bottom**: paw + `CATS · CAN · DANCE`.
-- Drop the "kicker" entirely — that's what was confusing.
-- Update `posts.ts`: add `category` and `coverTitle` per post; remove `kicker`.
-- `Blog.tsx` & `Media.tsx` show category chip too so users can scan.
+**Shopify seeding** (real products via `shopify--create_product`):
 
-## 4. Pet section — both `/pets` page AND filter on `/shop`
+1. **Cat Bucket Hat** — `product_type: "Pet"`, tags `pets,pet,cat,bucket-hat,streetwear`, ₹1200, image `src/assets/cat-headphones.png`.
+2. **Cat Bandana** — tags `pets,pet,cat,bandana`, ₹600, image `src/assets/cat-dancer.png`.
+3. **CCD Cat Treats** — tags `pets,pet,cat,treats,food`, ₹400, image `src/assets/boombox.png` (placeholder until real photo).
 
-**Shopify seed (3 placeholder products)**:
+`**src/pages/Pets.tsx**` (NEW):
 
-- `Cat Bucket Hat` — black, embroidered paw, "₹ 1,200" placeholder
-- `Cat Bandana` — magenta, screen-print, "₹ 600"
-- `CCD Cat Treats` — small bag, "₹ 400"
-Each tagged `pets,pet,cat` and `product_type: Pet`. Created via `shopify--create_product` so they're real, purchasable, and Shopify-managed. Placeholder images use existing brand SVGs (`cat-headphones`, `cat-dancer`, etc.) — user can swap photos later.
+- `PageHero` "PETS THAT PARTY" / "Streetwear for the floor — and your floor pet."
+- Reuses `storefrontApiRequest` with `query: "tag:pets"` to pull only pet-tagged products.
+- Same brutalist card grid + "Add to Cart" as `Shop.tsx` (extract a tiny `ProductCard` shared component to avoid duplication).
+- Heavy SEO: `Product` + `CollectionPage` + `Brand` JSON-LD; H1 "Pet streetwear in India — bandanas, bucket hats & cat treats from Bangalore"; SR-only paragraph hitting `cat bandana India`, `pet bucket hat`, `cat treats Bangalore`, `pet streetwear`.
 
-**Shop page**: Add a **filter row** at top — `ALL / STREETWEAR / PETS` chips that filter the rendered grid by `product_type` / `tags`. Default = ALL.
+`**src/pages/Shop.tsx**` — add filter chips at top of grid: `ALL / STREETWEAR / PETS`, default ALL. Filter is client-side on already-fetched products by checking `product.productType === "Pet"` or `tags.includes("pets")` (need to add `productType` + `tags` to the GraphQL query in `src/lib/shopify.ts`).
 
-**New `/pets` page** (`src/pages/Pets.tsx`):
+`**src/components/Nav.tsx` + `src/components/Footer.tsx**` — add `/pets` link beside `/shop`.
+`**src/App.tsx**` — register `/pets` route.
 
-- `PageHero` "PETS THAT PARTY" with subline "Streetwear for the floor — and your floor pet."
-- Pulls Shopify products tagged `pets` via Storefront API `query: "tag:pets"`.
-- Same brutalist card grid as Shop.
-- Heavy SEO: `Product` + `CollectionPage` JSON-LD, keyword-rich H1/H2 ("Pet streetwear India", "cat bandanas Bangalore", "cat treats India"), SR-only paragraph.
-- Linked from Nav (under "Shop" submenu or beside it), Footer, sitemap.
-- New SEO meta: `Pet streetwear, cat bandana India, pet bucket hat, cat treats Bangalore`.
+## 4. AI blog generator — Admin BLOG tab
 
-## 5. AI blog generator in Admin (3 questions → preview → publish)
+**DB**: `site_settings.blog_posts` already exists. No migration needed.
 
-**Backend**: New edge function `admin-generate-blog`:
+**Edge function `admin-generate-blog**` (NEW):
 
-- Accepts `{ topic, targetKeyword, angle, password }`.
-- Validates admin password (same pattern as other admin functions).
-- Calls Lovable AI Gateway (`google/gemini-2.5-pro` for quality) with a system prompt that produces SEO-heavy posts in CCD voice + the new structured shape (`title`, `excerpt`, `tag`, `category`, `coverTitle`, `coverColor`, `tldr[]`, `quickPicks{}`, `pullQuote`, `whatWedSkip`, `body[]`, `seoTitle`, `metaDescription`, `slug`).
-- Uses tool-calling for structured JSON (no string parsing).
-- Returns the generated draft as JSON.
+- Validates `x-admin-password` against `ADMIN_PASSWORD`.
+- Body: `{ category, title?, keyword?, angle? }` — all optional except `category`.
+- The function holds **pre-researched keyword/title library** per category (server-side const map):
+  - GUIDES → titles like "Best Underground Parties Bangalore 2026", keywords `bangalore underground events, techno bangalore`.
+  - CULTURE → "Why Bangalore's Dance Floors Hit Different", keywords `bangalore club culture, electronic music india`.
+  - ARTISTS → "Rising DJs in Bangalore You Should Book Now", keywords `bangalore djs, indian electronic artists`.
+  - JOURNAL → "Inside Episode 02: Notes From The Floor", keywords `cats can dance episode, ccd events`.
+  - DROPS → "Cat Bandana Drop Notes — Limited Run", keywords `cat streetwear india, cat bandana, pet streetwear`.
+  - PETS → "Best Cat Bandanas in India 2026", keywords `cat bandana india, pet bucket hat, cat treats bangalore`.
+- If user leaves title/keyword blank, function picks a fresh one from the library that doesn't collide with already-published slugs (fetched from `site_settings.blog_posts`).
+- Calls Lovable AI (`google/gemini-2.5-pro`) via tool-calling with strict schema returning: `slug, title, excerpt, category, coverTitle, tag, tldr[], quickPicks{title, items[]}, pullQuote, whatWedSkip, body[], seoTitle, metaDescription, dateISO`.
+- System prompt enforces: first-person CCD voice, Bangalore specifics, 700-1000 words, target keyword in title + first paragraph + once mid-body, TL;DR + pull-quote + "what we'd skip" mandatory, byline `— The Pack`.
+- Returns the draft JSON.
 
-**Frontend**: New **"BLOG"** tab in `Admin.tsx`:
+**Edge function `admin-publish-blog**` (NEW):
 
-1. **Step 1 — 3 questions form predetermined from research** :
-  - Topic (e.g. "best Bangalore record stores")
-  - Target keyword (e.g. "Bangalore record stores 2026")
-  - Angle / personal hook (1-2 sentences from you, optional but improves humanness)
-2. Click **GENERATE** → loading state → shows generated draft.
-3. **Step 2 — preview & edit**: All fields editable inline. Live `BlogCover` preview. Edit any field including body paragraphs.
-4. **Step 3 — publish**: Click **PUBLISH** → POST to a new edge function `admin-publish-blog` which appends to `posts` jsonb in `site_settings` (new column `blog_posts jsonb default '[]'`). Reads merged with static `src/content/posts.ts` at runtime.
+- Validates admin password.
+- Body: full post object (after user edits).
+- Reads `site_settings.blog_posts`, prepends new post (newest first), writes back via service role.
+- Returns success.
 
-`**Blog.tsx` / `BlogPost.tsx**` updated to load union of static posts + `site_settings.blog_posts` so AI-published posts appear instantly without redeploy.
+`**supabase/config.toml**`: add both functions, `verify_jwt = false` since they self-validate.
 
-**DB migration**: add `site_settings.blog_posts jsonb not null default '[]'`.
+**Admin UI — new BLOG tab** in `src/pages/Admin.tsx`:
 
-## 6. Rewrite 4 posts with your real human input
+- **Step 1 — Compose**: Category dropdown (required), optional Title, optional Target Keyword, optional Angle (textarea). Two buttons: "GENERATE FROM RESEARCH" (uses library) and "GENERATE WITH MY INPUTS".
+- **Step 2 — Preview & Edit**: All returned fields shown as editable inputs/textareas. Live `<BlogCover />` preview using current values (category, coverTitle, issue=auto). TL;DR bullets editable as a list. `body[]` editable as a single textarea split on `\n\n`.
+- **Step 3 — Publish**: PUBLISH button → POSTs to `admin-publish-blog`. On success, toast + reset wizard. Lists last 10 published posts under the wizard with delete (calls `admin-publish-blog?action=delete&slug=...`).
 
-After this batch ships, in the **next turn** I'll ask you 3-4 quick questions per post (one post at a time so it's not overwhelming), then rewrite using your real names/venues/anecdotes:
+**Frontend integration**: `useDynamicPosts` already merges DB posts into the static list, so published posts appear instantly on `/blog` and `/blog/:slug`.
 
-- Best Underground Parties in Bangalore — names of venues / promoters / nights you'd actually recommend
-- Top 10 Event Organisers in India — real crew names per city
-- Behind the Decks: Bangalore's Rising DJs — the 6 DJs you'd vouch for
-- Inside Episode 01 — where it was, who played, what happened, one anecdote
+## 5. SEO expansion — pets + streetwear
 
-This keeps the SEO weight while making the content actually true.
+- `index.html` `<meta name="keywords">`: append `pet streetwear India, cat bandana India, cat bucket hat, cat treats Bangalore, pet products`.
+- `public/sitemap.xml`: add `<url>` for `/pets` (priority 0.8, weekly).
+- `public/brand.json`: extend `categories` with `Pet Products, Pet Accessories`; add 2 FAQs ("Do you make pet products?", "Where to buy cat bandanas in Bangalore?").
+- `public/llms.txt` + `public/llms-full.txt`: new "Pets" section with `/pets` URL and the 3 product names.
 
-## 7. SEO expansion — pet products + streetwear
+## 6. Human-input rewrites — next turn
 
-- `index.html`: add `pet streetwear India, cat bandana, cat bucket hat, cat treats Bangalore` to keywords; add `Brand` JSON-LD entry for "pet products".
-- `brand.json`: add `categories: [...,"Pet Products","Pet Accessories"]` + 2 FAQ ("Do you make pet products?", "Where to buy cat bandanas in Bangalore?").
-- `llms.txt` + `llms-full.txt`: new **Pets** section with `/pets` URL and product list.
-- `sitemap.xml`: add `/pets` + each pet product URL with `image:image`.
+After this batch ships, I'll ask 3-4 questions per post (one at a time so it's not overwhelming), then rewrite and replace in `src/content/posts.ts`:
+
+- **Inside Episode 01** — venue, date, lineup, one anecdote, one regret.
+- **Behind the Decks: Bangalore's Rising DJs** — 5-6 DJs you'd vouch for + a one-line vibe each.
+- **Top 10 Event Organisers in India** — real crew names per city.
+- **Best Underground Parties in Bangalore** — venues, promoters, regular nights.
 
 ## Files touched
 
-- `src/components/Footer.tsx` — smaller medallions, drop Karnataka
-- `src/components/About.tsx` — overflow-visible, tighter cat motion
-- `src/components/BlogCover.tsx` — rewrite (category + brief title)
-- `src/content/posts.ts` — add `category`, `coverTitle`; drop `kicker`
-- `src/pages/Blog.tsx`, `src/pages/BlogPost.tsx`, `src/components/Media.tsx` — show category, load from static + DB union
-- `src/pages/Shop.tsx` — ALL/STREETWEAR/PETS filter chips
-- `src/pages/Pets.tsx` — NEW page
+- `src/components/Hero.tsx` — 2 new cats
+- `src/components/About.tsx` — bigger cat, real walking motion
+- `src/lib/shopify.ts` — add `productType` + `tags` to query
+- `src/pages/Shop.tsx` — filter chips ALL/STREETWEAR/PETS
+- `src/pages/Pets.tsx` — NEW
 - `src/components/Nav.tsx`, `src/components/Footer.tsx` — Pets link
-- `src/pages/Admin.tsx` — new BLOG tab (3-step wizard)
-- `supabase/functions/admin-generate-blog/index.ts` — NEW edge function (Lovable AI)
-- `supabase/functions/admin-publish-blog/index.ts` — NEW edge function
-- DB migration — `site_settings.blog_posts jsonb default '[]'`
-- Shopify — create 3 pet placeholder products
-- `index.html`, `public/brand.json`, `public/llms.txt`, `public/llms-full.txt`, `public/sitemap.xml` — pet SEO
 - `src/App.tsx` — `/pets` route
+- `src/pages/Admin.tsx` — BLOG tab (3-step wizard)
+- `supabase/functions/admin-generate-blog/index.ts` — NEW
+- `supabase/functions/admin-publish-blog/index.ts` — NEW
+- `supabase/config.toml` — register both, `verify_jwt = false`
+- Shopify — create 3 real products
+- `index.html`, `public/sitemap.xml`, `public/brand.json`, `public/llms.txt`, `public/llms-full.txt` — pet SEO
 
-No design system overhaul. No new npm packages. Real Shopify products (no mocks).
+No new npm packages. No DB migration (column already exists).
