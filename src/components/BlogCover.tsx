@@ -16,26 +16,42 @@ const palette: Record<Color, { bg: string; text: string; accent: string }> = {
 };
 
 type Props = {
+  /** Original title — used only for accessibility, not rendered */
   title: string;
   tag: string;
+  /** Short 2-3 word kicker shown big on the cover. Falls back to tag. */
+  kicker?: string;
+  /** Issue number; renders as "№ 01". */
+  issue?: number;
   color?: Color;
   className?: string;
   size?: "sm" | "md" | "lg";
 };
 
-const BlogCover = ({ title, tag, color = "cream", className = "", size = "md" }: Props) => {
+const BlogCover = ({ title, tag, kicker, issue, color = "cream", className = "", size = "md" }: Props) => {
   const c = palette[color] ?? palette.cream;
-  const titleSize =
+  const issueLabel = typeof issue === "number" ? `№ ${String(issue).padStart(2, "0")}` : null;
+  const kickerText = (kicker || tag).toUpperCase();
+
+  const issueSize =
     size === "lg"
-      ? "text-3xl sm:text-5xl md:text-6xl"
+      ? "text-5xl sm:text-7xl md:text-8xl"
       : size === "sm"
-      ? "text-xl md:text-2xl"
-      : "text-2xl md:text-4xl";
+      ? "text-3xl md:text-4xl"
+      : "text-4xl md:text-6xl";
+
+  const kickerSize =
+    size === "lg"
+      ? "text-2xl sm:text-4xl md:text-5xl"
+      : size === "sm"
+      ? "text-base md:text-lg"
+      : "text-xl md:text-3xl";
 
   return (
     <div
+      role="img"
+      aria-label={title}
       className={`relative w-full h-full ${c.bg} ${c.text} border-4 border-ink overflow-hidden flex flex-col justify-between p-5 md:p-7 ${className}`}
-      aria-hidden
     >
       <div className="flex items-start justify-between gap-3">
         <span className={`inline-block ${c.accent} text-[10px] md:text-xs font-bold px-2 py-1 border-2 border-ink uppercase`}>
@@ -44,9 +60,14 @@ const BlogCover = ({ title, tag, color = "cream", className = "", size = "md" }:
         <span className="font-display text-lg md:text-2xl leading-none opacity-90">★</span>
       </div>
 
-      <h3 className={`font-display ${titleSize} leading-[0.95] break-words`}>
-        {title}
-      </h3>
+      <div className="flex flex-col gap-1">
+        {issueLabel && (
+          <p className={`font-display ${issueSize} leading-[0.9] tracking-tight`}>{issueLabel}</p>
+        )}
+        <p className={`font-display ${kickerSize} leading-[0.95] tracking-tight opacity-90`}>
+          {kickerText}
+        </p>
+      </div>
 
       <div className="flex items-end justify-between gap-3">
         <span className="font-display text-[10px] md:text-xs tracking-widest opacity-80">
