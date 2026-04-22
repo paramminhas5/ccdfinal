@@ -828,3 +828,426 @@ const VerificationForm = ({
 
 export default Admin;
 
+// ============= BLOG TAB =============
+type WizardStep = 1 | 2 | 3;
+
+const CATEGORIES: Category[] = ["GUIDES", "CULTURE", "ARTISTS", "JOURNAL", "DROPS", "PETS"];
+
+const emptyDraft = (): DraftPost => ({
+  slug: "",
+  title: "",
+  excerpt: "",
+  category: "GUIDES",
+  coverTitle: "",
+  coverColor: "magenta",
+  tag: "",
+  tldr: [],
+  quickPicks: { title: "", items: [] },
+  pullQuote: "",
+  whatWedSkip: "",
+  body: [],
+  seoTitle: "",
+  metaDescription: "",
+  dateISO: new Date().toISOString().slice(0, 10),
+  author: "Cats Can Dance",
+});
+
+function BlogTab() {
+  const [step, setStep] = useState<WizardStep>(1);
+  const [category, setCategory] = useState<Category>("GUIDES");
+  const [seedTitle, setSeedTitle] = useState("");
+  const [seedKeyword, setSeedKeyword] = useState("");
+  const [seedAngle, setSeedAngle] = useState("");
+  const [draft, setDraft] = useState<DraftPost>(emptyDraft());
+  const [loading, setLoading] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState<DraftPost[]>([]);
+
+  const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+  const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+
+  const loadPublished = async () => {
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/admin-publish-blog`, {
+        headers: {
+          "x-admin-password": pwd,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) setPublished((data.posts ?? []).slice(0, 10));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  useEffect(() => {
+    loadPublished();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const generate = async (useInputs: boolean) => {
+    setLoading(true);
+    try {
+      const body: Record<string, unknown> = { category };
+      if (useInputs) {
+        if (seedTitle.trim()) body.title = seedTitle.trim();
+        if (seedKeyword.trim()) body.keyword = seedKeyword.trim();
+        if (seedAngle.trim()) body.angle = seedAngle.trim();
+      }
+      const res = await fetch(`${projectUrl}/functions/v1/admin-generate-blog`, {
+        method: "POST",
+        headers: {
+          "x-admin-password": pwd,
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 429) {
+        toast.error("Rate limit hit. Wait a moment and try again.");
+        return;
+      }
+      if (res.status === 402) {
+        toast.error("AI credits exhausted. Top up at Settings → Workspace → Usage.");
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok || !data.post) {
+        toast.error(data.error ?? "Generation failed");
+        return;
+      }
+      const post = { ...emptyDraft(), ...data.post } as DraftPost;
+      post.tldr = Array.isArray(post.tldr) ? post.tldr : [];
+      post.body = Array.isArray(post.body) ? post.body : [];
+      post.quickPicks = post.quickPicks ?? { title: "", items: [] };
+      setDraft(post);
+      setStep(2);
+      toast.success("Draft generated");
+    } catch (e) {
+      toast.error("Generation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const publish = async () => {
+    if (!draft.slug || !draft.title) {
+      toast.error("Slug and title are required");
+      return;
+    }
+    setPublishing(true);
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/admin-publish-blog`, {
+        method: "POST",
+        headers: {
+          "x-admin-password": pwd,
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify(draft),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Publish failed");
+        return;
+      }
+      toast.success("Published");
+      setDraft(emptyDraft());
+      setSeedTitle("");
+      setSeedKeyword("");
+      setSeedAngle("");
+      setStep(1);
+      loadPublished();
+    } catch {
+      toast.error("Publish failed");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const deletePost = async (slug: string) => {
+    if (!confirm(`Delete post "${slug}"?`)) return;
+    try {
+      const res = await fetch(
+        `${projectUrl}/functions/v1/admin-publish-blog?action=delete&slug=${encodeURIComponent(slug)}`,
+        {
+          method: "POST",
+          headers: {
+            "x-admin-password": pwd,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        }
+      );
+      if (res.ok) {
+        toast.success("Deleted");
+        loadPublished();
+      } else toast.error("Delete failed");
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
+
+  const upd = (patch: Partial<DraftPost>) => setDraft((d) => ({ ...d, ...patch }));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 mb-2">
+        {[1, 2, 3].map((n) => (
+          <div
+            key={n}
+            className={`px-4 py-2 border-4 border-ink font-display ${
+              step === n ? "bg-ink text-cream" : "bg-cream text-ink/60"
+            }`}
+          >
+            {n}. {n === 1 ? "COMPOSE" : n === 2 ? "PREVIEW & EDIT" : "PUBLISH"}
+          </div>
+        ))}
+      </div>
+
+      {step === 1 && (
+        <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-4">
+          <h3 className="font-display text-2xl text-ink">GENERATE A DRAFT</h3>
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Category *</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as Category)}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-display focus:outline-none focus:bg-acid-yellow"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Field label="Title (optional)" value={seedTitle} onChange={setSeedTitle} />
+          <Field label="Keyword (optional)" value={seedKeyword} onChange={setSeedKeyword} />
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Angle (optional)</label>
+            <textarea
+              rows={2}
+              value={seedAngle}
+              onChange={(e) => setSeedAngle(e.target.value)}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <button
+              onClick={() => generate(false)}
+              disabled={loading}
+              className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors disabled:opacity-60"
+            >
+              {loading ? "GENERATING…" : "GENERATE FROM RESEARCH"}
+            </button>
+            <button
+              onClick={() => generate(true)}
+              disabled={loading}
+              className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
+            >
+              {loading ? "GENERATING…" : "GENERATE WITH MY INPUTS"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-2xl text-ink">PREVIEW & EDIT</h3>
+            <button
+              onClick={() => setStep(1)}
+              className="bg-cream text-ink font-display px-4 py-1 border-2 border-ink hover:bg-acid-yellow"
+            >
+              ← BACK
+            </button>
+          </div>
+
+          <div className="border-4 border-ink p-4 bg-background">
+            <BlogCover category={draft.category} title={draft.coverTitle || draft.title} />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Field label="Slug" value={draft.slug} onChange={(v) => upd({ slug: v })} />
+            <div>
+              <label className="block font-display text-sm text-ink mb-1">Category</label>
+              <select
+                value={draft.category}
+                onChange={(e) => upd({ category: e.target.value as Category })}
+                className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-display focus:outline-none focus:bg-acid-yellow"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Field label="Title" value={draft.title} onChange={(v) => upd({ title: v })} />
+            <Field
+              label="Cover title"
+              value={draft.coverTitle}
+              onChange={(v) => upd({ coverTitle: v })}
+            />
+            <Field label="Tag" value={draft.tag} onChange={(v) => upd({ tag: v })} />
+            <Field label="Cover color" value={draft.coverColor} onChange={(v) => upd({ coverColor: v })} />
+            <Field label="Date (ISO)" value={draft.dateISO} onChange={(v) => upd({ dateISO: v })} />
+            <Field label="Author" value={draft.author ?? ""} onChange={(v) => upd({ author: v })} />
+          </div>
+
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Excerpt</label>
+            <textarea
+              rows={2}
+              value={draft.excerpt}
+              onChange={(e) => upd({ excerpt: e.target.value })}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">TL;DR (one per line)</label>
+            <textarea
+              rows={4}
+              value={(draft.tldr ?? []).join("\n")}
+              onChange={(e) =>
+                upd({ tldr: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })
+              }
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+
+          <Field
+            label="Quick picks title"
+            value={draft.quickPicks?.title ?? ""}
+            onChange={(v) => upd({ quickPicks: { ...draft.quickPicks, title: v } })}
+          />
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Quick picks items (one per line)</label>
+            <textarea
+              rows={4}
+              value={(draft.quickPicks?.items ?? []).join("\n")}
+              onChange={(e) =>
+                upd({
+                  quickPicks: {
+                    title: draft.quickPicks?.title ?? "",
+                    items: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+                  },
+                })
+              }
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Pull quote</label>
+            <textarea
+              rows={2}
+              value={draft.pullQuote}
+              onChange={(e) => upd({ pullQuote: e.target.value })}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">What we'd skip</label>
+            <textarea
+              rows={2}
+              value={draft.whatWedSkip}
+              onChange={(e) => upd({ whatWedSkip: e.target.value })}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Body (paragraphs separated by blank line)</label>
+            <textarea
+              rows={14}
+              value={(draft.body ?? []).join("\n\n")}
+              onChange={(e) =>
+                upd({ body: e.target.value.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean) })
+              }
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow font-mono text-sm"
+            />
+          </div>
+
+          <Field label="SEO title" value={draft.seoTitle} onChange={(v) => upd({ seoTitle: v })} />
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Meta description</label>
+            <textarea
+              rows={2}
+              value={draft.metaDescription}
+              onChange={(e) => upd({ metaDescription: e.target.value })}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setStep(3)}
+              className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+            >
+              CONTINUE →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-2xl text-ink">PUBLISH</h3>
+            <button
+              onClick={() => setStep(2)}
+              className="bg-cream text-ink font-display px-4 py-1 border-2 border-ink hover:bg-acid-yellow"
+            >
+              ← BACK
+            </button>
+          </div>
+          <p className="text-ink/80 font-medium">
+            Publishing <span className="font-display">{draft.title}</span> to <code>/{draft.slug}</code>.
+          </p>
+          <button
+            onClick={publish}
+            disabled={publishing}
+            className="bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
+          >
+            {publishing ? "PUBLISHING…" : "PUBLISH NOW"}
+          </button>
+        </div>
+      )}
+
+      <div className="bg-cream border-4 border-ink chunk-shadow p-6">
+        <h3 className="font-display text-2xl text-ink mb-4">PUBLISHED POSTS</h3>
+        {published.length === 0 ? (
+          <p className="text-ink/60">No posts yet.</p>
+        ) : (
+          <ul className="divide-y-2 divide-ink/20">
+            {published.map((p) => (
+              <li key={p.slug} className="py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-display text-lg text-ink truncate">{p.title}</p>
+                  <p className="text-ink/60 text-sm">
+                    /{p.slug} · {p.category}
+                  </p>
+                </div>
+                <button
+                  onClick={() => deletePost(p.slug)}
+                  className="bg-destructive text-cream font-display px-4 py-1 shrink-0"
+                >
+                  DELETE
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
