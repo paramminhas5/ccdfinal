@@ -90,7 +90,7 @@ const Pets = () => {
         <Nav />
         <PageHero eyebrow="PETS" title="PETS THAT PARTY." bg="bg-electric-blue" eyebrowColor="text-acid-yellow">
           <p className="font-display text-cream text-2xl mt-4">
-            Streetwear for the floor — and your floor pet.
+            Apparel & pet products — CCD-branded, made for the floor.
           </p>
         </PageHero>
 
