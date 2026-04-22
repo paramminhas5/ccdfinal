@@ -5,8 +5,8 @@ import catLeft from "@/assets/cat-left.svg";
 import catRight from "@/assets/cat-right.svg";
 import catHeadphones from "@/assets/cat-headphones.png";
 import catHandstand from "@/assets/cat-handstand.png";
-import catRaver from "@/assets/cat-raver.png";
-import catStreetwear from "@/assets/cat-streetwear.png";
+import catCap from "@/assets/cat-cap.png";
+import catHpDance from "@/assets/cat-headphones-dance.png";
 import { useDisco } from "@/contexts/DiscoContext";
 import DiscoBall from "@/components/DiscoBall";
 import Lasers from "@/components/Lasers";
@@ -78,20 +78,20 @@ const Hero = () => {
           className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
         />
 
-        {/* Two new mid-height flanking cats — desktop & mobile */}
+        {/* Flanking cats tucked into the wordmark edges */}
         <motion.img
-          src={catRaver}
+          src={catCap}
           alt=""
           aria-hidden
           style={{ x: raverX, rotate: raverRot, willChange: "transform" }}
-          className="absolute z-10 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-44 left-2 w-14 md:top-1/3 md:left-2 md:w-28 wiggle"
+          className="absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-[34%] left-[-4%] w-28 -rotate-12 md:top-[28%] md:left-[6%] md:w-44 wiggle"
         />
         <motion.img
-          src={catStreetwear}
+          src={catHpDance}
           alt=""
           aria-hidden
           style={{ x: streetX, rotate: streetRot, willChange: "transform" }}
-          className="absolute z-10 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-44 right-2 w-14 md:top-1/3 md:right-2 md:w-28 wiggle"
+          className="absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] top-[44%] right-[-4%] w-28 rotate-12 md:top-[36%] md:right-[6%] md:w-44 wiggle"
         />
 
         {/* Mobile-only flanking cats around DJ */}

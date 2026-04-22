@@ -23,9 +23,9 @@ const About = () => {
     <section
       ref={ref}
       id="about"
-      className="relative bg-cream border-b-4 border-ink py-16 md:py-20 bg-grain overflow-x-clip"
+      className="relative bg-cream border-b-4 border-ink py-10 md:py-14 bg-grain overflow-x-clip"
     >
-      <div className="container grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+      <div className="container grid md:grid-cols-2 gap-6 md:gap-10 items-center">
         <div>
           <p className="font-display text-magenta text-xl sm:text-2xl md:text-3xl mb-3 md:mb-4">/ THE BRAND</p>
           <h2 className="font-display text-ink leading-[0.95] mb-5 md:mb-6 break-words text-[2rem] sm:text-5xl md:text-6xl">
@@ -43,14 +43,14 @@ const About = () => {
           </Link>
         </div>
 
-        <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-visible pointer-events-none">
+        <div className="relative h-40 sm:h-48 md:h-56 w-full overflow-visible pointer-events-none">
           {/* Mobile cat (smaller range) */}
           <motion.img
             src={catDancer}
             alt=""
             aria-hidden
             style={{ x: xMobile, y: bob, rotate: rot }}
-            className="md:hidden absolute top-1/2 -translate-y-1/2 left-0 w-3/4 max-w-[220px] pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+            className="md:hidden absolute top-0 mt-2 left-0 w-3/4 max-w-[220px] pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))]"
           />
           {/* Desktop cat (wider range, larger) */}
           <motion.img
@@ -58,7 +58,7 @@ const About = () => {
             alt=""
             aria-hidden
             style={{ x: xDesktop, y: bob, rotate: rot }}
-            className="hidden md:block absolute top-1/2 -translate-y-1/2 left-0 w-2/3 max-w-sm pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+            className="hidden md:block absolute top-0 mt-2 left-0 w-2/3 max-w-sm pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))]"
           />
         </div>
       </div>
