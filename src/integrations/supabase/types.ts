@@ -41,6 +41,54 @@ export type Database = {
         }
         Relationships: []
       }
+      curated_events: {
+        Row: {
+          blurb: string | null
+          created_at: string
+          event_date: string | null
+          event_time: string | null
+          genre: Json
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          source: string
+          title: string
+          updated_at: string
+          url: string
+          venue: string | null
+        }
+        Insert: {
+          blurb?: string | null
+          created_at?: string
+          event_date?: string | null
+          event_time?: string | null
+          genre?: Json
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          source: string
+          title: string
+          updated_at?: string
+          url: string
+          venue?: string | null
+        }
+        Update: {
+          blurb?: string | null
+          created_at?: string
+          event_date?: string | null
+          event_time?: string | null
+          genre?: Json
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          source?: string
+          title?: string
+          updated_at?: string
+          url?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
       early_access_signups: {
         Row: {
           created_at: string
