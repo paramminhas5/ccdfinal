@@ -960,11 +960,22 @@ const emptyCurated = (): CuratedRow => ({
   url: "", source: "manual", blurb: "", genre: [], is_featured: false,
 });
 
+const CURATED_SOURCES = [
+  { key: "sortmyscene", label: "SortMyScene" },
+  { key: "insider", label: "Insider" },
+  { key: "skillboxes", label: "Skillbox" },
+  { key: "district", label: "District" },
+  { key: "highape", label: "HighApe" },
+  { key: "bookmyshow", label: "BookMyShow" },
+] as const;
+
 function CuratedEventsTab() {
   const [rows, setRows] = useState<CuratedRow[]>([]);
   const [draft, setDraft] = useState<CuratedRow>(emptyCurated());
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [crawlSource, setCrawlSource] = useState<string>("sortmyscene");
+  const [lastRun, setLastRun] = useState<any>(null);
 
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
   const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
@@ -1017,15 +1028,21 @@ function CuratedEventsTab() {
 
   const refreshFromWeb = async () => {
     setRefreshing(true);
+    setLastRun(null);
     try {
       const res = await fetch(`${projectUrl}/functions/v1/curate-events`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: "{}",
+        body: JSON.stringify({ source: crawlSource, mode: "single", limit: 5 }),
       });
       const data = await res.json();
-      if (res.ok) { toast.success(`Found ${data.found ?? 0}, upserted ${data.upserted ?? 0}`); load(); }
-      else toast.error(data.error ?? "Refresh failed");
+      if (res.ok) {
+        setLastRun(data);
+        toast.success(`Upserted ${data.upserted ?? 0} from ${crawlSource}`);
+        load();
+      } else {
+        toast.error(data.error ?? "Refresh failed");
+      }
     } catch {
       toast.error("Refresh failed");
     } finally {
@@ -1040,14 +1057,42 @@ function CuratedEventsTab() {
           <h3 className="font-display text-2xl text-ink">CURATED EVENTS</h3>
           <p className="text-ink/70 font-medium text-sm">Hand-picked + auto-crawled events shown on /events.</p>
         </div>
-        <button
-          onClick={refreshFromWeb}
-          disabled={refreshing}
-          className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
-        >
-          {refreshing ? "CRAWLING…" : "🔄 REFRESH FROM WEB"}
-        </button>
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={crawlSource}
+            onChange={(e) => setCrawlSource(e.target.value)}
+            disabled={refreshing}
+            className="border-4 border-ink bg-cream text-ink font-display px-3 py-2"
+          >
+            {CURATED_SOURCES.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+          <button
+            onClick={refreshFromWeb}
+            disabled={refreshing}
+            className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
+          >
+            {refreshing ? "CRAWLING…" : "🔄 REFRESH SOURCE"}
+          </button>
+        </div>
       </div>
+
+      {lastRun?.runs?.length > 0 && (
+        <div className="bg-cream border-4 border-ink p-4 space-y-2 text-sm">
+          {lastRun.runs.map((r: any, i: number) => (
+            <div key={i} className="font-mono text-ink">
+              <strong>{r.source}</strong> — candidates: {r.candidateLinks} · scraped: {r.scrapedPages} · extracted: {r.extracted} · saved: <strong>{r.upserted}</strong>
+              {r.errors?.length > 0 && (
+                <div className="text-magenta text-xs mt-1">errors: {r.errors.join(" | ")}</div>
+              )}
+              {r.samples?.length > 0 && r.upserted === 0 && (
+                <div className="text-ink/60 text-xs mt-1">candidates seen: {r.samples.slice(0, 3).join(", ")}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-3">
         <h4 className="font-display text-xl text-ink">ADD MANUALLY</h4>
