@@ -1,81 +1,152 @@
 
-# Fix: lineup commas, curated crawl returning 0, YouTube playlist embed
+Fix the two problem areas in a tighter, cheaper way: make curated crawling work source-by-source with direct source pages, and harden the YouTube playlist flow so playlist URLs parse correctly and render with a safe fallback.
 
-## 1. Lineup field strips commas mid-typing
+## 1. Curated events: stop crawling “everything”, start with one precise source
 
-In `src/pages/Admin.tsx` (line 668, 787-788), `lineupStr` is recomputed from the array on every render, and the onChange immediately splits on `,` + trims + filters empty. Result: typing "DJ A, " becomes `["DJ A"]` → re-rendered as `"DJ A"`, so the comma + space disappear as you type. You can never type a comma followed by another name without losing the trailing whitespace and getting cursor jumps.
+Current state:
+- `curated_events` is empty.
+- The crawl logs show some extraction happening, then the function shuts down before the flow finishes.
+- The current `curate-events` function loops all sources in one request and only upserts at the end, so a slow/failed later source can leave the table empty.
 
-**Fix:** make the input store local string state; only split into the array `onBlur` (or on save).
+Plan:
+- Refactor `supabase/functions/curate-events/index.ts` to support a request body like:
+  - `source?: "sortmyscene" | "insider" | "skillboxes" | "district" | "highape" | "bookmyshow"`
+  - `limit?: number`
+  - `mode?: "single" | "all"`
+- Default admin refresh to `mode: "single"` with one source only.
+- Start with just one source first: `sortmyscene` (public page content is easier to extract and cheaper than broad web search).
+- Replace broad search-first crawling with a source adapter:
+  - fetch one known source listing page
+  - extract only relevant Bangalore/Bengaluru dance/electronic event links
+  - scrape only the top few candidate event pages
+  - send smaller, cleaner text to AI
+- Hard-cap cost:
+  - max 1 listing page
+  - max 4–6 candidate event pages
+  - max 5 saved events per run
+- Upsert immediately after each source instead of collecting all events and writing once at the end.
+- Return detailed status per run:
+  - `source`
+  - `listingResults`
+  - `candidateLinks`
+  - `scrapedPages`
+  - `extracted`
+  - `upserted`
+  - `errors`
 
-```tsx
-// EventEditor: replace lineupStr derivation + inline onChange
-const [lineupStr, setLineupStr] = useState((event.lineup ?? []).join(", "));
-useEffect(() => { setLineupStr((event.lineup ?? []).join(", ")); }, [event.id]);
+## 2. Make the crawler precise instead of noisy
 
-<input
-  value={lineupStr}
-  onChange={(e) => setLineupStr(e.target.value)}
-  onBlur={() => onChange({
-    ...event,
-    lineup: lineupStr.split(",").map(s => s.trim()).filter(Boolean),
-  })}
-  ...
-/>
+In `supabase/functions/curate-events/index.ts`:
+- Remove the current “search the web for source keywords” approach for the first-source flow.
+- Add source-specific extraction rules:
+  - require Bengaluru/Bangalore match
+  - require event-like fields: title + URL + date
+  - prefer dance / electronic / techno / house / underground
+  - reject generic city pages, blogs, and non-event collection pages
+- Tighten AI prompt so it only returns real bookable events, not category pages or venue homepages.
+- Deduplicate by URL before save.
+
+Result:
+- lower Firecrawl usage
+- faster runs
+- easier debugging
+- no more “nothing shows up because the whole batch timed out”
+
+## 3. Admin: refresh one source first, then expand later
+
+In `src/pages/Admin.tsx` curated tab:
+- Add a source dropdown next to `REFRESH FROM WEB`
+- First run should call:
+  - `source: "sortmyscene"`
+  - `mode: "single"`
+  - `limit: 5`
+- Show a clearer result panel after refresh:
+  - “Listing found X candidates”
+  - “Scraped Y pages”
+  - “Saved Z curated events”
+- Keep “crawl all sources” out of the primary flow for now.
+- After one source is stable, add the other sources one at a time.
+
+## 4. Curated events frontend: always show what was saved
+
+In `src/components/CuratedEvents.tsx`:
+- Keep the section visible even when empty.
+- Prefer rows ordered by:
+  - featured first
+  - upcoming dates next
+  - newest manual/crawled rows after
+- If only a few rows are available from the first source, still render them immediately.
+
+## 5. YouTube playlist: fix parsing + use the official playlist embed route
+
+Current risk:
+- The admin parser accepts YouTube input loosely.
+- A full watch URL or mixed URL may save an ID that works for a link but not for an embeddable playlist iframe.
+- The current embed route change did not resolve the issue.
+
+Plan in playlist flow:
+- In `src/pages/Admin.tsx`, harden `extractPlaylistInfo()` for YouTube:
+  - accept playlist URLs with `?list=...`
+  - accept copied playlist IDs directly
+  - reject video-only YouTube URLs that do not contain a playlist ID
+  - show a clear toast like “That’s a video URL, not a playlist URL”
+- In `src/components/Playlist.tsx`, switch YouTube playlist embeds to the official playlist iframe route:
+  - `https://www.youtube.com/embed/videoseries?list=PLAYLIST_ID`
+- Add a small YouTube-only fallback state:
+  - if the playlist embed fails or the ID is invalid, show a styled card with
+    - playlist title
+    - “Open on YouTube”
+    - helpful text instead of a blank black iframe
+- Keep Spotify and SoundCloud behavior unchanged.
+
+## 6. Safer rollout order
+
+Implementation order:
+1. Refactor `curate-events` to single-source mode with per-source save
+2. Update Admin curated tab to refresh one source and show crawl stats
+3. Verify curated rows appear on `/events`
+4. Fix YouTube playlist parsing in Admin
+5. Switch playlist embed route and add visible fallback
+6. Only after the first source works reliably, add the next sources one by one
+
+## 7. Files to update
+
+- `supabase/functions/curate-events/index.ts`
+  - single-source mode
+  - source adapters
+  - direct-page crawling
+  - per-source upserts
+  - tighter filters and cheaper limits
+- `src/pages/Admin.tsx`
+  - curated source selector
+  - better crawl result UI
+  - stricter YouTube playlist parsing/validation
+- `src/components/CuratedEvents.tsx`
+  - stable render of newly saved rows
+- `src/components/Playlist.tsx`
+  - official YouTube playlist embed route
+  - visible fallback for invalid/unembeddable playlists
+
+## Technical details
+
+```text
+Admin CURATED tab
+   ↓
+refresh single source: sortmyscene
+   ↓
+curate-events(source=sortmyscene, mode=single, limit=5)
+   ↓
+fetch source listing page
+   ↓
+extract candidate event links
+   ↓
+scrape top 4–6 event pages
+   ↓
+AI extracts only Bengaluru dance events
+   ↓
+upsert immediately into curated_events
+   ↓
+frontend /events shows saved rows
 ```
 
-This lets you type `"DJ Whiskers, MC Mittens, Tabby T"` freely; array is committed on blur (and SAVE triggers blur first).
-
-## 2. Curated crawl returns 0 results
-
-Two real bugs in `supabase/functions/curate-events/index.ts`, confirmed by hitting Firecrawl directly:
-
-**Bug A — wrong response path.** Firecrawl v2 `/search` returns `{ data: { web: [...] } }`. Current code reads `data?.data ?? data?.web?.results` → always `undefined.web` → empty.
-
-**Bug B — over-restrictive `site:` queries.** Tested live:
-- `site:insider.in bangalore dance event` + `tbs:qdr:w` → `"web": []`
-- `bangalore dance party this week` (no site:) → 5 strong results (Eventbrite, HighApe, BookMyShow, BLR Techno Community, etc.)
-- `insider.in bangalore techno house event` (no `site:`, no tbs) → 5 results
-
-**Fixes:**
-- Read results as `data?.data?.web ?? data?.data ?? []`.
-- Drop `site:` operator from queries; drop `tbs:qdr:w` (kills almost everything).
-- New `SOURCES`:
-  ```ts
-  const SOURCES = [
-    { source: "highape",    query: "highape bangalore dance techno house event this week" },
-    { source: "insider",    query: "insider.in bengaluru dance OR techno OR house event" },
-    { source: "skillboxes", query: "skillboxes bangalore dance music event" },
-    { source: "district",   query: "district by zomato bengaluru dance music event" },
-    { source: "bookmyshow", query: "bookmyshow bengaluru parties dance event" },
-    { source: "sortmyscene",query: "sortmyscene bangalore dance event" },
-  ];
-  ```
-- Each Firecrawl call: `{ query, limit: 8, scrapeOptions: { formats: ["markdown"] } }` (no `tbs`).
-- Tighten the AI prompt so it filters to "next 14 days, Bangalore/Bengaluru only, dance/electronic/underground" and rejects non-event index pages.
-- Log `console.log("source", source, "results", results.length)` per source so future debugging is easy.
-
-After deploy, hitting "🔄 REFRESH FROM WEB" should populate the table; the `/events` page already falls back to `created_at` desc so it'll show.
-
-## 3. YouTube playlist not rendering on desktop
-
-Tested the current embed URL `https://www.youtube-nocookie.com/embed/videoseries?list=PLx8i1IX7Ykzpj5TocoukffjYUeWA0BYl7&listType=playlist&rel=0` directly — server returns **HTTP 200 with `content-length: 0`** (blank body). The `videoseries` endpoint is unreliable for many public playlists now and renders empty in iframes (matches the "single videos load, playlist doesn't" symptom).
-
-**Fix in `src/components/Playlist.tsx` `buildEmbedSrc`** — switch to the standard embed form which YouTube still serves reliably:
-
-```ts
-if (p.platform === "youtube") {
-  // PL... = playlist ID. Use videoseries via the *embed* path that actually returns HTML.
-  // Reliable form: /embed?listType=playlist&list=PL...
-  return `https://www.youtube.com/embed?listType=playlist&list=${p.embed_id}&rel=0`;
-}
-```
-
-(Drop `youtube-nocookie` for playlists — it's the variant returning empty bodies. Keep `rel=0`. `allowFullScreen` + the existing `allow="..."` stay.)
-
-## 4. Files touched
-
-- `src/pages/Admin.tsx` — local lineup string state, commit on blur
-- `supabase/functions/curate-events/index.ts` — fix Firecrawl result path, broaden queries, drop `tbs`, tighter AI prompt, per-source logs
-- `src/components/Playlist.tsx` — switch YouTube embed to `youtube.com/embed?listType=playlist&list=...`
-
-No DB changes, no new connectors. After deploy: hit "🔄 REFRESH FROM WEB" once in Admin → CURATED to seed.
+No database schema change is required for this iteration.
