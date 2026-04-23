@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import CuratedEvents from "@/components/CuratedEvents";
 import { supabase } from "@/integrations/supabase/client";
 
 type EventRow = {
@@ -122,6 +123,7 @@ const Events = () => {
             ))}
           </div>
         </section>
+        <CuratedEvents />
         <Footer />
       </main>
     </>
