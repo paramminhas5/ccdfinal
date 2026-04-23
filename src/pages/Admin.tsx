@@ -787,7 +787,8 @@ const EventEditor = ({
         <label className="block font-display text-sm text-ink mb-1">Lineup (comma-separated)</label>
         <input
           value={lineupStr}
-          onChange={(e) => onChange({ ...event, lineup: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+          onChange={(e) => setLineupStr(e.target.value)}
+          onBlur={commitLineup}
           className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
         />
       </div>
