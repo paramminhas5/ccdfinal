@@ -195,6 +195,7 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
   // Step 3: scrape + extract each, upsert immediately
   for (const url of candidates) {
     if (stats.upserted >= limit) break;
+    if (stats.scrapedPages >= 8) break;
     try {
       const page = await firecrawlScrape(url, fcKey, ["markdown"]);
       stats.scrapedPages += 1;
@@ -202,6 +203,11 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
         page?.data?.markdown ?? page?.markdown ?? "";
       if (!md || md.length < 100) {
         console.log(cfg.key, "skip short page", url);
+        continue;
+      }
+      // Pre-filter: must mention Bangalore/Bengaluru
+      if (!/bangalore|bengaluru/i.test(md)) {
+        console.log(cfg.key, "skip non-blr page", url);
         continue;
       }
       const events = await extractWithAI(md, url, cfg.key, lovableKey);
