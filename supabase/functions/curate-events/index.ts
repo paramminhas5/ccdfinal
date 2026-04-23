@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
 
   let body: any = {};
   try { body = await req.json(); } catch {}
-  const requestedSource = (body?.source as SourceKey) || "sortmyscene";
+  const requestedSource = (body?.source as SourceKey) || "skillboxes";
   const mode = body?.mode === "all" ? "all" : "single";
   const limit = Math.min(Math.max(Number(body?.limit) || 5, 1), 8);
 
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
       ? Object.values(SOURCES)
       : SOURCES[requestedSource]
         ? [SOURCES[requestedSource]]
-        : [SOURCES.sortmyscene];
+        : [SOURCES.skillboxes];
 
   const runs: any[] = [];
   let totalUpserted = 0;
