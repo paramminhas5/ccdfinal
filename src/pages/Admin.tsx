@@ -303,6 +303,10 @@ const Admin = () => {
         sort_order: (events[events.length - 1]?.sort_order ?? 0) + 1,
       },
     ]);
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }, 60);
+    toast.success("New event added — fill it in and hit 💾 SAVE EVENT");
   };
 
   const filteredSignups = signups.filter((s) => s.email.toLowerCase().includes(signupSearch.toLowerCase()));
@@ -662,6 +666,59 @@ const EventEditor = ({
   onDelete: () => void;
 }) => {
   const lineupStr = (event.lineup ?? []).join(", ");
+  const [uploading, setUploading] = useState(false);
+  const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+
+  const onUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("slug", event.slug || "poster");
+      const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+      const res = await fetch(`${projectUrl}/functions/v1/admin-upload-poster`, {
+        method: "POST",
+        headers: {
+          "x-admin-password": pwd,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "upload failed");
+      onChange({ ...event, poster_url: data.path });
+      toast.success("Poster uploaded — hit SAVE to persist");
+    } catch (e) {
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const sharLink = async () => {
+    const url = `https://catscandance.com/events/${event.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied: " + url);
+    } catch {
+      toast.error("Couldn't copy link");
+    }
+  };
+
+  const posterPreview = (() => {
+    const raw = (event.poster_url ?? "").trim();
+    if (!raw) return null;
+    if (raw.startsWith("http") || raw.startsWith("/")) return raw;
+    try {
+      const { data } = supabase.storage.from("event-posters").getPublicUrl(raw);
+      return data?.publicUrl ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <div className="bg-cream border-4 border-ink chunk-shadow p-5 space-y-3">
       <div className="grid sm:grid-cols-2 gap-3">
@@ -681,7 +738,35 @@ const EventEditor = ({
             <option value="past">past</option>
           </select>
         </div>
-        <Field label="Poster URL" value={event.poster_url ?? ""} onChange={(v) => onChange({ ...event, poster_url: v || null })} />
+        <div className="sm:col-span-2">
+          <label className="block font-display text-sm text-ink mb-1">Poster</label>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="text"
+              placeholder="Paste URL or upload below"
+              value={event.poster_url ?? ""}
+              onChange={(e) => onChange({ ...event, poster_url: e.target.value || null })}
+              className="flex-1 min-w-[220px] bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+            />
+            <label className="bg-acid-yellow text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform cursor-pointer">
+              {uploading ? "UPLOADING…" : "📤 UPLOAD"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onUpload(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {posterPreview && (
+              <img src={posterPreview} alt="poster preview" className="h-16 w-16 object-cover border-2 border-ink" />
+            )}
+          </div>
+        </div>
         <Field
           label="Sort order"
           value={String(event.sort_order)}
@@ -704,9 +789,14 @@ const EventEditor = ({
           className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
         />
       </div>
-      <div className="flex gap-2">
-        <button onClick={onSave} className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors">SAVE</button>
-        <button onClick={onDelete} className="bg-destructive text-cream font-display px-5 py-2">DELETE</button>
+      <div className="flex flex-wrap gap-2">
+        <button onClick={onSave} className="bg-ink text-cream font-display px-6 py-3 hover:bg-magenta transition-colors text-base">
+          💾 SAVE EVENT
+        </button>
+        <button onClick={sharLink} className="bg-acid-yellow text-ink font-display px-5 py-3 border-2 border-ink hover:bg-magenta hover:text-cream transition-colors">
+          ↗ SHARE
+        </button>
+        <button onClick={onDelete} className="bg-destructive text-cream font-display px-5 py-3">DELETE</button>
       </div>
     </div>
   );
@@ -874,7 +964,13 @@ function CuratedEventsTab() {
     try {
       const res = await fetch(`${projectUrl}/functions/v1/admin-curated-events`, { headers });
       const data = await res.json();
-      if (res.ok) setRows(data.events ?? []);
+      if (res.ok) {
+        setRows(data.events ?? []);
+      } else {
+        toast.error(data?.error ?? "Could not load curated events");
+      }
+    } catch (e) {
+      toast.error("Could not load curated events");
     } finally {
       setLoading(false);
     }
