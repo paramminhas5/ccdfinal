@@ -665,7 +665,9 @@ const EventEditor = ({
   onSave: () => void;
   onDelete: () => void;
 }) => {
-  const lineupStr = (event.lineup ?? []).join(", ");
+  const [lineupStr, setLineupStr] = useState((event.lineup ?? []).join(", "));
+  useEffect(() => { setLineupStr((event.lineup ?? []).join(", ")); }, [event.id]);
+  const commitLineup = () => onChange({ ...event, lineup: lineupStr.split(",").map((s) => s.trim()).filter(Boolean) });
   const [uploading, setUploading] = useState(false);
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
 
