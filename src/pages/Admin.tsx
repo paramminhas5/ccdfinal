@@ -961,9 +961,9 @@ const emptyCurated = (): CuratedRow => ({
 });
 
 const CURATED_SOURCES = [
+  { key: "skillboxes", label: "Skillbox" },
   { key: "sortmyscene", label: "SortMyScene" },
   { key: "insider", label: "Insider" },
-  { key: "skillboxes", label: "Skillbox" },
   { key: "district", label: "District" },
   { key: "highape", label: "HighApe" },
   { key: "bookmyshow", label: "BookMyShow" },
@@ -974,7 +974,7 @@ function CuratedEventsTab() {
   const [draft, setDraft] = useState<CuratedRow>(emptyCurated());
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [crawlSource, setCrawlSource] = useState<string>("sortmyscene");
+  const [crawlSource, setCrawlSource] = useState<string>("skillboxes");
   const [lastRun, setLastRun] = useState<any>(null);
 
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
