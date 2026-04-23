@@ -82,13 +82,12 @@ async function firecrawlScrape(
 
 async function extractWithAI(text: string, sourceUrl: string, source: string, lovableKey: string) {
   const today = new Date().toISOString().slice(0, 10);
-  const sys = `You extract a SINGLE music event from a single event page. Today is ${today}.
+  const sys = `You extract a SINGLE music event from one event page. Today is ${today}.
 Return the event if it is:
 - a real bookable individual event page (NOT a category, listing, or venue homepage)
-- in or near Bengaluru/Bangalore (assume Bangalore if no other Indian city is mentioned)
-- music-related (any genre — dance, electronic, techno, house, indie, rock, jazz, live, club, festival are all fine)
-- happening in the future
-Otherwise return events: []. Always include the title. Use empty string for unknown fields.`;
+- music-related (any genre: dance, electronic, techno, house, indie, rock, jazz, live, club, festival)
+- happening in the future (event_date today or later)
+Always include the title. Use empty string for unknown fields. If page is clearly not an event, return events: [].`;
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
