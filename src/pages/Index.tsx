@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
@@ -20,6 +22,14 @@ import MoonwalkCat from "@/components/MoonwalkCat";
 
 const Index = () => {
   useSmoothScroll();
+  const location = useLocation();
+  useEffect(() => {
+    if (location.hash === "#early-access") {
+      setTimeout(() => {
+        document.getElementById("early-access")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
+  }, [location.hash]);
   return (
     <>
       <SEO
@@ -54,7 +64,7 @@ const Index = () => {
         <Catbot />
         <MoonwalkCat />
         <Hero />
-        <Marquee bg="bg-acid-yellow" />
+        <Marquee bg="bg-acid-yellow" size="lg" />
         <SectionReveal><About /></SectionReveal>
         <Marquee bg="bg-lime" reverse />
         <SectionReveal><Playlist /></SectionReveal>
