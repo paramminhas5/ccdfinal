@@ -44,20 +44,28 @@ const CuratedEvents = () => {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
+      // Try future + undated first
+      let { data } = await supabase
         .from("curated_events")
         .select("*")
         .or(`event_date.gte.${today},event_date.is.null`)
         .order("is_featured", { ascending: false })
         .order("event_date", { ascending: true, nullsFirst: false })
         .limit(12);
+
+      // Fallback: most recent rows by created_at if filter returned nothing
+      if (!data || data.length === 0) {
+        const { data: recent } = await supabase
+          .from("curated_events")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(12);
+        data = recent ?? [];
+      }
       setEvents((data ?? []) as CuratedEvent[]);
       setLoading(false);
     })();
   }, []);
-
-  if (loading) return null;
-  if (!events.length) return null;
 
   return (
     <section className="container py-12 md:py-16">
@@ -69,43 +77,54 @@ const CuratedEvents = () => {
             Hand-picked dance & electronic events in Bangalore — by us, from the wider scene.
           </p>
         </div>
+        <p className="text-ink/50 text-xs font-mono uppercase tracking-wider">All times BLR</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((e) => (
-          <a
-            key={e.id}
-            href={e.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform"
-          >
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-acid-yellow text-ink">
-                {sourceLabel(e.source)}
-              </span>
-              {e.is_featured && (
-                <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-magenta text-cream">
-                  Featured
+
+      {loading ? (
+        <p className="text-ink/60 font-medium">Loading curated events…</p>
+      ) : events.length === 0 ? (
+        <div className="border-4 border-dashed border-ink/40 p-8 text-center">
+          <p className="font-display text-2xl text-ink mb-1">🔄 NO CURATED EVENTS YET</p>
+          <p className="text-ink/60 font-medium">Check back soon — we refresh this list weekly.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {events.map((e) => (
+            <a
+              key={e.id}
+              href={e.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform"
+            >
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-acid-yellow text-ink">
+                  {sourceLabel(e.source)}
                 </span>
-              )}
-            </div>
-            <h3 className="font-display text-xl md:text-2xl text-ink mb-2 leading-tight">
-              {e.title.toUpperCase()}
-            </h3>
-            <p className="font-display text-base text-ink/80 mb-1">{formatDate(e.event_date, e.event_time)}</p>
-            {e.venue && <p className="text-sm text-ink/70 font-medium mb-2">{e.venue}</p>}
-            {e.blurb && <p className="text-sm text-ink/80 mb-3">{e.blurb}</p>}
-            {e.genre?.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
-                {e.genre.slice(0, 3).map((g) => (
-                  <span key={g} className="text-[10px] uppercase bg-ink text-cream px-2 py-0.5 font-bold">{g}</span>
-                ))}
+                {e.is_featured && (
+                  <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-magenta text-cream">
+                    Featured
+                  </span>
+                )}
               </div>
-            )}
-            <span className="font-display text-magenta text-sm">RSVP →</span>
-          </a>
-        ))}
-      </div>
+              <h3 className="font-display text-xl md:text-2xl text-ink mb-2 leading-tight">
+                {e.title.toUpperCase()}
+              </h3>
+              <p className="font-display text-base text-ink/80 mb-1">{formatDate(e.event_date, e.event_time)}</p>
+              {e.venue && <p className="text-sm text-ink/70 font-medium mb-2">{e.venue}</p>}
+              {e.blurb && <p className="text-sm text-ink/80 mb-3">{e.blurb}</p>}
+              {e.genre?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {e.genre.slice(0, 3).map((g) => (
+                    <span key={g} className="text-[10px] uppercase bg-ink text-cream px-2 py-0.5 font-bold">{g}</span>
+                  ))}
+                </div>
+              )}
+              <span className="font-display text-magenta text-sm">RSVP →</span>
+            </a>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
