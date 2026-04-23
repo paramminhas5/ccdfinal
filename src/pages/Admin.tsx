@@ -224,8 +224,17 @@ const Admin = () => {
 
   const addPlaylist = () => {
     if (!settings || !newPlTitle.trim() || !newPlUrl.trim()) return;
-    const { embed_id, url } = extractPlaylistInfo(newPlPlatform, newPlUrl);
-    if (!embed_id) return;
+    let embed_id = "";
+    let url = "";
+    try {
+      const info = extractPlaylistInfo(newPlPlatform, newPlUrl);
+      embed_id = info.embed_id;
+      url = info.url;
+    } catch (e: any) {
+      toast.error(e?.message ?? "Invalid playlist URL");
+      return;
+    }
+    if (!embed_id) { toast.error("Could not parse playlist ID"); return; }
     const id = `${Date.now()}`;
     const next: Settings = {
       ...settings,
