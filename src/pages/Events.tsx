@@ -78,8 +78,8 @@ const Events = () => {
   return (
     <>
       <SEO
-        title="Upcoming Parties & Events in Bangalore, India | Cats Can Dance"
-        description="Every Cats Can Dance edition — the best underground parties and dance music events in Bangalore, India. Past and upcoming. RSVP free."
+        title="Parties & Curated Dance Events in Bangalore | Cats Can Dance"
+        description="Our nights plus a hand-picked feed of the best dance music events in Bangalore this week."
         path="/events"
         jsonLd={jsonLd}
       />

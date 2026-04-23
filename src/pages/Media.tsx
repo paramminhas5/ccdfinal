@@ -8,8 +8,8 @@ import SEO from "@/components/SEO";
 const MediaPage = () => (
   <>
     <SEO
-      title="Media & Press — Cats Can Dance | Bangalore"
-      description="Press features, journal entries and stories from Cats Can Dance — Bangalore's underground party brand and streetwear label."
+      title="Press & Media Kit | Cats Can Dance"
+      description="Press features, journal entries and stories from Cats Can Dance — Bangalore's underground crew, apparel drops and culture."
       path="/media"
     />
     <main className="bg-background text-foreground min-h-screen">
