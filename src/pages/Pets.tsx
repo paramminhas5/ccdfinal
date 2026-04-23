@@ -81,8 +81,8 @@ const Pets = () => {
   return (
     <>
       <SEO
-        title="Pet Streetwear India — Cat Bandanas, Bucket Hats & Cat Treats | Cats Can Dance Bangalore"
-        description="Pet streetwear from Cats Can Dance — cat bandanas, cat bucket hats and CCD cat treats. Limited drops from Bangalore, India. Shop pet streetwear made for cats who party."
+        title="Pet Streetwear & Products | Cats Can Dance Bangalore"
+        description="Cat bandanas, bucket hats, treats. Cool culture & streetwear, made for cats who party."
         path="/pets"
         jsonLd={[collectionLd, brandLd, ...(products.length ? [itemListLd] : [])]}
       />
