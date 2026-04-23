@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { toast } from "sonner";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -123,14 +124,40 @@ const EventDetail = () => {
                 { label: event.title },
               ]}
             />
-            <span className={`inline-block text-xs font-bold px-3 py-1 border-2 border-ink uppercase mb-4 ${
-              isUpcoming ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
-            }`}>
-              {isUpcoming ? `${event.title.toUpperCase()} · UPCOMING` : "PAST EPISODE"}
-            </span>
-            <h1 className="font-display text-6xl md:text-7xl mb-6 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
-              {event.title.toUpperCase()}
-            </h1>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="min-w-0 flex-1">
+                <span className={`inline-block text-xs font-bold px-3 py-1 border-2 border-ink uppercase mb-4 ${
+                  isUpcoming ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
+                }`}>
+                  {isUpcoming ? `${event.title.toUpperCase()} · UPCOMING` : "PAST EPISODE"}
+                </span>
+                <h1 className="font-display text-6xl md:text-7xl mb-6 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
+                  {event.title.toUpperCase()}
+                </h1>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const url = `${window.location.origin}/events/${slug}`;
+                  const shareData = { title: `Cats Can Dance — ${event.title}`, text: event.blurb || "Bangalore underground", url };
+                  if (typeof navigator.share === "function") {
+                    try { await navigator.share(shareData); return; } catch { /* user cancel */ }
+                  }
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    toast.success("Link copied to clipboard");
+                  } catch {
+                    toast.error("Couldn't copy link");
+                  }
+                }}
+                className={`shrink-0 inline-flex items-center gap-2 font-display px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform ${
+                  isUpcoming ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
+                }`}
+                aria-label="Share event"
+              >
+                ↗ SHARE
+              </button>
+            </div>
             <div className="grid sm:grid-cols-3 gap-4 max-w-3xl">
               <Field label="DATE" value={event.date} accent={isUpcoming} />
               <Field label="CITY" value={event.city} accent={isUpcoming} />

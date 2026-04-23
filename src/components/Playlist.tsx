@@ -43,7 +43,8 @@ const buildEmbedSrc = (p: PlaylistItem) => {
     return `https://open.spotify.com/embed/playlist/${p.embed_id}?utm_source=generator&theme=0`;
   }
   if (p.platform === "youtube") {
-    return `https://www.youtube.com/embed/videoseries?list=${p.embed_id}`;
+    // youtube-nocookie + listType=playlist works reliably for public PL... ids
+    return `https://www.youtube-nocookie.com/embed/videoseries?list=${p.embed_id}&listType=playlist&rel=0`;
   }
   return `https://w.soundcloud.com/player/?url=${encodeURIComponent(
     p.url
@@ -125,6 +126,8 @@ const Playlist = () => {
             width="100%"
             height={480}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"
             className="block w-full h-[380px] md:h-[480px] border-0 bg-ink relative z-30"
           />
