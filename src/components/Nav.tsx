@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { Link, NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import DiscoButton from "@/components/DiscoButton";
 import DiscoMute from "@/components/DiscoMute";
@@ -9,7 +9,6 @@ import { useCartStore } from "@/stores/cartStore";
 import ccdLogo from "@/assets/ccd-logo.png";
 
 const primaryLinks = [
-  { to: "/", label: "Home" },
   { to: "/about", label: "About" },
   { to: "/events", label: "Events" },
   { to: "/shop", label: "Shop" },
@@ -31,6 +30,13 @@ const moreLinks = [
 // Flat list for mobile hamburger
 const mobileLinks = [...primaryLinks, ...moreLinks, ...partnersLinks];
 
+const scrollToEarlyAccess = () => {
+  setTimeout(() => {
+    const el = document.getElementById("early-access");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 60);
+};
+
 const Dropdown = ({
   label,
   links,
@@ -42,6 +48,8 @@ const Dropdown = ({
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
+  const location = useLocation();
+  const isActive = links.some((l) => location.pathname.startsWith(l.to));
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -51,13 +59,16 @@ const Dropdown = ({
     return () => document.removeEventListener("click", onDoc);
   }, []);
 
+  const activeColor = scrolled ? "text-magenta" : "text-acid-yellow";
+  const baseColor = scrolled ? "text-ink" : "text-cream";
+
   return (
     <li ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`font-display text-base hover:text-magenta transition-colors flex items-center gap-1 ${
-          scrolled ? "text-ink" : "text-cream"
+        className={`font-display text-base hover:${activeColor} transition-colors flex items-center gap-1 ${
+          isActive ? activeColor : baseColor
         }`}
       >
         {label} <ChevronDown className="w-4 h-4" />
@@ -91,6 +102,7 @@ const Nav = () => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const hasCart = cartCount > 0;
 
@@ -103,6 +115,20 @@ const Nav = () => {
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
+  const goToEarlyAccess = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    if (location.pathname === "/") {
+      scrollToEarlyAccess();
+    } else {
+      navigate("/#early-access");
+      scrollToEarlyAccess();
+    }
+  };
+
+  const activeColor = scrolled ? "text-magenta" : "text-acid-yellow";
+  const baseColor = scrolled ? "text-ink" : "text-cream";
+
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all ${
@@ -110,7 +136,7 @@ const Nav = () => {
       }`}
     >
       <nav className="container flex items-center justify-between py-3 md:py-4 gap-3 md:gap-4">
-        <Link to="/" className={`group flex items-center gap-2 font-display text-xl md:text-2xl leading-none shrink-0 ${scrolled ? "text-ink" : "text-cream"}`}>
+        <Link to="/" className={`group flex items-center gap-2 font-display text-xl md:text-2xl leading-none shrink-0 ${baseColor}`}>
           <img
             src={ccdLogo}
             alt="Cats Can Dance logo"
@@ -121,16 +147,15 @@ const Nav = () => {
           <span className="sm:hidden">CCD</span>
         </Link>
 
-        <ul className="hidden lg:flex items-center gap-5">
+        <ul className="hidden lg:flex items-center gap-4">
           {primaryLinks.map((l) => (
             <li key={l.to}>
               <RouterNavLink
                 to={l.to}
-                end={l.to === "/"}
                 className={({ isActive }) =>
-                  `font-display text-base hover:text-magenta transition-colors ${
-                    scrolled ? "text-ink" : "text-cream"
-                  } ${isActive ? "text-magenta" : ""}`
+                  `font-display text-base hover:${activeColor} transition-colors ${
+                    isActive ? activeColor : baseColor
+                  }`
                 }
               >
                 {l.label}
@@ -139,16 +164,17 @@ const Nav = () => {
           ))}
           <Dropdown label="Partners" links={partnersLinks} scrolled={scrolled} />
           <Dropdown label="More" links={moreLinks} scrolled={scrolled} />
-          <li><DiscoMute /></li>
+          <li className="hidden xl:block"><DiscoMute /></li>
           <li><DiscoButton compact /></li>
           {hasCart && <li><CartDrawer /></li>}
           <li>
-            <Link
-              to="/#early-access"
-              className="inline-block bg-ink text-cream font-display px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform text-sm"
+            <a
+              href="/#early-access"
+              onClick={goToEarlyAccess}
+              className="inline-block bg-ink text-cream font-display px-3 py-2 xl:px-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform text-xs xl:text-sm"
             >
               Early Access
-            </Link>
+            </a>
           </li>
         </ul>
 
@@ -173,7 +199,6 @@ const Nav = () => {
               <li key={l.to}>
                 <RouterNavLink
                   to={l.to}
-                  end={l.to === "/"}
                   className="block font-display text-2xl text-ink py-2"
                 >
                   {l.label}
@@ -181,9 +206,9 @@ const Nav = () => {
               </li>
             ))}
             <li>
-              <Link to="/#early-access" className="block font-display text-2xl text-magenta py-2">
+              <a href="/#early-access" onClick={goToEarlyAccess} className="block font-display text-2xl text-magenta py-2">
                 Early Access →
-              </Link>
+              </a>
             </li>
           </ul>
         </div>
