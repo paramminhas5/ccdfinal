@@ -59,11 +59,18 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
   },
 };
 
-async function firecrawlScrape(url: string, apiKey: string, formats: string[] = ["markdown", "links"]) {
+async function firecrawlScrape(
+  url: string,
+  apiKey: string,
+  formats: string[] = ["markdown", "links"],
+  waitFor = 0,
+) {
+  const body: any = { url, formats, onlyMainContent: false };
+  if (waitFor > 0) body.waitFor = waitFor;
   const res = await fetch(`${FIRECRAWL}/scrape`, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ url, formats, onlyMainContent: true }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const t = await res.text();
