@@ -43,8 +43,8 @@ const buildEmbedSrc = (p: PlaylistItem) => {
     return `https://open.spotify.com/embed/playlist/${p.embed_id}?utm_source=generator&theme=0`;
   }
   if (p.platform === "youtube") {
-    // youtube-nocookie + listType=playlist works reliably for public PL... ids
-    return `https://www.youtube-nocookie.com/embed/videoseries?list=${p.embed_id}&listType=playlist&rel=0`;
+    // Reliable form for public playlists
+    return `https://www.youtube.com/embed?listType=playlist&list=${p.embed_id}&rel=0`;
   }
   return `https://w.soundcloud.com/player/?url=${encodeURIComponent(
     p.url

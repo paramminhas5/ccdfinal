@@ -10,18 +10,19 @@ const FIRECRAWL = "https://api.firecrawl.dev/v2";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const SOURCES = [
-  { source: "skillboxes", query: "site:skillboxes.com bangalore dance OR techno OR house OR electronic event" },
-  { source: "district", query: "site:districtbyzomato.com bengaluru dance OR techno OR house OR electronic event" },
-  { source: "insider", query: "site:insider.in bangalore dance OR techno OR house OR electronic event" },
-  { source: "sortmyscene", query: "site:sortmyscene.com bangalore dance OR techno OR house event" },
-  { source: "paytm-insider", query: "paytm insider bangalore dance music event this week" },
+  { source: "highape",    query: "highape bangalore dance techno house event this week" },
+  { source: "insider",    query: "insider.in bengaluru dance OR techno OR house event" },
+  { source: "skillboxes", query: "skillboxes bangalore dance music event" },
+  { source: "district",   query: "district by zomato bengaluru dance music event" },
+  { source: "bookmyshow", query: "bookmyshow bengaluru parties dance event" },
+  { source: "sortmyscene",query: "sortmyscene bangalore dance event" },
 ];
 
 async function firecrawlSearch(query: string, apiKey: string) {
   const res = await fetch(`${FIRECRAWL}/search`, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ query, limit: 5, tbs: "qdr:w", scrapeOptions: { formats: ["markdown"] } }),
+    body: JSON.stringify({ query, limit: 8, scrapeOptions: { formats: ["markdown"] } }),
   });
   if (!res.ok) {
     const t = await res.text();
@@ -29,14 +30,18 @@ async function firecrawlSearch(query: string, apiKey: string) {
     return [];
   }
   const data = await res.json();
-  // V2 may return data.data or data.web
-  const results = data?.data ?? data?.web?.results ?? [];
+  // V2: { success, data: { web: [...] } } — also tolerate other shapes
+  const results =
+    data?.data?.web ??
+    (Array.isArray(data?.data) ? data.data : null) ??
+    data?.web?.results ??
+    [];
   return Array.isArray(results) ? results : [];
 }
 
 async function extractWithAI(text: string, source: string, lovableKey: string) {
   const today = new Date().toISOString().slice(0, 10);
-  const sys = `You extract dance/electronic/underground music events in Bangalore from web content. Today is ${today}. Only include events in the next 7 days. Return events with venue, date and a working URL.`;
+  const sys = `You extract dance/electronic/underground music events in BANGALORE / BENGALURU only from web content. Today is ${today}. Only include real individual events in the next 14 days with a venue and date. Reject city/category index pages, generic listings without a specific event, and events outside Bengaluru. Return events with a working ticket/event URL.`;
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
@@ -111,15 +116,19 @@ Deno.serve(async (req) => {
   );
 
   const allEvents: any[] = [];
+  const perSource: Record<string, number> = {};
 
   for (const { source, query } of SOURCES) {
     try {
       const results = await firecrawlSearch(query, fcKey);
+      console.log("source", source, "results", results.length);
       const combined = results
         .map((r: any) => `URL: ${r.url}\nTitle: ${r.title}\n${r.markdown ?? r.description ?? ""}`)
         .join("\n\n---\n\n");
-      if (!combined) continue;
+      if (!combined) { perSource[source] = 0; continue; }
       const events = await extractWithAI(combined, source, lovableKey);
+      console.log("source", source, "extracted", events.length);
+      perSource[source] = events.length;
       for (const ev of events) {
         if (!ev.url || !ev.title) continue;
         allEvents.push({
@@ -146,14 +155,14 @@ Deno.serve(async (req) => {
       .upsert(allEvents, { onConflict: "url", count: "exact" });
     if (error) {
       console.error("upsert error", error);
-      return new Response(JSON.stringify({ error: error.message, attempted: allEvents.length }), {
+      return new Response(JSON.stringify({ error: error.message, attempted: allEvents.length, perSource }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     upserted = count ?? allEvents.length;
   }
 
-  return new Response(JSON.stringify({ ok: true, found: allEvents.length, upserted }), {
+  return new Response(JSON.stringify({ ok: true, found: allEvents.length, upserted, perSource }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
