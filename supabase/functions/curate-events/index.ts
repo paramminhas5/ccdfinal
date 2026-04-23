@@ -181,7 +181,7 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
     if (cfg.linkReject.some((r) => r.test(url))) continue;
     seen.add(url);
     candidates.push(url);
-    if (candidates.length >= Math.min(limit + 2, 6)) break;
+    if (candidates.length >= 12) break;
   }
   stats.candidateLinks = candidates.length;
   stats.samples = candidates.slice(0, 5);
