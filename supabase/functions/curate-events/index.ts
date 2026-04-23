@@ -156,7 +156,9 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
   };
 
   // Step 1: scrape listing page for links
-  const listing = await firecrawlScrape(cfg.listingUrl, fcKey, ["links", "markdown"]);
+  // JS-heavy sites need waitFor; skillbox returns links without it
+  const needsWait = cfg.key !== "skillboxes";
+  const listing = await firecrawlScrape(cfg.listingUrl, fcKey, ["links", "markdown"], needsWait ? 5000 : 0);
   if (!listing) {
     stats.errors.push("listing scrape failed");
     return stats;
