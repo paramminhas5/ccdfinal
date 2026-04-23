@@ -38,13 +38,15 @@ const platformGlyph = (p: Platform) =>
 const platformLabel = (p: Platform) =>
   p === "spotify" ? "Spotify" : p === "youtube" ? "YouTube" : "SoundCloud";
 
+const isValidYouTubePlaylistId = (id: string) =>
+  /^(PL|UU|LL|FL|RD|OL)[a-zA-Z0-9_-]{10,}$/.test(id);
+
 const buildEmbedSrc = (p: PlaylistItem) => {
   if (p.platform === "spotify") {
     return `https://open.spotify.com/embed/playlist/${p.embed_id}?utm_source=generator&theme=0`;
   }
   if (p.platform === "youtube") {
-    // Reliable form for public playlists
-    return `https://www.youtube.com/embed?listType=playlist&list=${p.embed_id}&rel=0`;
+    return `https://www.youtube.com/embed/videoseries?list=${p.embed_id}`;
   }
   return `https://w.soundcloud.com/player/?url=${encodeURIComponent(
     p.url
@@ -119,18 +121,33 @@ const Playlist = () => {
           className="max-w-3xl border-4 border-ink chunk-shadow-lg bg-ink overflow-hidden relative z-20 isolate"
           style={{ isolation: "isolate" }}
         >
-          <iframe
-            key={`${active?.platform}-${active?.embed_id || active?.url}`}
-            title={`Cats Can Dance — ${active?.title ?? "Playlist"}`}
-            src={buildEmbedSrc(active)}
-            width="100%"
-            height={480}
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
-            loading="lazy"
-            className="block w-full h-[380px] md:h-[480px] border-0 bg-ink relative z-30"
-          />
+          {active?.platform === "youtube" && !isValidYouTubePlaylistId(active.embed_id) ? (
+            <div className="p-8 text-center bg-ink text-cream">
+              <p className="font-display text-2xl mb-2">PLAYLIST UNAVAILABLE</p>
+              <p className="text-cream/70 mb-4 text-sm">
+                This YouTube link doesn't look like a playlist (ID should start with PL).
+              </p>
+              {active.url && (
+                <a href={active.url} target="_blank" rel="noopener noreferrer"
+                   className="inline-block bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-cream">
+                  Open on YouTube →
+                </a>
+              )}
+            </div>
+          ) : (
+            <iframe
+              key={`${active?.platform}-${active?.embed_id || active?.url}`}
+              title={`Cats Can Dance — ${active?.title ?? "Playlist"}`}
+              src={buildEmbedSrc(active)}
+              width="100%"
+              height={480}
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              loading="lazy"
+              className="block w-full h-[380px] md:h-[480px] border-0 bg-ink relative z-30"
+            />
+          )}
         </div>
 
         {active?.url && (
