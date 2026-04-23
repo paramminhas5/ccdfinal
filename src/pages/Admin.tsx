@@ -351,6 +351,7 @@ const Admin = () => {
                 <TabsTrigger value="events" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENTS</TabsTrigger>
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
+                <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
               </TabsList>
 
@@ -513,6 +514,11 @@ const Admin = () => {
               {/* BLOG */}
               <TabsContent value="blog">
                 <BlogTab />
+              </TabsContent>
+
+              {/* CURATED EVENTS */}
+              <TabsContent value="curated">
+                <CuratedEventsTab />
               </TabsContent>
 
               {/* SEO CHECKLIST */}
