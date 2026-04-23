@@ -63,8 +63,13 @@ const extractPlaylistInfo = (
     return { embed_id: id, url: `https://open.spotify.com/playlist/${id}` };
   }
   if (platform === "youtube") {
-    const m = trimmed.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-    const id = m ? m[1] : trimmed;
+    // Accept full playlist URLs OR a bare playlist ID (PL..., UU..., LL..., FL..., RD...)
+    const fromUrl = trimmed.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    const bareId = trimmed.match(/^(PL|UU|LL|FL|RD|OL)[a-zA-Z0-9_-]{10,}$/);
+    const id = fromUrl ? fromUrl[1] : bareId ? trimmed : "";
+    if (!id) {
+      throw new Error("That looks like a video URL, not a playlist URL. Paste a YouTube playlist URL (with ?list=...) or a playlist ID starting with PL.");
+    }
     return { embed_id: id, url: `https://www.youtube.com/playlist?list=${id}` };
   }
   return { embed_id: trimmed, url: trimmed };
