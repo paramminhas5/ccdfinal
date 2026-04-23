@@ -205,11 +205,6 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
         console.log(cfg.key, "skip short page", url);
         continue;
       }
-      // Pre-filter: must mention Bangalore/Bengaluru
-      if (!/bangalore|bengaluru/i.test(md)) {
-        console.log(cfg.key, "skip non-blr page", url);
-        continue;
-      }
       const events = await extractWithAI(md, url, cfg.key, lovableKey);
       if (events.length === 0) {
         console.log(cfg.key, "AI returned 0 events for", url);
