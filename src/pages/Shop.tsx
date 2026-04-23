@@ -83,8 +83,8 @@ const Shop = () => {
   return (
     <>
       <SEO
-        title="Cats Can Dance Shop — Streetwear Drops, Pet Streetwear & Music Collectibles | Bangalore"
-        description="Limited streetwear drops, cat-graphic tees and pet streetwear — cat bandanas, bucket hats, CCD cat treats. Made in Bangalore, India."
+        title="Apparel, Limited Drops & CCD Goods | Cats Can Dance"
+        description="Tees, totes, accessories. Limited apparel drops and CCD goods from Bangalore's dance crew."
         path="/shop"
         jsonLd={[collectionLd, ...(filtered.length ? [itemListLd] : [])]}
       />

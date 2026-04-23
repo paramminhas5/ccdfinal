@@ -26,8 +26,8 @@ const Blog = () => {
   return (
     <>
       <SEO
-        title="Blog — Best Parties, Events & DJs in Bangalore | Cats Can Dance"
-        description="Long reads on Bangalore's underground party scene, top event organisers in India, and the DJs reshaping electronic music in Bangalore."
+        title="Field Notes from Bangalore's Underground | Cats Can Dance"
+        description="Long reads on Bangalore's party scene, apparel drops, cool culture & streetwear, and the artists behind the nights."
         path="/blog"
         jsonLd={itemListLd}
       />

@@ -51,8 +51,8 @@ const faqLd = {
 const About = () => (
   <main className="bg-background text-foreground">
     <SEO
-      title="About Cats Can Dance — Bangalore's Underground Event Organisers"
-      description="Cats Can Dance is a Bangalore, India event organiser producing the best underground dance music parties and electronic events in India."
+      title="About Cats Can Dance | Bangalore's Underground Crew"
+      description="Dance music nights, limited apparel drops, and cool culture & streetwear out of Bangalore."
       path="/about"
       jsonLd={faqLd}
     />

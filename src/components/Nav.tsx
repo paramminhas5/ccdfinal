@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import DiscoButton from "@/components/DiscoButton";
 import DiscoMute from "@/components/DiscoMute";
 import DiscoHint from "@/components/DiscoHint";
@@ -7,16 +8,84 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { useCartStore } from "@/stores/cartStore";
 import ccdLogo from "@/assets/ccd-logo.png";
 
-const links = [
+const primaryLinks = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
+  { to: "/events", label: "Events" },
   { to: "/shop", label: "Shop" },
-  { to: "/pets", label: "Pets" },
-  { to: "/media", label: "Media" },
-  { to: "/for-venues", label: "Venue Partners" },
+];
+
+const partnersLinks = [
+  { to: "/for-venues", label: "For Venues" },
   { to: "/for-artists", label: "For Artists" },
   { to: "/for-investors", label: "For Investors" },
 ];
+
+const moreLinks = [
+  { to: "/pets", label: "Pets" },
+  { to: "/media", label: "Media" },
+  { to: "/blog", label: "Blog" },
+  { to: "/press", label: "Press" },
+];
+
+// Flat list for mobile hamburger
+const mobileLinks = [...primaryLinks, ...moreLinks, ...partnersLinks];
+
+const Dropdown = ({
+  label,
+  links,
+  scrolled,
+}: {
+  label: string;
+  links: { to: string; label: string }[];
+  scrolled: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
+
+  return (
+    <li ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`font-display text-base hover:text-magenta transition-colors flex items-center gap-1 ${
+          scrolled ? "text-ink" : "text-cream"
+        }`}
+      >
+        {label} <ChevronDown className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-2 min-w-[180px] bg-cream border-4 border-ink chunk-shadow z-50">
+          <ul className="py-1">
+            {links.map((l) => (
+              <li key={l.to}>
+                <RouterNavLink
+                  to={l.to}
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
+                      isActive ? "bg-acid-yellow" : ""
+                    }`
+                  }
+                >
+                  {l.label}
+                </RouterNavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </li>
+  );
+};
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
@@ -52,24 +121,26 @@ const Nav = () => {
           <span className="sm:hidden">CCD</span>
         </Link>
 
-        <ul className="hidden lg:flex items-center gap-6">
-          {links.map((l) => (
+        <ul className="hidden lg:flex items-center gap-5">
+          {primaryLinks.map((l) => (
             <li key={l.to}>
               <RouterNavLink
                 to={l.to}
                 end={l.to === "/"}
                 className={({ isActive }) =>
-                  `font-display text-base text-ink hover:text-magenta transition-colors ${
-                    isActive ? "text-magenta" : ""
-                  }`
+                  `font-display text-base hover:text-magenta transition-colors ${
+                    scrolled ? "text-ink" : "text-cream"
+                  } ${isActive ? "text-magenta" : ""}`
                 }
               >
                 {l.label}
               </RouterNavLink>
             </li>
           ))}
+          <Dropdown label="Partners" links={partnersLinks} scrolled={scrolled} />
+          <Dropdown label="More" links={moreLinks} scrolled={scrolled} />
           <li><DiscoMute /></li>
-          <li className="relative"><DiscoButton compact /><DiscoHint /></li>
+          <li><DiscoButton compact /></li>
           {hasCart && <li><CartDrawer /></li>}
           <li>
             <Link
@@ -98,7 +169,7 @@ const Nav = () => {
       {open && (
         <div className="lg:hidden bg-cream border-t-4 border-ink">
           <ul className="container py-4 flex flex-col gap-1">
-            {links.map((l) => (
+            {mobileLinks.map((l) => (
               <li key={l.to}>
                 <RouterNavLink
                   to={l.to}

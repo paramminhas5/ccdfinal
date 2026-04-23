@@ -23,10 +23,20 @@ const Index = () => {
   return (
     <>
       <SEO
-        title="Best Parties & Events in Bangalore | Cats Can Dance"
-        description="Cats Can Dance — Bangalore's top event organisers. The best underground parties, dance music nights and electronic events in Bangalore, India. RSVP now."
+        title="Cats Can Dance — Bangalore Underground Parties, Apparel & Culture"
+        description="Bangalore's underground crew. Dance music nights, limited apparel drops, CCD goods, and cool culture & streetwear. RSVP, shop, join the pack."
         path="/"
+        keywords="bangalore parties, underground events bangalore, dance music bangalore, streetwear india, apparel drops, cool culture, electronic music bangalore, cats can dance"
         jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Cats Can Dance",
+            url: "https://catscandance.com",
+            logo: "https://catscandance.com/og-image.png",
+            description: "Bangalore underground crew — dance music nights, limited apparel drops, CCD goods, and cool culture & streetwear.",
+            sameAs: ["https://instagram.com/catscandance"],
+          },
           {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",

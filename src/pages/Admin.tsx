@@ -351,6 +351,7 @@ const Admin = () => {
                 <TabsTrigger value="events" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENTS</TabsTrigger>
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
+                <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
               </TabsList>
 
@@ -513,6 +514,11 @@ const Admin = () => {
               {/* BLOG */}
               <TabsContent value="blog">
                 <BlogTab />
+              </TabsContent>
+
+              {/* CURATED EVENTS */}
+              <TabsContent value="curated">
+                <CuratedEventsTab />
               </TabsContent>
 
               {/* SEO CHECKLIST */}
@@ -827,6 +833,181 @@ const VerificationForm = ({
 };
 
 export default Admin;
+
+// ============= CURATED EVENTS TAB =============
+type CuratedRow = {
+  id?: string;
+  title: string;
+  venue: string;
+  event_date: string;
+  event_time: string;
+  url: string;
+  source: string;
+  blurb: string;
+  genre: string[];
+  is_featured: boolean;
+};
+
+const emptyCurated = (): CuratedRow => ({
+  title: "", venue: "", event_date: "", event_time: "",
+  url: "", source: "manual", blurb: "", genre: [], is_featured: false,
+});
+
+function CuratedEventsTab() {
+  const [rows, setRows] = useState<CuratedRow[]>([]);
+  const [draft, setDraft] = useState<CuratedRow>(emptyCurated());
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+  const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+
+  const headers = {
+    "x-admin-password": pwd,
+    "Content-Type": "application/json",
+    apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+  };
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/admin-curated-events`, { headers });
+      const data = await res.json();
+      if (res.ok) setRows(data.events ?? []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const upsert = async (row: CuratedRow) => {
+    if (!row.title || !row.url) { toast.error("Title and URL are required"); return; }
+    const res = await fetch(`${projectUrl}/functions/v1/admin-curated-events`, {
+      method: "POST", headers,
+      body: JSON.stringify({ action: "upsert", payload: row }),
+    });
+    if (res.ok) { toast.success("Saved"); setDraft(emptyCurated()); load(); }
+    else toast.error("Save failed");
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Delete this curated event?")) return;
+    const res = await fetch(`${projectUrl}/functions/v1/admin-curated-events`, {
+      method: "POST", headers,
+      body: JSON.stringify({ action: "delete", payload: { id } }),
+    });
+    if (res.ok) { toast.success("Deleted"); load(); }
+    else toast.error("Delete failed");
+  };
+
+  const refreshFromWeb = async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/curate-events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (res.ok) { toast.success(`Found ${data.found ?? 0}, upserted ${data.upserted ?? 0}`); load(); }
+      else toast.error(data.error ?? "Refresh failed");
+    } catch {
+      toast.error("Refresh failed");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap justify-between items-end gap-3">
+        <div>
+          <h3 className="font-display text-2xl text-ink">CURATED EVENTS</h3>
+          <p className="text-ink/70 font-medium text-sm">Hand-picked + auto-crawled events shown on /events.</p>
+        </div>
+        <button
+          onClick={refreshFromWeb}
+          disabled={refreshing}
+          className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
+        >
+          {refreshing ? "CRAWLING…" : "🔄 REFRESH FROM WEB"}
+        </button>
+      </div>
+
+      <div className="bg-cream border-4 border-ink chunk-shadow p-6 space-y-3">
+        <h4 className="font-display text-xl text-ink">ADD MANUALLY</h4>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Field label="Title *" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} />
+          <Field label="URL *" value={draft.url} onChange={(v) => setDraft({ ...draft, url: v })} />
+          <Field label="Venue" value={draft.venue} onChange={(v) => setDraft({ ...draft, venue: v })} />
+          <Field label="Date (YYYY-MM-DD)" value={draft.event_date} onChange={(v) => setDraft({ ...draft, event_date: v })} />
+          <Field label="Time" value={draft.event_time} onChange={(v) => setDraft({ ...draft, event_time: v })} />
+          <div>
+            <label className="block font-display text-sm text-ink mb-1">Source</label>
+            <select
+              value={draft.source}
+              onChange={(e) => setDraft({ ...draft, source: e.target.value })}
+              className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-display focus:outline-none focus:bg-acid-yellow"
+            >
+              <option value="manual">CCD Pick</option>
+              <option value="skillboxes">Skillbox</option>
+              <option value="district">District</option>
+              <option value="insider">Insider</option>
+              <option value="sortmyscene">SortMyScene</option>
+              <option value="paytm-insider">Paytm Insider</option>
+            </select>
+          </div>
+          <Field
+            label="Genres (comma-separated)"
+            value={draft.genre.join(", ")}
+            onChange={(v) => setDraft({ ...draft, genre: v.split(",").map((s) => s.trim()).filter(Boolean) })}
+          />
+        </div>
+        <div>
+          <label className="block font-display text-sm text-ink mb-1">Blurb</label>
+          <textarea
+            rows={2}
+            value={draft.blurb}
+            onChange={(e) => setDraft({ ...draft, blurb: e.target.value })}
+            className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
+          />
+        </div>
+        <label className="flex items-center gap-2 font-medium text-ink">
+          <input
+            type="checkbox"
+            checked={draft.is_featured}
+            onChange={(e) => setDraft({ ...draft, is_featured: e.target.checked })}
+          />
+          Feature this event
+        </label>
+        <button onClick={() => upsert(draft)} className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors">
+          ADD CURATED EVENT
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-ink/70 font-medium text-sm">{rows.length} curated event{rows.length === 1 ? "" : "s"}</p>
+        {loading && <p className="text-ink/60">Loading…</p>}
+        {rows.map((r) => (
+          <div key={r.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-3 justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg text-ink">{r.title}</p>
+              <p className="text-ink/70 text-sm">
+                {r.source} · {r.event_date || "no date"} {r.event_time && `· ${r.event_time}`} {r.venue && `· ${r.venue}`}
+                {r.is_featured && " · ⭐"}
+              </p>
+              <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-magenta text-xs underline break-all">{r.url}</a>
+            </div>
+            <button onClick={() => r.id && remove(r.id)} className="bg-destructive text-cream font-display px-4 py-2">DELETE</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 // ============= BLOG TAB =============
 type WizardStep = 1 | 2 | 3;
