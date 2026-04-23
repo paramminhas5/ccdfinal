@@ -38,13 +38,15 @@ const platformGlyph = (p: Platform) =>
 const platformLabel = (p: Platform) =>
   p === "spotify" ? "Spotify" : p === "youtube" ? "YouTube" : "SoundCloud";
 
+const isValidYouTubePlaylistId = (id: string) =>
+  /^(PL|UU|LL|FL|RD|OL)[a-zA-Z0-9_-]{10,}$/.test(id);
+
 const buildEmbedSrc = (p: PlaylistItem) => {
   if (p.platform === "spotify") {
     return `https://open.spotify.com/embed/playlist/${p.embed_id}?utm_source=generator&theme=0`;
   }
   if (p.platform === "youtube") {
-    // Reliable form for public playlists
-    return `https://www.youtube.com/embed?listType=playlist&list=${p.embed_id}&rel=0`;
+    return `https://www.youtube.com/embed/videoseries?list=${p.embed_id}`;
   }
   return `https://w.soundcloud.com/player/?url=${encodeURIComponent(
     p.url
