@@ -36,8 +36,8 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
   skillboxes: {
     key: "skillboxes",
     listingUrl: "https://skillboxes.com/bangalore",
-    linkMatch: /skillboxes\.com\/[^/]+\/[^/?#]+/i,
-    linkReject: [/\/category\//i, /\/page\//i],
+    linkMatch: /skillboxes\.com\/events\//i,
+    linkReject: [/\/category\//i, /\/page\//i, /\/business\//i],
   },
   district: {
     key: "district",
