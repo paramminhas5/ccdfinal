@@ -63,7 +63,7 @@ const Dropdown = ({
   const baseColor = scrolled ? "text-ink" : "text-cream";
 
   return (
-    <li ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <li ref={ref} className="relative pb-2" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -74,8 +74,8 @@ const Dropdown = ({
         {label} <ChevronDown className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute top-full right-0 mt-2 min-w-[180px] bg-cream border-4 border-ink chunk-shadow z-50">
-          <ul className="py-1">
+        <div className="absolute top-full right-0 pt-2 min-w-[180px] z-50">
+          <ul className="py-1 bg-cream border-4 border-ink chunk-shadow">
             {links.map((l) => (
               <li key={l.to}>
                 <RouterNavLink
