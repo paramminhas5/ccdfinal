@@ -154,6 +154,7 @@ export type Database = {
           date: string
           id: string
           lineup: Json
+          media: Json
           poster_url: string | null
           slug: string
           sort_order: number
@@ -169,6 +170,7 @@ export type Database = {
           date: string
           id?: string
           lineup?: Json
+          media?: Json
           poster_url?: string | null
           slug: string
           sort_order?: number
@@ -184,6 +186,7 @@ export type Database = {
           date?: string
           id?: string
           lineup?: Json
+          media?: Json
           poster_url?: string | null
           slug?: string
           sort_order?: number
