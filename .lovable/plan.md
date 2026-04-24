@@ -1,109 +1,96 @@
 
 
-# Fix: cat loading, past-event covers, section dots, paw cursor, curated city scoping, episode-1 GIF fallback
+# Fix: RSVPs panel, nav alignment, autoplay GIF, pet merch on home, fix crawl URLs
 
-## 1. Hero cats — preload together + show loading state, no layout shift
+## 1. RSVPs not showing in admin
+The Admin dashboard has no RSVPs tab. The `admin-rsvps` edge function exists and works — we just never surfaced it.
 
-**Problem:** 9 cat assets (`hero-center.svg`, `cat-left/right.svg`, plus PNGs ~hundreds of KB each) load asynchronously and pop in one by one.
+**Fix in `src/pages/Admin.tsx`:**
+- Add new state `rsvps: { id, event_slug, name, email, plus_ones, created_at }[]` and a `rsvpEventFilter` string.
+- Add `loadRsvps()` calling `GET {projectUrl}/functions/v1/admin-rsvps?event_slug=...` with `x-admin-password` header (mirroring `callContent` pattern).
+- Add a new `<TabsTrigger value="rsvps">RSVPS</TabsTrigger>` and matching `<TabsContent>` with:
+  - event-slug filter dropdown (built from existing `events` list + "All")
+  - count + DOWNLOAD CSV button (calls same function with `?format=csv`)
+  - table: event slug · name · email · plus_ones · created_at
+- Auto-load when tab is opened the first time.
 
-**Fix in `src/components/Hero.tsx`:**
-- Add `useEffect` that preloads all 9 images in parallel via `new Image()` + `Promise.all`. Track an `imagesReady` boolean state.
-- Wrap the entire cat group (`heroCenter`, `catLeft/Right`, 4 flank cats) in a single `motion.div` with `opacity: imagesReady ? 1 : 0` and `transition: opacity 0.4s`. They all fade in together once loaded.
-- Headline + buttons render immediately (no blocking).
-- Add a tiny centered spinner (a CSS-only spinning paw or `⚡` glyph) absolutely positioned in the hero center, visible only while `!imagesReady`. Hides on ready.
-- Does NOT touch sharing (the SEO/OG tags are server-side meta — preloading is purely client visual).
-
-## 2. Show past-event poster on the homepage `Events` card
-
-**Problem:** Featured upcoming card has no image. Only the small "past episodes" grid shows posters.
-
-**Fix in `src/components/Events.tsx`:**
-- In the featured `motion.article`, when `featured.poster_url` exists, render the poster on the right side as a side-by-side flex (image left ~40% width on desktop, text right) using `resolvePosterUrl` (already in file). On mobile stacks vertically, image first.
-- Use the same `<img>` with onError fallback to the lime "★ TITLE" placeholder.
-- Keep all existing copy + buttons intact.
-
-## 3. Section nav dots on the right (scrollspy)
-
-**Problem:** Long page, no orientation.
-
-**New component `src/components/SectionDots.tsx`:**
-- Fixed right-edge vertical strip (`fixed right-4 top-1/2 -translate-y-1/2 z-40`), hidden on mobile (`hidden md:flex`).
-- 8 dots: Home, About, Playlist, Events, Drops, Instagram, Videos, Early Access — each dot is a small button with `aria-label`, hover label tooltip on the left.
-- Uses `IntersectionObserver` to watch each section id; active dot fills `bg-magenta` w/ `border-ink`, others `bg-cream/40`.
-- Click a dot → `document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })`.
-- Mount in `Index.tsx` after `<Nav />`.
-- Section IDs to add (where missing): `home` (already on Hero), `about`, `playlist`, `events` (already), `drops`, `instagram`, `videos`, `early-access` (already). Add the missing ones via small wrapper `<div id="...">` inside each component or in `Index.tsx`.
-
-## 4. Remove paw cursor (interferes with nav clicks)
+## 2. Nav text alignment (Partners / More sit above the rest)
+Cause: in `src/components/Nav.tsx` the `Dropdown` `<li>` has `className="relative pb-2"` while sibling primary `<li>`s have no padding. The extra `pb-2` (and the trigger button having `<ChevronDown>` flex centering) shifts the dropdown labels visually up relative to plain links.
 
 **Fix:**
-- Remove `<PawCursor />` import + usage from `src/pages/Index.tsx`.
-- Delete `src/components/PawCursor.tsx`.
-- Verify no other page imports it (only Index does — confirmed).
+- Drop `pb-2` from the Dropdown `<li>` (keep hover gap closure inside the panel which already uses `pt-2` — that already prevents the close-too-early bug).
+- Make the dropdown trigger `button` `inline-flex items-baseline gap-1` and wrap the chevron in a span with `self-center` so the text baseline aligns with the plain `RouterNavLink`s.
+- Make the parent `<ul>` `items-baseline` instead of `items-center` so all link text shares a baseline; keep CTA + DiscoButton + Cart wrapped in their own flex group with `items-center` to avoid breaking those icons.
 
-The dropdown-closes-too-early bug (mentioned by user re: "topdown closes before I can scroll down to it") is the `Dropdown` in `Nav.tsx` using both hover + outside-click handlers. The hover handlers already keep it open while pointer is inside; the closing comes from cursor moving across the `mt-2` gap to the panel. **Bridge fix in `Nav.tsx` Dropdown:** remove the `mt-2` gap (use `mt-0` + a transparent `pt-2` inside the panel) so hover doesn't break when crossing the gap. Also widen hover area by adding `pb-2` to the trigger `li`.
+Concretely: split the `<ul className="hidden lg:flex items-center gap-4">` into:
+```tsx
+<ul className="hidden lg:flex items-baseline gap-4">
+  ...primary links + Dropdown(Partners) + Dropdown(More)
+</ul>
+<div className="hidden lg:flex items-center gap-3">
+  <DiscoMute /> <DiscoButton compact /> {hasCart && <CartDrawer />} <EarlyAccessCta />
+</div>
+```
 
-## 5. Curated events — broken city scoping (Skillbox returns Gurgaon)
+## 3. GIF should autoplay (no PLAY GIF button)
+**Fix in `src/pages/EventDetail.tsx` `RecapMedia`:**
+- Remove the static-fallback-first behaviour and the `▶ PLAY GIF` button.
+- Default `src` to `gifSrc`. If it errors, swap to the static `RECAP_FALLBACK[slug]`. No button. No "showingGif" state.
+- Keep `loading="eager"` + `fetchPriority="high"`.
 
-**Confirmed:** `https://skillboxes.com/bangalore` ignores the city slug and returns nationwide events. DB has only Gurgaon/Kasol rows.
+This means the GIF starts loading & playing immediately. Static PNG remains as silent fallback if the GIF 404s or fails.
 
-**Fixes in `supabase/functions/curate-events/index.ts`:**
-- Change SOURCES to use proper city-scoped listing URLs that actually filter, and add a `cities` field per request:
-  - Body now accepts `city: "bangalore" | "mumbai" | "delhi" | "pune" | "all"` (default `"bangalore"`). `"all"` runs each city in turn for the chosen source.
-  - Build listing URL per city per source from a template:
-    ```
-    skillboxes:  https://www.skillboxes.com/city/{city}
-    insider:     https://insider.in/{citySlug}/nightlife (bengaluru/mumbai/new-delhi/pune)
-    highape:     https://highape.com/{city}/events
-    district:    https://www.district.in/events-in-{citySlug} (bengaluru/mumbai/new-delhi/pune)
-    bookmyshow:  https://in.bookmyshow.com/explore/events-{citySlug}
-    sortmyscene: https://sortmyscene.com/{city}
-    ```
-- **Post-AI city filter (the real safety net):** after AI extraction, reject any event whose `venue` string doesn't contain the requested city name OR a known city alias (e.g. Bangalore↔Bengaluru, Delhi↔New Delhi↔NCR, Mumbai↔Bombay). This catches Skillbox's national listings.
-- Save the city onto each row: add `city` column to `curated_events` (migration) so the frontend can group / filter.
-- Update AI prompt: "Reject if venue is not in {requestedCity} or its metro area."
-- Per-source per-city stats in response.
+## 4. Pet merch on the homepage `Drops` section
+**Fix in `src/components/Drops.tsx`:**
+- Run two Storefront queries in parallel: `query: null` (general — used as streetwear pool) and `query: "tag:pets"`.
+- Render two side-by-side mini-grids on the section:
+  - Left column: `STREETWEAR` heading + 2 latest non-pet products (filter out items tagged `pets`/`pet` from the general pool, slice 2)
+  - Right column: `PET MERCH` heading + 2 latest pet-tagged products
+- Each card links to `/product/{handle}`; reuse the existing card markup.
+- Keep the single `SHOP THE DROP` CTA, plus add a secondary `SHOP PET MERCH → /pets` chip below (small, lime).
+- Mobile: stacks (streetwear first, then pets). Skeleton while loading.
+- Copy stays "WEAR THE CULTURE." headline; small subhead "Streetwear + pet drops. Limited. No restocks."
 
-**Migration:** `ALTER TABLE curated_events ADD COLUMN IF NOT EXISTS city text;` + backfill existing rows from venue text where possible (or leave null).
+## 5. Curated crawler — actually use the working listing URLs
+The current `listingUrl` templates don't match the real working pages. Replace with the URLs the user provided + verified equivalents.
 
-**Admin UI in `src/pages/Admin.tsx` curated tab:**
-- Add a second dropdown "City" next to the source selector (Bangalore default; All; Mumbai; Delhi; Pune).
-- Send `{ source, city, mode: "single", limit: 5 }` to the function.
+**Fix in `supabase/functions/curate-events/index.ts`:**
 
-**Frontend `src/components/CuratedEvents.tsx`:**
-- Add city-tab filter chips at the top (All / Bangalore / Mumbai / Delhi / Pune). Default Bangalore. Filters the rendered list by `city` (case-insensitive includes).
+Update `SOURCES`:
+```ts
+skillboxes:  https://www.skillboxes.com/events-{city}        // bangalore, mumbai, delhi, pune
+sortmyscene: https://sortmyscene.com/events?tab=events&city={Capitalized} // Bengaluru/Mumbai/Delhi/Pune
+district:    https://www.district.in/events/music-in-{citySlug}-book-tickets // bengaluru/mumbai/new-delhi/pune
+insider:     https://insider.in/{citySlug}/nightlife          // unchanged
+highape:     https://highape.com/{city}/events                // unchanged
+bookmyshow:  https://in.bookmyshow.com/explore/events-{citySlug}
+```
 
-## 6. Episode 1 GIF — robust fallback to static PNG
+Add per-city overrides:
+- `bangalore`: skillboxes slug `bangalore`, sortmyscene `Bengaluru`, district `bengaluru`, insider `bengaluru`
+- `mumbai`: all `mumbai` / `Mumbai`
+- `delhi`: skillboxes `delhi`, sortmyscene `Delhi`, district `new-delhi`, insider `new-delhi`
+- `pune`: all `pune` / `Pune`
 
-**Confirmed:** DB has `poster_url = "/episode-1.gif"` (file doesn't exist). The 7.8MB `/episodes/episode-01.gif` is too heavy and unreliable. `episode-1-poster.png` static asset already exists.
+Tighten `linkMatch` patterns so we only follow real event detail pages from these listing URLs:
+- skillboxes: only `/events/{slug}` — already correct
+- sortmyscene: `sortmyscene.com/events/[^/?#]+` (not `/events?...`)
+- district: `district.in/events/[^/?#]+` (book-tickets variant accepted)
 
-**Fixes:**
-- **`src/pages/EventDetail.tsx`** `RECAP_MEDIA` block (line 207): wrap the GIF `<img>` in a small component that:
-  - First tries `/episodes/episode-01.gif`
-  - On `onError`, swaps to the static import `episode-1-poster.png`
-  - Adds a tiny "PLAY GIF" overlay button on the static fallback that swaps src back to the GIF on click (so users on slow connections see the static immediately, can opt into the GIF).
-  - Adds `loading="eager"` + `fetchPriority="high"` so it actually starts downloading.
-- **Update DB** for `episode-1.poster_url` to the static PNG via migration so home/grid stops 404-ing:
-  - `UPDATE events SET poster_url = 'episode-1-poster.png' WHERE slug = 'episode-1'`
-  - The `Events` grid `resolvePosterUrl` will route this through `event-posters` storage bucket — which is wrong for static assets. **Better:** set `poster_url = '/src/assets/episode-1-poster.png'` won't work either at runtime. Cleanest: upload `episode-1-poster.png` into the `event-posters` storage bucket and point `poster_url` at the bare filename, OR keep the path approach: copy the static PNG into `public/episodes/episode-01.png` and set `poster_url = '/episodes/episode-01.png'`.
-  - **Chosen approach:** copy `src/assets/episode-1-poster.png` → `public/episodes/episode-01.png` (build-time public asset) and `UPDATE events SET poster_url = '/episodes/episode-01.png' WHERE slug = 'episode-1'`.
-- The `Events.tsx` past-grid img already has `onError` → lime fallback, so any future broken poster will not break the layout.
+**City filter loosening:** the AI was rejecting good events because the `venue` field doesn't always include the city word. Change `venueMatchesCity` to check `venue + blurb + sourceUrl + page-markdown-slice (first 500 chars)` and require either a city alias OR an explicit reject (Goa, Hyderabad, Chennai, Kolkata, Jaipur etc.) being absent. Pass markdown into the function for that check.
 
-## 7. Files touched
+Also: the AI prompt currently forces "future events only" — many listing pages embed past events. Keep that filter but allow rows with no date so we don't lose events whose date isn't in extracted text.
 
-- `src/components/Hero.tsx` — preload all cats, fade-in together, spinner
-- `src/components/Events.tsx` — featured card poster image (left side, side-by-side)
-- `src/components/SectionDots.tsx` — NEW scroll-spy dots
-- `src/pages/Index.tsx` — mount SectionDots, remove PawCursor, ensure section IDs
-- `src/components/PawCursor.tsx` — DELETE
-- `src/components/Nav.tsx` — Dropdown hover-gap fix (kill `mt-2` jump)
-- `src/components/About.tsx`, `Playlist.tsx`, `Drops.tsx`, `Instagram.tsx`, `Videos.tsx` — add `id="..."` on root section if missing
-- `src/components/CuratedEvents.tsx` — city filter chips, render `city` column
-- `src/pages/Admin.tsx` — city dropdown in curated tab; pass `city` to function
-- `supabase/functions/curate-events/index.ts` — multi-city listing URLs, post-AI city filter, city in upsert payload
-- `supabase/migrations/*` — `ALTER TABLE curated_events ADD COLUMN city text` + `UPDATE events SET poster_url = '/episodes/episode-01.png' WHERE slug = 'episode-1'`
-- `public/episodes/episode-01.png` — copy from `src/assets/episode-1-poster.png` (lightweight static fallback)
-- `src/pages/EventDetail.tsx` — GIF→PNG fallback + opt-in play button
+Increase `waitFor` to 5000 for skillboxes too (it's JS-rendered now), add `onlyMainContent: false` (already set) and add `formats: ["markdown", "links"]` for listings, `["markdown"]` for detail.
 
-No new dependencies. No connector changes.
+**Stats:** keep returning per-source `samples` so we can debug from admin UI when the listing-link extraction misses.
+
+## 6. Files touched
+- `src/pages/Admin.tsx` — RSVPs tab + loader + CSV download
+- `src/components/Nav.tsx` — baseline alignment + drop `pb-2` from Dropdown li, split utility cluster from text links
+- `src/pages/EventDetail.tsx` — `RecapMedia` autoplays GIF, no button
+- `src/components/Drops.tsx` — dual grid: streetwear + pet merch with second CTA
+- `supabase/functions/curate-events/index.ts` — fix listing URLs to match user-provided pages, broaden city filter to include markdown context
+
+No DB schema changes. No new connectors. After deploy: open Admin → RSVPS to verify, and Admin → CURATED, pick `skillboxes` + `Bangalore` → `🔄 REFRESH SOURCE`.
 
