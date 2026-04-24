@@ -1,96 +1,60 @@
 
 
-# Fix: RSVPs panel, nav alignment, autoplay GIF, pet merch on home, fix crawl URLs
+# Fix: Drops loading, YouTube fallback, home GIF, page speed
 
-## 1. RSVPs not showing in admin
-The Admin dashboard has no RSVPs tab. The `admin-rsvps` edge function exists and works — we just never surfaced it.
+## 1. Streetwear/Pets not loading on home — broken Shopify query
 
-**Fix in `src/pages/Admin.tsx`:**
-- Add new state `rsvps: { id, event_slug, name, email, plus_ones, created_at }[]` and a `rsvpEventFilter` string.
-- Add `loadRsvps()` calling `GET {projectUrl}/functions/v1/admin-rsvps?event_slug=...` with `x-admin-password` header (mirroring `callContent` pattern).
-- Add a new `<TabsTrigger value="rsvps">RSVPS</TabsTrigger>` and matching `<TabsContent>` with:
-  - event-slug filter dropdown (built from existing `events` list + "All")
-  - count + DOWNLOAD CSV button (calls same function with `?format=csv`)
-  - table: event slug · name · email · plus_ones · created_at
-- Auto-load when tab is opened the first time.
-
-## 2. Nav text alignment (Partners / More sit above the rest)
-Cause: in `src/components/Nav.tsx` the `Dropdown` `<li>` has `className="relative pb-2"` while sibling primary `<li>`s have no padding. The extra `pb-2` (and the trigger button having `<ChevronDown>` flex centering) shifts the dropdown labels visually up relative to plain links.
+In `src/components/Drops.tsx` the pets query `"tag:pets OR tag:pet"` is malformed for Shopify Storefront search and throws, so the `Promise.all` rejects and both grids stay empty (silent except console).
 
 **Fix:**
-- Drop `pb-2` from the Dropdown `<li>` (keep hover gap closure inside the panel which already uses `pt-2` — that already prevents the close-too-early bug).
-- Make the dropdown trigger `button` `inline-flex items-baseline gap-1` and wrap the chevron in a span with `self-center` so the text baseline aligns with the plain `RouterNavLink`s.
-- Make the parent `<ul>` `items-baseline` instead of `items-center` so all link text shares a baseline; keep CTA + DiscoButton + Cart wrapped in their own flex group with `items-center` to avoid breaking those icons.
+- Run the two queries independently (not `Promise.all`) so one failing doesn't kill the other. Use `Promise.allSettled`.
+- Use a valid pets query: `tag:pets` (single tag). If empty, fall back to title-keyword filter we already have via `isPet()` against the general pool.
+- For streetwear, pass `query: ""` (not `null`) so Shopify treats it as "no filter".
+- Tighten the `isPet()` keyword list (keep "pet/cat collar/bandana/leash"; drop bare "cat" — every product on this store contains "cat").
+- Add a visible error state so we see if Shopify actually returned nothing vs. errored.
 
-Concretely: split the `<ul className="hidden lg:flex items-center gap-4">` into:
-```tsx
-<ul className="hidden lg:flex items-baseline gap-4">
-  ...primary links + Dropdown(Partners) + Dropdown(More)
-</ul>
-<div className="hidden lg:flex items-center gap-3">
-  <DiscoMute /> <DiscoButton compact /> {hasCart && <CartDrawer />} <EarlyAccessCta />
-</div>
-```
+## 2. YouTube videos grid — quota exceeded
 
-## 3. GIF should autoplay (no PLAY GIF button)
-**Fix in `src/pages/EventDetail.tsx` `RecapMedia`:**
-- Remove the static-fallback-first behaviour and the `▶ PLAY GIF` button.
-- Default `src` to `gifSrc`. If it errors, swap to the static `RECAP_FALLBACK[slug]`. No button. No "showingGif" state.
-- Keep `loading="eager"` + `fetchPriority="high"`.
+Edge logs show `quotaExceeded` from YouTube Data API. Until quota resets at midnight PT, the grid will keep failing. Two-part fix:
 
-This means the GIF starts loading & playing immediately. Static PNG remains as silent fallback if the GIF 404s or fails.
+- **In `src/components/Videos.tsx`:** when the function returns no videos, render a polished fallback that embeds the channel uploads playlist directly (no API call) using `https://www.youtube.com/embed/videoseries?list=UU<channelId minus first 2 chars>` — for channel `UCmtg0d8E2PXfs3vlQIcGwdQ` the uploads playlist is `UUmtg0d8E2PXfs3vlQIcGwdQ`. This shows real videos with zero quota cost. Plus the existing "Visit channel" button.
+- **In `supabase/functions/youtube-videos/index.ts`:** extend in-memory cache TTL from 10 min to 12 hours and cache empty/error results too (so we don't burn quota retrying every page load). Add a stale-while-error guard: if API errors but we have any prior cached payload, return it.
 
-## 4. Pet merch on the homepage `Drops` section
-**Fix in `src/components/Drops.tsx`:**
-- Run two Storefront queries in parallel: `query: null` (general — used as streetwear pool) and `query: "tag:pets"`.
-- Render two side-by-side mini-grids on the section:
-  - Left column: `STREETWEAR` heading + 2 latest non-pet products (filter out items tagged `pets`/`pet` from the general pool, slice 2)
-  - Right column: `PET MERCH` heading + 2 latest pet-tagged products
-- Each card links to `/product/{handle}`; reuse the existing card markup.
-- Keep the single `SHOP THE DROP` CTA, plus add a secondary `SHOP PET MERCH → /pets` chip below (small, lime).
-- Mobile: stacks (streetwear first, then pets). Skeleton while loading.
-- Copy stays "WEAR THE CULTURE." headline; small subhead "Streetwear + pet drops. Limited. No restocks."
+## 3. Episode 1 GIF on home + animated thumbnail
 
-## 5. Curated crawler — actually use the working listing URLs
-The current `listingUrl` templates don't match the real working pages. Replace with the URLs the user provided + verified equivalents.
+Past-episode tile on home (`Events.tsx`) shows the static PNG because DB `poster_url = /episodes/episode-01.png`. User wants the GIF to play.
 
-**Fix in `supabase/functions/curate-events/index.ts`:**
+**Fix:**
+- Migration: `UPDATE events SET poster_url = '/episodes/episode-01.gif' WHERE slug = 'episode-1'`. The 7.8MB GIF lives at that public path already.
+- Keep the existing `onError` fallback in `Events.tsx` so if the GIF fails it still shows the "★ TITLE" lime tile.
+- Add `loading="lazy"` (already present) so it only downloads when scrolled into view — protects initial paint speed.
+- In `EventDetail.tsx` the `RecapMedia` already autoplays the GIF and silently falls back to the static PNG — no change.
+- Keep the static PNG as the silent `onError` source via a small wrapper for the past-grid `<img>` so a gif failure swaps to PNG instead of the lime fallback (better UX).
 
-Update `SOURCES`:
-```ts
-skillboxes:  https://www.skillboxes.com/events-{city}        // bangalore, mumbai, delhi, pune
-sortmyscene: https://sortmyscene.com/events?tab=events&city={Capitalized} // Bengaluru/Mumbai/Delhi/Pune
-district:    https://www.district.in/events/music-in-{citySlug}-book-tickets // bengaluru/mumbai/new-delhi/pune
-insider:     https://insider.in/{citySlug}/nightlife          // unchanged
-highape:     https://highape.com/{city}/events                // unchanged
-bookmyshow:  https://in.bookmyshow.com/explore/events-{citySlug}
-```
+## 4. Site slower — quick wins
 
-Add per-city overrides:
-- `bangalore`: skillboxes slug `bangalore`, sortmyscene `Bengaluru`, district `bengaluru`, insider `bengaluru`
-- `mumbai`: all `mumbai` / `Mumbai`
-- `delhi`: skillboxes `delhi`, sortmyscene `Delhi`, district `new-delhi`, insider `new-delhi`
-- `pune`: all `pune` / `Pune`
+Three real causes contributing to the slowdown after recent additions:
 
-Tighten `linkMatch` patterns so we only follow real event detail pages from these listing URLs:
-- skillboxes: only `/events/{slug}` — already correct
-- sortmyscene: `sortmyscene.com/events/[^/?#]+` (not `/events?...`)
-- district: `district.in/events/[^/?#]+` (book-tickets variant accepted)
+a. **Hero preloads 7 PNGs blocking the fade-in.** Some PNGs are heavy. Fix:
+   - Lower the spinner safety timeout from 4s to 1.5s.
+   - Only preload the 4 flank PNGs and the DJ SVG; let `catLeft`/`catRight` SVGs load with the natural `<img>` (they're tiny). Splits the critical wait.
+   - Remove `decoding="sync"` from the PNG flank cats — sync decode blocks paint. Keep it only on the DJ SVG.
 
-**City filter loosening:** the AI was rejecting good events because the `venue` field doesn't always include the city word. Change `venueMatchesCity` to check `venue + blurb + sourceUrl + page-markdown-slice (first 500 chars)` and require either a city alias OR an explicit reject (Goa, Hyderabad, Chennai, Kolkata, Jaipur etc.) being absent. Pass markdown into the function for that check.
+b. **Heavy upfront work on `/`.** `Drops` calls Shopify, `Videos` calls an edge fn, `Instagram` calls another, `EarlyAccess`/`Events` query DB — all on first paint. Fix:
+   - Lazy-mount below-the-fold sections via React `lazy()` + `Suspense` in `src/pages/Index.tsx` for `Playlist`, `Drops`, `Instagram`, `Videos`, `EarlyAccess`. Hero/About/Events stay eager so first scroll has content.
+   - Suspense fallback = a small skeleton block matching section height (avoids layout shift).
 
-Also: the AI prompt currently forces "future events only" — many listing pages embed past events. Keep that filter but allow rows with no date so we don't lose events whose date isn't in extracted text.
+c. **GIF on home eats bandwidth.** `loading="lazy"` already gates it; we additionally swap to PNG via `onError` if the connection times out the GIF.
 
-Increase `waitFor` to 5000 for skillboxes too (it's JS-rendered now), add `onlyMainContent: false` (already set) and add `formats: ["markdown", "links"]` for listings, `["markdown"]` for detail.
+## 5. Files touched
 
-**Stats:** keep returning per-source `samples` so we can debug from admin UI when the listing-link extraction misses.
+- `src/components/Drops.tsx` — split queries with `allSettled`, fix pets query, tighter `isPet`, visible error fallback
+- `src/components/Videos.tsx` — playlist-embed fallback when no API videos
+- `supabase/functions/youtube-videos/index.ts` — 12h cache + cache errors + stale-while-error
+- `src/components/Events.tsx` — past-grid `<img>` swaps gif → static PNG on error (not straight to lime)
+- `src/components/Hero.tsx` — preload only critical assets, drop sync decode on PNGs, shorter safety timeout
+- `src/pages/Index.tsx` — lazy-load below-the-fold sections with Suspense skeletons
+- `supabase/migrations/*` — `UPDATE events SET poster_url = '/episodes/episode-01.gif' WHERE slug = 'episode-1'`
 
-## 6. Files touched
-- `src/pages/Admin.tsx` — RSVPs tab + loader + CSV download
-- `src/components/Nav.tsx` — baseline alignment + drop `pb-2` from Dropdown li, split utility cluster from text links
-- `src/pages/EventDetail.tsx` — `RecapMedia` autoplays GIF, no button
-- `src/components/Drops.tsx` — dual grid: streetwear + pet merch with second CTA
-- `supabase/functions/curate-events/index.ts` — fix listing URLs to match user-provided pages, broaden city filter to include markdown context
-
-No DB schema changes. No new connectors. After deploy: open Admin → RSVPS to verify, and Admin → CURATED, pick `skillboxes` + `Bangalore` → `🔄 REFRESH SOURCE`.
+No new dependencies. No connector changes. After deploy: home shows the moving GIF tile, Drops fills with streetwear + pet products, Videos shows the channel playlist even while YouTube quota is exhausted, and first paint feels snappier.
 
