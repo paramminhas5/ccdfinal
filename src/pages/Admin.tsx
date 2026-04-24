@@ -806,25 +806,31 @@ const EventEditor = ({
   const [uploading, setUploading] = useState(false);
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
 
+  const uploadFile = async (file: File): Promise<{ path: string; publicUrl: string } | null> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("slug", event.slug || "poster");
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const res = await fetch(`${projectUrl}/functions/v1/admin-upload-poster`, {
+      method: "POST",
+      headers: {
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error ?? "upload failed");
+    return data;
+  };
+
   const onUpload = async (file: File) => {
     if (!file) return;
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("slug", event.slug || "poster");
-      const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
-      const res = await fetch(`${projectUrl}/functions/v1/admin-upload-poster`, {
-        method: "POST",
-        headers: {
-          "x-admin-password": pwd,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: fd,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "upload failed");
+      const data = await uploadFile(file);
+      if (!data) return;
       onChange({ ...event, poster_url: data.path });
       toast.success("Poster uploaded — hit SAVE to persist");
     } catch (e) {
@@ -833,6 +839,40 @@ const EventEditor = ({
       setUploading(false);
     }
   };
+
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const onGalleryUpload = async (file: File) => {
+    if (!file) return;
+    setGalleryUploading(true);
+    try {
+      const data = await uploadFile(file);
+      if (!data) return;
+      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+      const next: MediaItem[] = [...(event.media ?? []), { type, url: data.publicUrl, caption: "" }];
+      onChange({ ...event, media: next });
+      toast.success("Added — hit SAVE to persist");
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const updateMedia = (idx: number, patch: Partial<MediaItem>) => {
+    const next = (event.media ?? []).map((m, i) => (i === idx ? { ...m, ...patch } : m));
+    onChange({ ...event, media: next });
+  };
+  const removeMedia = (idx: number) => {
+    onChange({ ...event, media: (event.media ?? []).filter((_, i) => i !== idx) });
+  };
+  const moveMedia = (idx: number, dir: -1 | 1) => {
+    const arr = [...(event.media ?? [])];
+    const j = idx + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+    onChange({ ...event, media: arr });
+  };
+
 
   const sharLink = async () => {
     const url = `https://catscandance.com/events/${event.slug}`;
