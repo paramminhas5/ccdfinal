@@ -64,16 +64,26 @@ const Videos = () => {
         )}
 
         {error && (
-          <div className="bg-cream border-4 border-ink chunk-shadow p-8 text-center">
-            <p className="font-display text-2xl text-ink mb-4">No videos to load right now.</p>
-            <a
-              href={CHANNEL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-magenta text-cream font-display px-6 py-3 border-4 border-ink"
-            >
-              Visit the channel →
-            </a>
+          <div className="space-y-6">
+            <div className="aspect-video border-4 border-ink chunk-shadow bg-ink overflow-hidden">
+              <iframe
+                title="Cats Can Dance — Channel Uploads"
+                src="https://www.youtube.com/embed/videoseries?list=UUmtg0d8E2PXfs3vlQIcGwdQ"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+            <div className="text-center">
+              <a
+                href={CHANNEL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-magenta text-cream font-display px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+              >
+                Visit the channel →
+              </a>
+            </div>
           </div>
         )}
 

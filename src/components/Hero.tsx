@@ -12,7 +12,8 @@ import DiscoBall from "@/components/DiscoBall";
 import Lasers from "@/components/Lasers";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const ALL_CAT_SRCS = [heroCenter, catLeft, catRight, catHeadphones, catHandstand, catCap, catHpDance];
+// Only preload critical paint assets (DJ + 4 flank PNGs). Tiny SVGs (catLeft/catRight) load naturally.
+const CRITICAL_CAT_SRCS = [heroCenter, catHeadphones, catHandstand, catCap, catHpDance];
 
 const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -31,11 +32,11 @@ const Hero = () => {
         img.onerror = () => resolve(); // resolve on error so we don't block forever
         img.src = src;
       });
-    Promise.all(ALL_CAT_SRCS.map(loadOne)).then(() => {
+    Promise.all(CRITICAL_CAT_SRCS.map(loadOne)).then(() => {
       if (!cancelled) setImagesReady(true);
     });
-    // Safety timeout — show after 4s even if something hangs
-    const t = setTimeout(() => !cancelled && setImagesReady(true), 4000);
+    // Safety timeout — show after 1.5s even if something hangs
+    const t = setTimeout(() => !cancelled && setImagesReady(true), 1500);
     return () => { cancelled = true; clearTimeout(t); };
   }, []);
 
@@ -154,13 +155,13 @@ const Hero = () => {
             style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
             className="absolute bottom-28 md:bottom-4 left-1 md:left-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
           >
-            <img src={catLeft} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
+            <img src={catLeft} alt="" decoding="async" loading="eager" className="w-full wiggle" />
           </motion.div>
           <motion.div
             style={{ x: rightX, y: rightY, rotate: rightRot, willChange: "transform" }}
             className="absolute bottom-28 md:bottom-4 right-1 md:right-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
           >
-            <img src={catRight} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
+            <img src={catRight} alt="" decoding="async" loading="eager" className="w-full wiggle" />
           </motion.div>
         </motion.div>
 

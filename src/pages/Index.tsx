@@ -1,16 +1,11 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
 import About from "@/components/About";
-import Playlist from "@/components/Playlist";
 import Events from "@/components/Events";
-import Drops from "@/components/Drops";
-import Instagram from "@/components/Instagram";
-import Videos from "@/components/Videos";
-import EarlyAccess from "@/components/EarlyAccess";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Catbot from "@/components/Catbot";
@@ -18,6 +13,17 @@ import SectionReveal from "@/components/SectionReveal";
 import SectionDots from "@/components/SectionDots";
 import SEO from "@/components/SEO";
 import MoonwalkCat from "@/components/MoonwalkCat";
+
+// Lazy-load below-the-fold sections to speed up first paint
+const Playlist = lazy(() => import("@/components/Playlist"));
+const Drops = lazy(() => import("@/components/Drops"));
+const Instagram = lazy(() => import("@/components/Instagram"));
+const Videos = lazy(() => import("@/components/Videos"));
+const EarlyAccess = lazy(() => import("@/components/EarlyAccess"));
+
+const SectionFallback = ({ bg = "bg-cream" }: { bg?: string }) => (
+  <div className={`${bg} border-b-4 border-ink min-h-[400px] animate-pulse`} aria-hidden />
+);
 
 const Index = () => {
   useSmoothScroll();
@@ -66,14 +72,24 @@ const Index = () => {
         <Marquee bg="bg-acid-yellow" size="lg" />
         <SectionReveal><About /></SectionReveal>
         <Marquee bg="bg-lime" reverse />
-        <SectionReveal><Playlist /></SectionReveal>
+        <Suspense fallback={<SectionFallback bg="bg-cream" />}>
+          <SectionReveal><Playlist /></SectionReveal>
+        </Suspense>
         <SectionReveal><Events /></SectionReveal>
         <Marquee bg="bg-orange" />
-        <SectionReveal><Drops /></SectionReveal>
-        <SectionReveal><Instagram /></SectionReveal>
-        <SectionReveal><Videos /></SectionReveal>
+        <Suspense fallback={<SectionFallback bg="bg-cream" />}>
+          <SectionReveal><Drops /></SectionReveal>
+        </Suspense>
+        <Suspense fallback={<SectionFallback bg="bg-electric-blue" />}>
+          <SectionReveal><Instagram /></SectionReveal>
+        </Suspense>
+        <Suspense fallback={<SectionFallback bg="bg-lime" />}>
+          <SectionReveal><Videos /></SectionReveal>
+        </Suspense>
         <Marquee bg="bg-acid-yellow" />
-        <SectionReveal><EarlyAccess /></SectionReveal>
+        <Suspense fallback={<SectionFallback bg="bg-magenta" />}>
+          <SectionReveal><EarlyAccess /></SectionReveal>
+        </Suspense>
         <Contact />
         <Footer />
       </main>
