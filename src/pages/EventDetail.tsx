@@ -6,40 +6,11 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import RsvpDialog from "@/components/RsvpDialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import episode1Poster from "@/assets/episode-1-poster.png";
 
-const RECAP_MEDIA: Record<string, string> = {
-  "episode-1": "/episodes/episode-01.gif",
-};
-
-const RECAP_FALLBACK: Record<string, string> = {
-  "episode-1": episode1Poster,
-};
-
-const RecapMedia = ({ gifSrc, title, slug }: { gifSrc: string; title: string; slug: string }) => {
-  const fallback = RECAP_FALLBACK[slug];
-  // Autoplay the GIF immediately; silently fall back to static PNG on error.
-  const [src, setSrc] = useState<string>(gifSrc);
-
-  return (
-    <div className="container pt-12">
-      <h2 className="font-display text-3xl md:text-4xl text-ink mb-4">/ THE NIGHT, IN MOTION</h2>
-      <img
-        src={src}
-        alt={`${title} recap`}
-        loading="eager"
-        fetchPriority="high"
-        decoding="async"
-        className="w-full max-h-[600px] object-contain bg-ink border-4 border-ink chunk-shadow-lg"
-        onError={() => {
-          if (fallback && src !== fallback) setSrc(fallback);
-        }}
-      />
-    </div>
-  );
-};
-
+type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 
 type EventRow = {
   slug: string;
@@ -51,6 +22,19 @@ type EventRow = {
   lineup: string[];
   status: "upcoming" | "past";
   poster_url: string | null;
+  media?: MediaItem[];
+};
+
+const resolveStorageUrl = (raw: string): string => {
+  const v = raw.trim();
+  if (!v) return v;
+  if (v.startsWith("http") || v.startsWith("/")) return v;
+  try {
+    const { data } = supabase.storage.from("event-posters").getPublicUrl(v);
+    return data?.publicUrl ?? `/${v}`;
+  } catch {
+    return `/${v}`;
+  }
 };
 
 const EventDetail = () => {
@@ -58,6 +42,7 @@ const EventDetail = () => {
   const [open, setOpen] = useState(false);
   const [event, setEvent] = useState<EventRow | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [lightbox, setLightbox] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -90,6 +75,11 @@ const EventDetail = () => {
   }
 
   const isUpcoming = event.status === "upcoming";
+  const headingShadow = isUpcoming
+    ? "drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+    : "drop-shadow-[6px_6px_0_hsl(var(--magenta))]";
+
+  const media = (event.media ?? []).filter((m) => m && m.url);
 
   const eventLd = {
     "@context": "https://schema.org",
@@ -160,7 +150,7 @@ const EventDetail = () => {
                 }`}>
                   {isUpcoming ? `${event.title.toUpperCase()} · UPCOMING` : "PAST EPISODE"}
                 </span>
-                <h1 className="font-display text-6xl md:text-7xl mb-6 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
+                <h1 className={`font-display text-6xl md:text-7xl mb-6 leading-[0.9] ${headingShadow}`}>
                   {event.title.toUpperCase()}
                 </h1>
               </div>
@@ -196,16 +186,7 @@ const EventDetail = () => {
         </section>
 
         {event.poster_url && (() => {
-          const raw = event.poster_url!.trim();
-          let src = raw;
-          if (!raw.startsWith("http") && !raw.startsWith("/")) {
-            try {
-              const { data } = supabase.storage.from("event-posters").getPublicUrl(raw);
-              src = data?.publicUrl ?? `/${raw}`;
-            } catch {
-              src = `/${raw}`;
-            }
-          }
+          const src = resolveStorageUrl(event.poster_url);
           return (
             <div className="container pt-12">
               <img
@@ -215,9 +196,18 @@ const EventDetail = () => {
                 decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-full max-h-[600px] object-cover border-4 border-ink chunk-shadow-lg"
+                data-fallback-step="0"
                 onError={(ev) => {
                   const img = ev.currentTarget as HTMLImageElement;
-                  if (import.meta.env.DEV) console.warn("[poster] failed", src);
+                  const step = Number(img.dataset.fallbackStep ?? "0");
+                  // Step 0 → try the static episode-1 PNG (only relevant for episode-1)
+                  if (step === 0 && slug === "episode-1" && img.src !== episode1Poster) {
+                    img.dataset.fallbackStep = "1";
+                    img.src = episode1Poster;
+                    return;
+                  }
+                  // Final fallback: lime tile with title
+                  if (import.meta.env.DEV) console.warn("[poster] failed", img.src);
                   img.style.display = "none";
                   const parent = img.parentElement;
                   if (parent && !parent.querySelector("[data-poster-fallback]")) {
@@ -233,8 +223,51 @@ const EventDetail = () => {
           );
         })()}
 
-        {event.status === "past" && RECAP_MEDIA[slug] && (
-          <RecapMedia gifSrc={RECAP_MEDIA[slug]} title={event.title} slug={slug} />
+        {media.length > 0 && (
+          <section className="container pt-12">
+            <h2 className="font-display text-3xl md:text-4xl text-ink mb-6">/ THE NIGHT, IN MOTION</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {media.map((item, i) => {
+                const url = resolveStorageUrl(item.url);
+                return (
+                  <figure key={`${item.url}-${i}`} className="bg-ink border-4 border-ink chunk-shadow">
+                    {item.type === "video" ? (
+                      <video
+                        src={url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full aspect-video object-cover bg-ink"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setLightbox({ ...item, url })}
+                        className="block w-full"
+                        aria-label={item.caption || `Open photo ${i + 1}`}
+                      >
+                        <img
+                          src={url}
+                          alt={item.caption || `${event.title} photo ${i + 1}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full aspect-video object-cover hover:opacity-90 transition-opacity"
+                          onError={(ev) => {
+                            (ev.currentTarget as HTMLImageElement).style.opacity = "0.4";
+                          }}
+                        />
+                      </button>
+                    )}
+                    {item.caption && (
+                      <figcaption className="bg-cream text-ink px-3 py-2 text-sm font-medium border-t-4 border-ink">
+                        {item.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         <section className="container py-16 md:py-20 grid md:grid-cols-2 gap-10 max-w-5xl">
@@ -263,14 +296,27 @@ const EventDetail = () => {
         <Footer />
       </main>
       <RsvpDialog open={open} onOpenChange={setOpen} eventSlug={slug} eventTitle={`Cats Can Dance ${event.title}`} />
+
+      <Dialog open={!!lightbox} onOpenChange={(o) => !o && setLightbox(null)}>
+        <DialogContent className="max-w-5xl bg-ink border-4 border-ink p-2">
+          {lightbox && (
+            <figure>
+              <img src={lightbox.url} alt={lightbox.caption || "Photo"} className="w-full max-h-[80vh] object-contain bg-ink" />
+              {lightbox.caption && (
+                <figcaption className="text-cream text-center font-medium py-2">{lightbox.caption}</figcaption>
+              )}
+            </figure>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
 
 const Field = ({ label, value, accent }: { label: string; value: string; accent: boolean }) => (
-  <div>
+  <div className="min-w-0">
     <p className={`font-display text-sm mb-1 ${accent ? "text-acid-yellow" : "text-magenta"}`}>/ {label}</p>
-    <p className="font-display text-2xl">{value}</p>
+    <p className="font-display text-xl md:text-2xl break-words">{value}</p>
   </div>
 );
 

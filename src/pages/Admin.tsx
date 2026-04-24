@@ -44,9 +44,11 @@ type Settings = {
   featured_playlist_id: string | null;
   seo_verifications?: Verifications;
 };
+type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 type EventRow = {
   id?: string; slug: string; title: string; date: string; city: string; venue: string;
   blurb: string; lineup: string[]; status: string; poster_url: string | null; sort_order: number;
+  media?: MediaItem[];
 };
 type Message = { id: string; name: string; email: string; message: string; created_at: string };
 
@@ -360,7 +362,7 @@ const Admin = () => {
       ...events,
       {
         slug: `event-${Date.now()}`, title: "NEW EPISODE", date: "TBA", city: "TBA", venue: "TBA",
-        blurb: "", lineup: [], status: "upcoming", poster_url: null,
+        blurb: "", lineup: [], status: "upcoming", poster_url: null, media: [],
         sort_order: (events[events.length - 1]?.sort_order ?? 0) + 1,
       },
     ]);
@@ -804,25 +806,31 @@ const EventEditor = ({
   const [uploading, setUploading] = useState(false);
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
 
+  const uploadFile = async (file: File): Promise<{ path: string; publicUrl: string } | null> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("slug", event.slug || "poster");
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const res = await fetch(`${projectUrl}/functions/v1/admin-upload-poster`, {
+      method: "POST",
+      headers: {
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error ?? "upload failed");
+    return data;
+  };
+
   const onUpload = async (file: File) => {
     if (!file) return;
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("slug", event.slug || "poster");
-      const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
-      const res = await fetch(`${projectUrl}/functions/v1/admin-upload-poster`, {
-        method: "POST",
-        headers: {
-          "x-admin-password": pwd,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: fd,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "upload failed");
+      const data = await uploadFile(file);
+      if (!data) return;
       onChange({ ...event, poster_url: data.path });
       toast.success("Poster uploaded — hit SAVE to persist");
     } catch (e) {
@@ -831,6 +839,40 @@ const EventEditor = ({
       setUploading(false);
     }
   };
+
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const onGalleryUpload = async (file: File) => {
+    if (!file) return;
+    setGalleryUploading(true);
+    try {
+      const data = await uploadFile(file);
+      if (!data) return;
+      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+      const next: MediaItem[] = [...(event.media ?? []), { type, url: data.publicUrl, caption: "" }];
+      onChange({ ...event, media: next });
+      toast.success("Added — hit SAVE to persist");
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const updateMedia = (idx: number, patch: Partial<MediaItem>) => {
+    const next = (event.media ?? []).map((m, i) => (i === idx ? { ...m, ...patch } : m));
+    onChange({ ...event, media: next });
+  };
+  const removeMedia = (idx: number) => {
+    onChange({ ...event, media: (event.media ?? []).filter((_, i) => i !== idx) });
+  };
+  const moveMedia = (idx: number, dir: -1 | 1) => {
+    const arr = [...(event.media ?? [])];
+    const j = idx + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+    onChange({ ...event, media: arr });
+  };
+
 
   const sharLink = async () => {
     const url = `https://catscandance.com/events/${event.slug}`;
@@ -924,6 +966,55 @@ const EventEditor = ({
           onBlur={commitLineup}
           className="w-full bg-cream text-ink border-4 border-ink px-4 py-2 font-medium focus:outline-none focus:bg-acid-yellow"
         />
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block font-display text-sm text-ink">Gallery ({(event.media ?? []).length})</label>
+          <label className="bg-acid-yellow text-ink font-display px-3 py-1.5 border-2 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform cursor-pointer text-sm">
+            {galleryUploading ? "UPLOADING…" : "+ ADD PHOTO/VIDEO"}
+            <input
+              type="file"
+              accept="image/*,video/mp4,video/webm"
+              className="hidden"
+              disabled={galleryUploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onGalleryUpload(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+        {(event.media ?? []).length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(event.media ?? []).map((m, i) => (
+              <div key={`${m.url}-${i}`} className="bg-background border-2 border-ink p-2 space-y-2">
+                <div className="flex gap-2">
+                  {m.type === "video" ? (
+                    <video src={m.url} muted playsInline className="h-20 w-28 object-cover bg-ink border-2 border-ink shrink-0" />
+                  ) : (
+                    <img src={m.url} alt="" className="h-20 w-28 object-cover border-2 border-ink shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <input
+                      type="text"
+                      placeholder="Caption (optional)"
+                      value={m.caption ?? ""}
+                      onChange={(e) => updateMedia(i, { caption: e.target.value })}
+                      className="w-full bg-cream text-ink border-2 border-ink px-2 py-1 text-sm font-medium focus:outline-none focus:bg-acid-yellow"
+                    />
+                    <p className="text-xs text-ink/60 uppercase font-display">{m.type}</p>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => moveMedia(i, -1)} disabled={i === 0} className="bg-ink text-cream font-display px-2 py-1 text-xs disabled:opacity-30">▲</button>
+                  <button type="button" onClick={() => moveMedia(i, 1)} disabled={i === (event.media ?? []).length - 1} className="bg-ink text-cream font-display px-2 py-1 text-xs disabled:opacity-30">▼</button>
+                  <button type="button" onClick={() => removeMedia(i)} className="ml-auto bg-destructive text-cream font-display px-2 py-1 text-xs">✕ REMOVE</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">
         <button onClick={onSave} className="bg-ink text-cream font-display px-6 py-3 hover:bg-magenta transition-colors text-base">
