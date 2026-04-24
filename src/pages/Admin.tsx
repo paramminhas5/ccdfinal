@@ -104,6 +104,9 @@ const Admin = () => {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [msgSearch, setMsgSearch] = useState("");
+  const [rsvps, setRsvps] = useState<{ id: string; event_slug: string; name: string; email: string; plus_ones: number; created_at: string }[]>([]);
+  const [rsvpEventFilter, setRsvpEventFilter] = useState<string>("");
+  const [rsvpsLoaded, setRsvpsLoaded] = useState(false);
 
   const callContent = async (init: RequestInit & { search?: string } = {}) => {
     const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
@@ -120,6 +123,50 @@ const Admin = () => {
     });
     if (!res.ok) throw new Error("request failed");
     return res.json();
+  };
+
+  const loadRsvps = async (eventSlug?: string) => {
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const qs = eventSlug ? `?event_slug=${encodeURIComponent(eventSlug)}` : "";
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/admin-rsvps${qs}`, {
+        headers: {
+          "x-admin-password": pwd,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      if (!res.ok) throw new Error("failed");
+      const data = await res.json();
+      setRsvps(data?.rsvps ?? []);
+      setRsvpsLoaded(true);
+    } catch (e) {
+      toast.error("Could not load RSVPs");
+    }
+  };
+
+  const downloadRsvpsCsv = () => {
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const params = new URLSearchParams({ format: "csv" });
+    if (rsvpEventFilter) params.set("event_slug", rsvpEventFilter);
+    const url = `${projectUrl}/functions/v1/admin-rsvps?${params.toString()}`;
+    fetch(url, {
+      headers: {
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+    })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `rsvps-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+      })
+      .catch(() => toast.error("CSV download failed"));
   };
 
   const loadAll = async (pwd: string) => {
