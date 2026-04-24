@@ -63,15 +63,15 @@ const Dropdown = ({
   const baseColor = scrolled ? "text-ink" : "text-cream";
 
   return (
-    <li ref={ref} className="relative pb-2" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <li ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`font-display text-base hover:${activeColor} transition-colors flex items-center gap-1 ${
+        className={`font-display text-base hover:${activeColor} transition-colors inline-flex items-baseline gap-1 ${
           isActive ? activeColor : baseColor
         }`}
       >
-        {label} <ChevronDown className="w-4 h-4" />
+        {label} <ChevronDown className="w-4 h-4 self-center" />
       </button>
       {open && (
         <div className="absolute top-full right-0 pt-2 min-w-[180px] z-50">
@@ -147,7 +147,7 @@ const Nav = () => {
           <span className="sm:hidden">CCD</span>
         </Link>
 
-        <ul className="hidden lg:flex items-center gap-4">
+        <ul className="hidden lg:flex items-baseline gap-4">
           {primaryLinks.map((l) => (
             <li key={l.to}>
               <RouterNavLink
@@ -164,19 +164,19 @@ const Nav = () => {
           ))}
           <Dropdown label="Partners" links={partnersLinks} scrolled={scrolled} />
           <Dropdown label="More" links={moreLinks} scrolled={scrolled} />
-          <li className="hidden xl:block"><DiscoMute /></li>
-          <li><DiscoButton compact /></li>
-          {hasCart && <li><CartDrawer /></li>}
-          <li>
-            <a
-              href="/#early-access"
-              onClick={goToEarlyAccess}
-              className="inline-block bg-ink text-cream font-display px-3 py-2 xl:px-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform text-xs xl:text-sm"
-            >
-              Early Access
-            </a>
-          </li>
         </ul>
+        <div className="hidden lg:flex items-center gap-3">
+          <span className="hidden xl:block"><DiscoMute /></span>
+          <DiscoButton compact />
+          {hasCart && <CartDrawer />}
+          <a
+            href="/#early-access"
+            onClick={goToEarlyAccess}
+            className="inline-block bg-ink text-cream font-display px-3 py-2 xl:px-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform text-xs xl:text-sm"
+          >
+            Early Access
+          </a>
+        </div>
 
         <div className="lg:hidden flex items-center gap-1.5 sm:gap-2 relative">
           <DiscoMute />
