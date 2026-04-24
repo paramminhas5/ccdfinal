@@ -1,152 +1,109 @@
 
-Fix the two problem areas in a tighter, cheaper way: make curated crawling work source-by-source with direct source pages, and harden the YouTube playlist flow so playlist URLs parse correctly and render with a safe fallback.
 
-## 1. Curated events: stop crawling “everything”, start with one precise source
+# Fix: cat loading, past-event covers, section dots, paw cursor, curated city scoping, episode-1 GIF fallback
 
-Current state:
-- `curated_events` is empty.
-- The crawl logs show some extraction happening, then the function shuts down before the flow finishes.
-- The current `curate-events` function loops all sources in one request and only upserts at the end, so a slow/failed later source can leave the table empty.
+## 1. Hero cats — preload together + show loading state, no layout shift
 
-Plan:
-- Refactor `supabase/functions/curate-events/index.ts` to support a request body like:
-  - `source?: "sortmyscene" | "insider" | "skillboxes" | "district" | "highape" | "bookmyshow"`
-  - `limit?: number`
-  - `mode?: "single" | "all"`
-- Default admin refresh to `mode: "single"` with one source only.
-- Start with just one source first: `sortmyscene` (public page content is easier to extract and cheaper than broad web search).
-- Replace broad search-first crawling with a source adapter:
-  - fetch one known source listing page
-  - extract only relevant Bangalore/Bengaluru dance/electronic event links
-  - scrape only the top few candidate event pages
-  - send smaller, cleaner text to AI
-- Hard-cap cost:
-  - max 1 listing page
-  - max 4–6 candidate event pages
-  - max 5 saved events per run
-- Upsert immediately after each source instead of collecting all events and writing once at the end.
-- Return detailed status per run:
-  - `source`
-  - `listingResults`
-  - `candidateLinks`
-  - `scrapedPages`
-  - `extracted`
-  - `upserted`
-  - `errors`
+**Problem:** 9 cat assets (`hero-center.svg`, `cat-left/right.svg`, plus PNGs ~hundreds of KB each) load asynchronously and pop in one by one.
 
-## 2. Make the crawler precise instead of noisy
+**Fix in `src/components/Hero.tsx`:**
+- Add `useEffect` that preloads all 9 images in parallel via `new Image()` + `Promise.all`. Track an `imagesReady` boolean state.
+- Wrap the entire cat group (`heroCenter`, `catLeft/Right`, 4 flank cats) in a single `motion.div` with `opacity: imagesReady ? 1 : 0` and `transition: opacity 0.4s`. They all fade in together once loaded.
+- Headline + buttons render immediately (no blocking).
+- Add a tiny centered spinner (a CSS-only spinning paw or `⚡` glyph) absolutely positioned in the hero center, visible only while `!imagesReady`. Hides on ready.
+- Does NOT touch sharing (the SEO/OG tags are server-side meta — preloading is purely client visual).
 
-In `supabase/functions/curate-events/index.ts`:
-- Remove the current “search the web for source keywords” approach for the first-source flow.
-- Add source-specific extraction rules:
-  - require Bengaluru/Bangalore match
-  - require event-like fields: title + URL + date
-  - prefer dance / electronic / techno / house / underground
-  - reject generic city pages, blogs, and non-event collection pages
-- Tighten AI prompt so it only returns real bookable events, not category pages or venue homepages.
-- Deduplicate by URL before save.
+## 2. Show past-event poster on the homepage `Events` card
 
-Result:
-- lower Firecrawl usage
-- faster runs
-- easier debugging
-- no more “nothing shows up because the whole batch timed out”
+**Problem:** Featured upcoming card has no image. Only the small "past episodes" grid shows posters.
 
-## 3. Admin: refresh one source first, then expand later
+**Fix in `src/components/Events.tsx`:**
+- In the featured `motion.article`, when `featured.poster_url` exists, render the poster on the right side as a side-by-side flex (image left ~40% width on desktop, text right) using `resolvePosterUrl` (already in file). On mobile stacks vertically, image first.
+- Use the same `<img>` with onError fallback to the lime "★ TITLE" placeholder.
+- Keep all existing copy + buttons intact.
 
-In `src/pages/Admin.tsx` curated tab:
-- Add a source dropdown next to `REFRESH FROM WEB`
-- First run should call:
-  - `source: "sortmyscene"`
-  - `mode: "single"`
-  - `limit: 5`
-- Show a clearer result panel after refresh:
-  - “Listing found X candidates”
-  - “Scraped Y pages”
-  - “Saved Z curated events”
-- Keep “crawl all sources” out of the primary flow for now.
-- After one source is stable, add the other sources one at a time.
+## 3. Section nav dots on the right (scrollspy)
 
-## 4. Curated events frontend: always show what was saved
+**Problem:** Long page, no orientation.
 
-In `src/components/CuratedEvents.tsx`:
-- Keep the section visible even when empty.
-- Prefer rows ordered by:
-  - featured first
-  - upcoming dates next
-  - newest manual/crawled rows after
-- If only a few rows are available from the first source, still render them immediately.
+**New component `src/components/SectionDots.tsx`:**
+- Fixed right-edge vertical strip (`fixed right-4 top-1/2 -translate-y-1/2 z-40`), hidden on mobile (`hidden md:flex`).
+- 8 dots: Home, About, Playlist, Events, Drops, Instagram, Videos, Early Access — each dot is a small button with `aria-label`, hover label tooltip on the left.
+- Uses `IntersectionObserver` to watch each section id; active dot fills `bg-magenta` w/ `border-ink`, others `bg-cream/40`.
+- Click a dot → `document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })`.
+- Mount in `Index.tsx` after `<Nav />`.
+- Section IDs to add (where missing): `home` (already on Hero), `about`, `playlist`, `events` (already), `drops`, `instagram`, `videos`, `early-access` (already). Add the missing ones via small wrapper `<div id="...">` inside each component or in `Index.tsx`.
 
-## 5. YouTube playlist: fix parsing + use the official playlist embed route
+## 4. Remove paw cursor (interferes with nav clicks)
 
-Current risk:
-- The admin parser accepts YouTube input loosely.
-- A full watch URL or mixed URL may save an ID that works for a link but not for an embeddable playlist iframe.
-- The current embed route change did not resolve the issue.
+**Fix:**
+- Remove `<PawCursor />` import + usage from `src/pages/Index.tsx`.
+- Delete `src/components/PawCursor.tsx`.
+- Verify no other page imports it (only Index does — confirmed).
 
-Plan in playlist flow:
-- In `src/pages/Admin.tsx`, harden `extractPlaylistInfo()` for YouTube:
-  - accept playlist URLs with `?list=...`
-  - accept copied playlist IDs directly
-  - reject video-only YouTube URLs that do not contain a playlist ID
-  - show a clear toast like “That’s a video URL, not a playlist URL”
-- In `src/components/Playlist.tsx`, switch YouTube playlist embeds to the official playlist iframe route:
-  - `https://www.youtube.com/embed/videoseries?list=PLAYLIST_ID`
-- Add a small YouTube-only fallback state:
-  - if the playlist embed fails or the ID is invalid, show a styled card with
-    - playlist title
-    - “Open on YouTube”
-    - helpful text instead of a blank black iframe
-- Keep Spotify and SoundCloud behavior unchanged.
+The dropdown-closes-too-early bug (mentioned by user re: "topdown closes before I can scroll down to it") is the `Dropdown` in `Nav.tsx` using both hover + outside-click handlers. The hover handlers already keep it open while pointer is inside; the closing comes from cursor moving across the `mt-2` gap to the panel. **Bridge fix in `Nav.tsx` Dropdown:** remove the `mt-2` gap (use `mt-0` + a transparent `pt-2` inside the panel) so hover doesn't break when crossing the gap. Also widen hover area by adding `pb-2` to the trigger `li`.
 
-## 6. Safer rollout order
+## 5. Curated events — broken city scoping (Skillbox returns Gurgaon)
 
-Implementation order:
-1. Refactor `curate-events` to single-source mode with per-source save
-2. Update Admin curated tab to refresh one source and show crawl stats
-3. Verify curated rows appear on `/events`
-4. Fix YouTube playlist parsing in Admin
-5. Switch playlist embed route and add visible fallback
-6. Only after the first source works reliably, add the next sources one by one
+**Confirmed:** `https://skillboxes.com/bangalore` ignores the city slug and returns nationwide events. DB has only Gurgaon/Kasol rows.
 
-## 7. Files to update
+**Fixes in `supabase/functions/curate-events/index.ts`:**
+- Change SOURCES to use proper city-scoped listing URLs that actually filter, and add a `cities` field per request:
+  - Body now accepts `city: "bangalore" | "mumbai" | "delhi" | "pune" | "all"` (default `"bangalore"`). `"all"` runs each city in turn for the chosen source.
+  - Build listing URL per city per source from a template:
+    ```
+    skillboxes:  https://www.skillboxes.com/city/{city}
+    insider:     https://insider.in/{citySlug}/nightlife (bengaluru/mumbai/new-delhi/pune)
+    highape:     https://highape.com/{city}/events
+    district:    https://www.district.in/events-in-{citySlug} (bengaluru/mumbai/new-delhi/pune)
+    bookmyshow:  https://in.bookmyshow.com/explore/events-{citySlug}
+    sortmyscene: https://sortmyscene.com/{city}
+    ```
+- **Post-AI city filter (the real safety net):** after AI extraction, reject any event whose `venue` string doesn't contain the requested city name OR a known city alias (e.g. Bangalore↔Bengaluru, Delhi↔New Delhi↔NCR, Mumbai↔Bombay). This catches Skillbox's national listings.
+- Save the city onto each row: add `city` column to `curated_events` (migration) so the frontend can group / filter.
+- Update AI prompt: "Reject if venue is not in {requestedCity} or its metro area."
+- Per-source per-city stats in response.
 
-- `supabase/functions/curate-events/index.ts`
-  - single-source mode
-  - source adapters
-  - direct-page crawling
-  - per-source upserts
-  - tighter filters and cheaper limits
-- `src/pages/Admin.tsx`
-  - curated source selector
-  - better crawl result UI
-  - stricter YouTube playlist parsing/validation
-- `src/components/CuratedEvents.tsx`
-  - stable render of newly saved rows
-- `src/components/Playlist.tsx`
-  - official YouTube playlist embed route
-  - visible fallback for invalid/unembeddable playlists
+**Migration:** `ALTER TABLE curated_events ADD COLUMN IF NOT EXISTS city text;` + backfill existing rows from venue text where possible (or leave null).
 
-## Technical details
+**Admin UI in `src/pages/Admin.tsx` curated tab:**
+- Add a second dropdown "City" next to the source selector (Bangalore default; All; Mumbai; Delhi; Pune).
+- Send `{ source, city, mode: "single", limit: 5 }` to the function.
 
-```text
-Admin CURATED tab
-   ↓
-refresh single source: sortmyscene
-   ↓
-curate-events(source=sortmyscene, mode=single, limit=5)
-   ↓
-fetch source listing page
-   ↓
-extract candidate event links
-   ↓
-scrape top 4–6 event pages
-   ↓
-AI extracts only Bengaluru dance events
-   ↓
-upsert immediately into curated_events
-   ↓
-frontend /events shows saved rows
-```
+**Frontend `src/components/CuratedEvents.tsx`:**
+- Add city-tab filter chips at the top (All / Bangalore / Mumbai / Delhi / Pune). Default Bangalore. Filters the rendered list by `city` (case-insensitive includes).
 
-No database schema change is required for this iteration.
+## 6. Episode 1 GIF — robust fallback to static PNG
+
+**Confirmed:** DB has `poster_url = "/episode-1.gif"` (file doesn't exist). The 7.8MB `/episodes/episode-01.gif` is too heavy and unreliable. `episode-1-poster.png` static asset already exists.
+
+**Fixes:**
+- **`src/pages/EventDetail.tsx`** `RECAP_MEDIA` block (line 207): wrap the GIF `<img>` in a small component that:
+  - First tries `/episodes/episode-01.gif`
+  - On `onError`, swaps to the static import `episode-1-poster.png`
+  - Adds a tiny "PLAY GIF" overlay button on the static fallback that swaps src back to the GIF on click (so users on slow connections see the static immediately, can opt into the GIF).
+  - Adds `loading="eager"` + `fetchPriority="high"` so it actually starts downloading.
+- **Update DB** for `episode-1.poster_url` to the static PNG via migration so home/grid stops 404-ing:
+  - `UPDATE events SET poster_url = 'episode-1-poster.png' WHERE slug = 'episode-1'`
+  - The `Events` grid `resolvePosterUrl` will route this through `event-posters` storage bucket — which is wrong for static assets. **Better:** set `poster_url = '/src/assets/episode-1-poster.png'` won't work either at runtime. Cleanest: upload `episode-1-poster.png` into the `event-posters` storage bucket and point `poster_url` at the bare filename, OR keep the path approach: copy the static PNG into `public/episodes/episode-01.png` and set `poster_url = '/episodes/episode-01.png'`.
+  - **Chosen approach:** copy `src/assets/episode-1-poster.png` → `public/episodes/episode-01.png` (build-time public asset) and `UPDATE events SET poster_url = '/episodes/episode-01.png' WHERE slug = 'episode-1'`.
+- The `Events.tsx` past-grid img already has `onError` → lime fallback, so any future broken poster will not break the layout.
+
+## 7. Files touched
+
+- `src/components/Hero.tsx` — preload all cats, fade-in together, spinner
+- `src/components/Events.tsx` — featured card poster image (left side, side-by-side)
+- `src/components/SectionDots.tsx` — NEW scroll-spy dots
+- `src/pages/Index.tsx` — mount SectionDots, remove PawCursor, ensure section IDs
+- `src/components/PawCursor.tsx` — DELETE
+- `src/components/Nav.tsx` — Dropdown hover-gap fix (kill `mt-2` jump)
+- `src/components/About.tsx`, `Playlist.tsx`, `Drops.tsx`, `Instagram.tsx`, `Videos.tsx` — add `id="..."` on root section if missing
+- `src/components/CuratedEvents.tsx` — city filter chips, render `city` column
+- `src/pages/Admin.tsx` — city dropdown in curated tab; pass `city` to function
+- `supabase/functions/curate-events/index.ts` — multi-city listing URLs, post-AI city filter, city in upsert payload
+- `supabase/migrations/*` — `ALTER TABLE curated_events ADD COLUMN city text` + `UPDATE events SET poster_url = '/episodes/episode-01.png' WHERE slug = 'episode-1'`
+- `public/episodes/episode-01.png` — copy from `src/assets/episode-1-poster.png` (lightweight static fallback)
+- `src/pages/EventDetail.tsx` — GIF→PNG fallback + opt-in play button
+
+No new dependencies. No connector changes.
+
