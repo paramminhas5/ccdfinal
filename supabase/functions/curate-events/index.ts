@@ -51,12 +51,21 @@ type SourceConfig = {
   linkReject: RegExp[];
 };
 
+// Per-source aliases for cities (for slug forms specific to that source)
+const CITY_TITLE: Record<CityKey, string> = {
+  bangalore: "Bengaluru",
+  mumbai: "Mumbai",
+  delhi: "Delhi",
+  pune: "Pune",
+};
+
 const SOURCES: Record<SourceKey, SourceConfig> = {
   sortmyscene: {
     key: "sortmyscene",
-    listingUrl: (c) => `https://sortmyscene.com/${c.slugs.sortmyscene ?? c.key}`,
-    linkMatch: /sortmyscene\.com\/[^/]+\/[^/?#]+/i,
-    linkReject: [/\/category\//i, /\/tag\//i, /\/page\//i, /\/about/i, /\/contact/i],
+    listingUrl: (c) =>
+      `https://sortmyscene.com/events?tab=events&city=${encodeURIComponent(CITY_TITLE[c.key])}`,
+    linkMatch: /sortmyscene\.com\/events\/[^/?#]+/i,
+    linkReject: [/\/category\//i, /\/tag\//i, /\/page\//i, /\/about/i, /\/contact/i, /\/events\?/i],
   },
   insider: {
     key: "insider",
@@ -66,15 +75,16 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
   },
   skillboxes: {
     key: "skillboxes",
-    listingUrl: (c) => `https://www.skillboxes.com/city/${c.slugs.skillboxes ?? c.key}`,
-    linkMatch: /skillboxes\.com\/events\//i,
-    linkReject: [/\/category\//i, /\/page\//i, /\/business\//i],
+    listingUrl: (c) => `https://www.skillboxes.com/events-${c.slugs.skillboxes ?? c.key}`,
+    linkMatch: /skillboxes\.com\/events\/[^/?#]+/i,
+    linkReject: [/\/category\//i, /\/page\//i, /\/business\//i, /\/events-[a-z]+$/i],
   },
   district: {
     key: "district",
-    listingUrl: (c) => `https://www.district.in/events-in-${c.slugs.district ?? c.key}`,
-    linkMatch: /district\.in\/events?\//i,
-    linkReject: [/\/categories\//i],
+    listingUrl: (c) =>
+      `https://www.district.in/events/music-in-${c.slugs.district ?? c.key}-book-tickets`,
+    linkMatch: /district\.in\/events\/[^/?#]+/i,
+    linkReject: [/\/categories\//i, /\/events\/music-in-[a-z-]+-book-tickets$/i],
   },
   highape: {
     key: "highape",
@@ -89,6 +99,11 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
     linkReject: [/\/explore\//i],
   },
 };
+
+const CITY_REJECT = [
+  "goa", "hyderabad", "chennai", "kolkata", "jaipur", "ahmedabad",
+  "kochi", "chandigarh", "lucknow", "indore", "guwahati", "shillong",
+];
 
 async function firecrawlScrape(
   url: string,
@@ -117,9 +132,9 @@ async function extractWithAI(text: string, sourceUrl: string, source: string, ci
 Return the event ONLY if it is:
 - a real bookable individual event page (NOT a category, listing, or venue homepage)
 - music-related (any genre: dance, electronic, techno, house, indie, rock, jazz, live, club, festival)
-- happening in the future (event_date today or later)
-- located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}). Reject if the venue is not in ${city.key}.
-Always include the title. Use empty string for unknown fields. If page is not a valid event in ${city.key}, return events: [].`;
+- located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}). Reject if the venue is clearly in another Indian city (Goa, Hyderabad, Chennai, Kolkata, Jaipur, etc.).
+Prefer future events (event_date today or later) but include events even if no date is found — leave event_date empty.
+Always include the title. Use empty string for unknown fields. If page is not a valid event in ${city.key} or another city is named, return events: [].`;
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
@@ -175,10 +190,21 @@ Always include the title. Use empty string for unknown fields. If page is not a 
   }
 }
 
-function venueMatchesCity(venue: string | null | undefined, blurb: string | null | undefined, city: CityConfig): boolean {
-  const hay = `${venue ?? ""} ${blurb ?? ""}`.toLowerCase();
-  if (!hay.trim()) return false;
-  return city.aliases.some((a) => hay.includes(a));
+function venueMatchesCity(
+  venue: string | null | undefined,
+  blurb: string | null | undefined,
+  sourceUrl: string,
+  pageMarkdown: string,
+  city: CityConfig,
+): boolean {
+  const hay = `${venue ?? ""} ${blurb ?? ""} ${sourceUrl} ${pageMarkdown.slice(0, 800)}`.toLowerCase();
+  if (city.aliases.some((a) => hay.includes(a))) return true;
+  // No alias match: only allow through if no other Indian city is mentioned (likely city-agnostic copy).
+  const otherCityKeys = (Object.keys(CITIES) as CityKey[]).filter((k) => k !== city.key);
+  const otherCityHit = otherCityKeys.some((k) =>
+    CITIES[k].aliases.some((a) => hay.includes(a)),
+  ) || CITY_REJECT.some((c) => hay.includes(c));
+  return !otherCityHit;
 }
 
 async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcKey: string, lovableKey: string, supabase: any) {
@@ -196,8 +222,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     samples: [] as string[],
   };
 
-  const needsWait = cfg.key !== "skillboxes";
-  const listing = await firecrawlScrape(listingUrl, fcKey, ["links", "markdown"], needsWait ? 5000 : 0);
+  const listing = await firecrawlScrape(listingUrl, fcKey, ["links", "markdown"], 5000);
   if (!listing) {
     stats.errors.push("listing scrape failed");
     return stats;
@@ -244,8 +269,8 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
       const ev = events[0];
       stats.extracted += 1;
 
-      // Hard city filter: venue text must contain a city alias
-      if (!venueMatchesCity(ev.venue, ev.blurb, city)) {
+      // City filter: check venue + blurb + URL + page markdown
+      if (!venueMatchesCity(ev.venue, ev.blurb, url, md, city)) {
         stats.rejectedCity += 1;
         console.log(cfg.key, "rejected (city mismatch):", ev.venue);
         continue;
