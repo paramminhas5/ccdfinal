@@ -7,16 +7,15 @@ import Marquee from "@/components/Marquee";
 import About from "@/components/About";
 import Playlist from "@/components/Playlist";
 import Events from "@/components/Events";
-// Media moved to its own page at /media
 import Drops from "@/components/Drops";
 import Instagram from "@/components/Instagram";
 import Videos from "@/components/Videos";
 import EarlyAccess from "@/components/EarlyAccess";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import PawCursor from "@/components/PawCursor";
 import Catbot from "@/components/Catbot";
 import SectionReveal from "@/components/SectionReveal";
+import SectionDots from "@/components/SectionDots";
 import SEO from "@/components/SEO";
 import MoonwalkCat from "@/components/MoonwalkCat";
 
@@ -60,7 +59,7 @@ const Index = () => {
       />
       <main className="bg-background text-foreground">
         <Nav />
-        <PawCursor />
+        <SectionDots />
         <Catbot />
         <MoonwalkCat />
         <Hero />

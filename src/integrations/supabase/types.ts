@@ -44,6 +44,7 @@ export type Database = {
       curated_events: {
         Row: {
           blurb: string | null
+          city: string | null
           created_at: string
           event_date: string | null
           event_time: string | null
@@ -59,6 +60,7 @@ export type Database = {
         }
         Insert: {
           blurb?: string | null
+          city?: string | null
           created_at?: string
           event_date?: string | null
           event_time?: string | null
@@ -74,6 +76,7 @@ export type Database = {
         }
         Update: {
           blurb?: string | null
+          city?: string | null
           created_at?: string
           event_date?: string | null
           event_time?: string | null

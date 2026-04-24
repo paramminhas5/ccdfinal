@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import heroCenter from "@/assets/hero-center.svg";
 import catLeft from "@/assets/cat-left.svg";
@@ -12,12 +12,32 @@ import DiscoBall from "@/components/DiscoBall";
 import Lasers from "@/components/Lasers";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+const ALL_CAT_SRCS = [heroCenter, catLeft, catRight, catHeadphones, catHandstand, catCap, catHpDance];
+
 const Hero = () => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const { disco } = useDisco();
   const reduce = useReducedMotion();
   const isMobile = useIsMobile();
+  const [imagesReady, setImagesReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadOne = (src: string) =>
+      new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // resolve on error so we don't block forever
+        img.src = src;
+      });
+    Promise.all(ALL_CAT_SRCS.map(loadOne)).then(() => {
+      if (!cancelled) setImagesReady(true);
+    });
+    // Safety timeout — show after 4s even if something hangs
+    const t = setTimeout(() => !cancelled && setImagesReady(true), 4000);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, []);
 
   // Big bottom side cats (existing)
   const leftX = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["0%", "-180%"]);
@@ -49,7 +69,6 @@ const Hero = () => {
 
   const flankBase = "absolute z-30 pointer-events-none drop-shadow-[6px_6px_0_hsl(var(--ink))] wiggle w-24 md:w-40";
 
-  // Each flank cat is independently positionable — tweak `pos` per-cat to nudge.
   const FLANK_CATS = [
     { id: "cap",        src: catCap,        pos: "top-[28%] left-[6%] md:top-[26%] md:left-[14%]",   x: tlX, rot: tlRot },
     { id: "hpDance",    src: catHpDance,    pos: "top-[28%] right-[6%] md:top-[26%] md:right-[14%]", x: trX, rot: trRot },
@@ -90,42 +109,59 @@ const Hero = () => {
           </p>
         </div>
 
-        {/* DJ cat — slightly overlaps the headline */}
-        <motion.img
-          src={heroCenter}
-          alt=""
-          aria-hidden
-          fetchPriority="high"
-          decoding="sync"
-          loading="eager"
-          style={{ y: djY, willChange: "transform" }}
-          className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
-        />
+        {/* Loading spinner — shows until all cats preload */}
+        {!imagesReady && (
+          <div className="absolute inset-0 z-[35] flex items-center justify-center pointer-events-none" aria-hidden>
+            <div
+              className="w-12 h-12 border-4 border-cream border-t-magenta rounded-full animate-spin"
+              style={{ filter: "drop-shadow(3px 3px 0 hsl(var(--ink)))" }}
+            />
+          </div>
+        )}
 
-        {/* Four flank cats bracketing the wordmark — each independently positionable via FLANK_CATS */}
-        {FLANK_CATS.map((c) => (
+        {/* All cats grouped — fade in together once preloaded */}
+        <motion.div
+          animate={{ opacity: imagesReady ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+          className="contents"
+        >
+          {/* DJ cat — slightly overlaps the headline */}
           <motion.img
-            key={c.id}
-            src={c.src}
+            src={heroCenter}
             alt=""
             aria-hidden
-            style={{ x: c.x, rotate: c.rot, opacity: flankOpacity, willChange: "transform" }}
-            className={`${flankBase} ${c.pos}`}
+            fetchPriority="high"
+            decoding="sync"
+            loading="eager"
+            style={{ y: djY, willChange: "transform" }}
+            className="absolute inset-x-0 mx-auto bottom-20 md:-bottom-8 z-30 w-[100%] md:w-[92%] min-w-[300px] max-w-[820px] drop-shadow-[10px_10px_0_hsl(var(--ink))] pointer-events-none"
           />
-        ))}
 
-        {/* Big bottom side cats */}
-        <motion.div
-          style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
-          className="absolute bottom-28 md:bottom-4 left-1 md:left-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
-        >
-          <img src={catLeft} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
-        </motion.div>
-        <motion.div
-          style={{ x: rightX, y: rightY, rotate: rightRot, willChange: "transform" }}
-          className="absolute bottom-28 md:bottom-4 right-1 md:right-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
-        >
-          <img src={catRight} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
+          {/* Four flank cats bracketing the wordmark */}
+          {FLANK_CATS.map((c) => (
+            <motion.img
+              key={c.id}
+              src={c.src}
+              alt=""
+              aria-hidden
+              style={{ x: c.x, rotate: c.rot, opacity: flankOpacity, willChange: "transform" }}
+              className={`${flankBase} ${c.pos}`}
+            />
+          ))}
+
+          {/* Big bottom side cats */}
+          <motion.div
+            style={{ x: leftX, y: leftY, rotate: leftRot, willChange: "transform" }}
+            className="absolute bottom-28 md:bottom-4 left-1 md:left-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          >
+            <img src={catLeft} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
+          </motion.div>
+          <motion.div
+            style={{ x: rightX, y: rightY, rotate: rightRot, willChange: "transform" }}
+            className="absolute bottom-28 md:bottom-4 right-1 md:right-10 z-40 w-32 md:w-56 drop-shadow-[6px_6px_0_hsl(var(--ink))]"
+          >
+            <img src={catRight} alt="" fetchPriority="high" decoding="sync" loading="eager" className="w-full wiggle" />
+          </motion.div>
         </motion.div>
 
         {/* Desktop buttons */}

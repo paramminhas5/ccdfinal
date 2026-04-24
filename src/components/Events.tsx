@@ -55,58 +55,91 @@ const Events = () => {
           CATCH<br/>US LIVE
         </h2>
 
-        {featured && (
+        {featured && (() => {
+          const featuredPoster = resolvePosterUrl(featured.poster_url);
+          return (
           <motion.article
             initial={{ opacity: 0, y: 60, rotate: -1 }}
             whileInView={{ opacity: 1, y: 0, rotate: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ type: "spring", stiffness: 140, damping: 18 }}
-            className="bg-magenta text-cream border-4 border-ink chunk-shadow-lg p-8 md:p-12 mb-12"
+            className="bg-magenta text-cream border-4 border-ink chunk-shadow-lg p-6 md:p-10 mb-12"
           >
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <span className="bg-acid-yellow text-ink text-xs font-bold px-3 py-1 border-2 border-ink uppercase">
-                {featured.title} · {featured.status.toUpperCase()}
-              </span>
-              {featured.status === "upcoming" && (
-                <span className="bg-cream text-ink text-xs font-bold px-3 py-1 border-2 border-ink uppercase">RSVP</span>
+            <div className={`flex flex-col ${featuredPoster ? "md:flex-row" : ""} gap-6 md:gap-10`}>
+              {featuredPoster && (
+                <div className="md:w-[40%] shrink-0">
+                  <div className="aspect-[3/4] bg-ink border-4 border-ink overflow-hidden chunk-shadow">
+                    <img
+                      src={featuredPoster}
+                      alt={`${featured.title} poster`}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                      onError={(ev) => {
+                        const img = ev.currentTarget as HTMLImageElement;
+                        img.style.display = "none";
+                        const parent = img.parentElement;
+                        if (parent && !parent.querySelector("[data-poster-fallback]")) {
+                          const div = document.createElement("div");
+                          div.setAttribute("data-poster-fallback", "");
+                          div.className = "w-full h-full grid place-items-center bg-lime text-ink font-display text-3xl text-center px-4";
+                          div.innerHTML = `★ ${featured.title}`;
+                          parent.appendChild(div);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
               )}
-            </div>
-            <h3 className="font-display text-5xl md:text-7xl mb-4 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
-              CATS CAN DANCE<br/>{featured.title}
-            </h3>
-            <div className="grid sm:grid-cols-3 gap-4 my-8 max-w-3xl">
-              <div>
-                <p className="font-display text-acid-yellow text-sm mb-1">/ DATE</p>
-                <p className="font-display text-2xl">{featured.date}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-3 mb-6">
+                  <span className="bg-acid-yellow text-ink text-xs font-bold px-3 py-1 border-2 border-ink uppercase">
+                    {featured.title} · {featured.status.toUpperCase()}
+                  </span>
+                  {featured.status === "upcoming" && (
+                    <span className="bg-cream text-ink text-xs font-bold px-3 py-1 border-2 border-ink uppercase">RSVP</span>
+                  )}
+                </div>
+                <h3 className="font-display text-4xl md:text-6xl mb-4 leading-[0.9] drop-shadow-[6px_6px_0_hsl(var(--ink))]">
+                  CATS CAN DANCE<br/>{featured.title}
+                </h3>
+                <div className="grid sm:grid-cols-3 gap-4 my-6">
+                  <div>
+                    <p className="font-display text-acid-yellow text-sm mb-1">/ DATE</p>
+                    <p className="font-display text-xl md:text-2xl">{featured.date}</p>
+                  </div>
+                  <div>
+                    <p className="font-display text-acid-yellow text-sm mb-1">/ CITY</p>
+                    <p className="font-display text-xl md:text-2xl">{featured.city}</p>
+                  </div>
+                  <div>
+                    <p className="font-display text-acid-yellow text-sm mb-1">/ VENUE</p>
+                    <p className="font-display text-xl md:text-2xl">{featured.venue}</p>
+                  </div>
+                </div>
+                <p className="text-cream/90 text-base md:text-lg max-w-2xl mb-6 font-medium">{featured.blurb}</p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {featured.status === "upcoming" && (
+                    <button
+                      onClick={() => setRsvpOpen(true)}
+                      className="bg-acid-yellow text-ink font-display text-xl px-8 py-4 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                    >
+                      RSVP NOW →
+                    </button>
+                  )}
+                  <Link
+                    to={`/events/${featured.slug}`}
+                    className="bg-cream text-ink font-display text-xl px-8 py-4 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-center"
+                  >
+                    VIEW DETAILS
+                  </Link>
+                </div>
               </div>
-              <div>
-                <p className="font-display text-acid-yellow text-sm mb-1">/ CITY</p>
-                <p className="font-display text-2xl">{featured.city}</p>
-              </div>
-              <div>
-                <p className="font-display text-acid-yellow text-sm mb-1">/ VENUE</p>
-                <p className="font-display text-2xl">{featured.venue}</p>
-              </div>
-            </div>
-            <p className="text-cream/90 text-base md:text-lg max-w-2xl mb-8 font-medium">{featured.blurb}</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              {featured.status === "upcoming" && (
-                <button
-                  onClick={() => setRsvpOpen(true)}
-                  className="bg-acid-yellow text-ink font-display text-xl px-8 py-4 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-                >
-                  RSVP NOW →
-                </button>
-              )}
-              <Link
-                to={`/events/${featured.slug}`}
-                className="bg-cream text-ink font-display text-xl px-8 py-4 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-center"
-              >
-                VIEW DETAILS
-              </Link>
             </div>
           </motion.article>
-        )}
+          );
+        })()}
 
         {past.length > 0 && (
           <div>

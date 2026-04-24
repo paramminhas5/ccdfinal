@@ -7,10 +7,54 @@ import SEO from "@/components/SEO";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import RsvpDialog from "@/components/RsvpDialog";
 import { supabase } from "@/integrations/supabase/client";
+import episode1Poster from "@/assets/episode-1-poster.png";
 
 const RECAP_MEDIA: Record<string, string> = {
   "episode-1": "/episodes/episode-01.gif",
 };
+
+const RECAP_FALLBACK: Record<string, string> = {
+  "episode-1": episode1Poster,
+};
+
+const RecapMedia = ({ gifSrc, title, slug }: { gifSrc: string; title: string; slug: string }) => {
+  const fallback = RECAP_FALLBACK[slug];
+  // Default to static fallback if available; let user opt into the GIF.
+  const [src, setSrc] = useState<string>(fallback || gifSrc);
+  const [showingGif, setShowingGif] = useState<boolean>(!fallback);
+
+  return (
+    <div className="container pt-12">
+      <div className="flex items-end justify-between flex-wrap gap-3 mb-4">
+        <h2 className="font-display text-3xl md:text-4xl text-ink">/ THE NIGHT, IN MOTION</h2>
+        {fallback && !showingGif && (
+          <button
+            type="button"
+            onClick={() => { setSrc(gifSrc); setShowingGif(true); }}
+            className="bg-magenta text-cream font-display text-sm px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+          >
+            ▶ PLAY GIF
+          </button>
+        )}
+      </div>
+      <img
+        src={src}
+        alt={`${title} recap`}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
+        className="w-full max-h-[600px] object-contain bg-ink border-4 border-ink chunk-shadow-lg"
+        onError={() => {
+          if (fallback && src !== fallback) {
+            setSrc(fallback);
+            setShowingGif(false);
+          }
+        }}
+      />
+    </div>
+  );
+};
+
 
 type EventRow = {
   slug: string;
@@ -205,16 +249,7 @@ const EventDetail = () => {
         })()}
 
         {event.status === "past" && RECAP_MEDIA[slug] && (
-          <div className="container pt-12">
-            <h2 className="font-display text-3xl md:text-4xl text-ink mb-4">/ THE NIGHT, IN MOTION</h2>
-            <img
-              src={RECAP_MEDIA[slug]}
-              alt={`${event.title} recap`}
-              loading="lazy"
-              decoding="async"
-              className="w-full max-h-[600px] object-contain bg-ink border-4 border-ink chunk-shadow-lg"
-            />
-          </div>
+          <RecapMedia gifSrc={RECAP_MEDIA[slug]} title={event.title} slug={slug} />
         )}
 
         <section className="container py-16 md:py-20 grid md:grid-cols-2 gap-10 max-w-5xl">
