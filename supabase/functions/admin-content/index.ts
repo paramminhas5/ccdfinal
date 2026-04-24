@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
           status: payload.status ?? "upcoming",
           poster_url: payload.poster_url ?? null,
           sort_order: payload.sort_order ?? 0,
+          media: Array.isArray(payload.media) ? payload.media : [],
         };
         const { error } = await supabase.from("events").upsert(row, { onConflict: "slug" });
         if (error) return json({ error: error.message }, 500);
