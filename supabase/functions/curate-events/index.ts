@@ -132,9 +132,9 @@ async function extractWithAI(text: string, sourceUrl: string, source: string, ci
 Return the event ONLY if it is:
 - a real bookable individual event page (NOT a category, listing, or venue homepage)
 - music-related (any genre: dance, electronic, techno, house, indie, rock, jazz, live, club, festival)
-- happening in the future (event_date today or later)
-- located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}). Reject if the venue is not in ${city.key}.
-Always include the title. Use empty string for unknown fields. If page is not a valid event in ${city.key}, return events: [].`;
+- located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}). Reject if the venue is clearly in another Indian city (Goa, Hyderabad, Chennai, Kolkata, Jaipur, etc.).
+Prefer future events (event_date today or later) but include events even if no date is found — leave event_date empty.
+Always include the title. Use empty string for unknown fields. If page is not a valid event in ${city.key} or another city is named, return events: [].`;
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
