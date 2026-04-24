@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 
 const isPet = (p: ShopifyProduct) => {
   const t = `${p.node.title}`.toLowerCase();
-  return t.includes("pet") || t.includes("cat") || t.includes("dog") || t.includes("collar") || t.includes("bandana");
+  return t.includes("pet ") || t.includes("collar") || t.includes("bandana") || t.includes("leash") || t.includes("harness");
 };
 
 const ProductTile = ({ p }: { p: ShopifyProduct }) => {
@@ -43,25 +43,35 @@ const Drops = () => {
   const [streetwear, setStreetwear] = useState<ShopifyProduct[]>([]);
   const [pets, setPets] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     (async () => {
-      try {
-        const [generalRes, petsRes] = await Promise.all([
-          storefrontApiRequest(STOREFRONT_QUERY, { first: 8, query: null }),
-          storefrontApiRequest(STOREFRONT_QUERY, { first: 4, query: "tag:pets OR tag:pet" }),
-        ]);
-        const general: ShopifyProduct[] = generalRes?.data?.products?.edges || [];
-        const petsList: ShopifyProduct[] = petsRes?.data?.products?.edges || [];
-        const petIds = new Set(petsList.map((p) => p.node.id));
-        const sw = general.filter((p) => !petIds.has(p.node.id) && !isPet(p)).slice(0, 2);
-        setStreetwear(sw);
-        setPets(petsList.slice(0, 2));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+      const [generalRes, petsRes] = await Promise.allSettled([
+        storefrontApiRequest(STOREFRONT_QUERY, { first: 12, query: "" }),
+        storefrontApiRequest(STOREFRONT_QUERY, { first: 6, query: "tag:pets" }),
+      ]);
+
+      const general: ShopifyProduct[] =
+        generalRes.status === "fulfilled" ? generalRes.value?.data?.products?.edges || [] : [];
+      let petsList: ShopifyProduct[] =
+        petsRes.status === "fulfilled" ? petsRes.value?.data?.products?.edges || [] : [];
+
+      // Fallback: if tag:pets returned nothing, derive pets from general pool by title keywords
+      if (petsList.length === 0 && general.length > 0) {
+        petsList = general.filter(isPet);
       }
+
+      const petIds = new Set(petsList.map((p) => p.node.id));
+      const sw = general.filter((p) => !petIds.has(p.node.id) && !isPet(p)).slice(0, 2);
+
+      setStreetwear(sw);
+      setPets(petsList.slice(0, 2));
+      setErrored(generalRes.status === "rejected" && petsRes.status === "rejected");
+      setLoading(false);
+
+      if (generalRes.status === "rejected") console.error("[drops] general query failed", generalRes.reason);
+      if (petsRes.status === "rejected") console.error("[drops] pets query failed", petsRes.reason);
     })();
   }, []);
 

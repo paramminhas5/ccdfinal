@@ -165,7 +165,13 @@ const Events = () => {
                         className="w-full h-full object-cover"
                         onError={(ev) => {
                           const img = ev.currentTarget as HTMLImageElement;
-                          if (import.meta.env.DEV) console.warn("[poster] failed", src);
+                          if (import.meta.env.DEV) console.warn("[poster] failed", img.src);
+                          // First fallback: if the GIF failed, try the static PNG variant
+                          if (img.src.toLowerCase().endsWith(".gif") && !img.dataset.fellback) {
+                            img.dataset.fellback = "1";
+                            img.src = img.src.replace(/\.gif$/i, ".png");
+                            return;
+                          }
                           img.style.display = "none";
                           const parent = img.parentElement;
                           if (parent && !parent.querySelector("[data-poster-fallback]")) {

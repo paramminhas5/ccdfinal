@@ -4,9 +4,10 @@ const corsHeaders = {
 };
 
 const CHANNEL_ID = "UCmtg0d8E2PXfs3vlQIcGwdQ";
-const CACHE_MS = 10 * 60 * 1000;
+const CACHE_MS = 12 * 60 * 60 * 1000; // 12 hours
+const ERROR_CACHE_MS = 30 * 60 * 1000; // 30 minutes — don't burn quota retrying
 
-let videosCache: { ts: number; videos: any[] } | null = null;
+let videosCache: { ts: number; videos: any[]; isError?: boolean } | null = null;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -21,10 +22,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (videosCache && Date.now() - videosCache.ts < CACHE_MS) {
-      return new Response(JSON.stringify({ videos: videosCache.videos, cached: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const now = Date.now();
+    if (videosCache) {
+      const ttl = videosCache.isError ? ERROR_CACHE_MS : CACHE_MS;
+      if (now - videosCache.ts < ttl) {
+        return new Response(JSON.stringify({ videos: videosCache.videos, cached: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&order=date&type=video&maxResults=6&key=${apiKey}`;
@@ -33,7 +38,19 @@ Deno.serve(async (req) => {
 
     if (j.error) {
       console.error("YouTube API error:", JSON.stringify(j.error));
-      throw new Error(j.error.message);
+      // Stale-while-error: return previously cached videos if we have any
+      if (videosCache && videosCache.videos.length > 0) {
+        videosCache = { ts: now, videos: videosCache.videos, isError: true };
+        return new Response(JSON.stringify({ videos: videosCache.videos, cached: true, stale: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Cache empty error result so we don't re-hit the API every page load
+      videosCache = { ts: now, videos: [], isError: true };
+      return new Response(JSON.stringify({ videos: [], error: j.error.message }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!j.items || j.items.length === 0) {
@@ -47,13 +64,19 @@ Deno.serve(async (req) => {
       publishedAt: v.snippet.publishedAt,
     }));
 
-    videosCache = { ts: Date.now(), videos };
+    videosCache = { ts: now, videos };
 
     return new Response(JSON.stringify({ videos, cached: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("youtube-videos error", e);
+    // Stale-while-error
+    if (videosCache && videosCache.videos.length > 0) {
+      return new Response(JSON.stringify({ videos: videosCache.videos, cached: true, stale: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify({ videos: [], error: String(e) }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
