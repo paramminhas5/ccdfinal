@@ -44,9 +44,11 @@ type Settings = {
   featured_playlist_id: string | null;
   seo_verifications?: Verifications;
 };
+type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 type EventRow = {
   id?: string; slug: string; title: string; date: string; city: string; venue: string;
   blurb: string; lineup: string[]; status: string; poster_url: string | null; sort_order: number;
+  media?: MediaItem[];
 };
 type Message = { id: string; name: string; email: string; message: string; created_at: string };
 
@@ -360,7 +362,7 @@ const Admin = () => {
       ...events,
       {
         slug: `event-${Date.now()}`, title: "NEW EPISODE", date: "TBA", city: "TBA", venue: "TBA",
-        blurb: "", lineup: [], status: "upcoming", poster_url: null,
+        blurb: "", lineup: [], status: "upcoming", poster_url: null, media: [],
         sort_order: (events[events.length - 1]?.sort_order ?? 0) + 1,
       },
     ]);
