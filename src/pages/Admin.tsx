@@ -418,6 +418,13 @@ const Admin = () => {
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
                 <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
+                <TabsTrigger
+                  value="rsvps"
+                  onClick={() => { if (!rsvpsLoaded) loadRsvps(); }}
+                  className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream"
+                >
+                  RSVPS
+                </TabsTrigger>
               </TabsList>
 
               {/* SIGNUPS */}
