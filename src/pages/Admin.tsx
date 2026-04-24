@@ -717,6 +717,71 @@ const Admin = () => {
                   </div>
                 </div>
               </TabsContent>
+
+              {/* RSVPS */}
+              <TabsContent value="rsvps">
+                <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                      <label className="block font-display text-xs text-ink/70 mb-1">FILTER BY EVENT</label>
+                      <select
+                        value={rsvpEventFilter}
+                        onChange={(e) => {
+                          const slug = e.target.value;
+                          setRsvpEventFilter(slug);
+                          loadRsvps(slug || undefined);
+                        }}
+                        className="bg-cream text-ink border-4 border-ink px-3 py-2 font-display"
+                      >
+                        <option value="">All events</option>
+                        {events.map((ev) => (
+                          <option key={ev.slug} value={ev.slug}>{ev.title} ({ev.slug})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => loadRsvps(rsvpEventFilter || undefined)}
+                      className="bg-cream text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                    >
+                      🔄 REFRESH
+                    </button>
+                  </div>
+                  <button
+                    onClick={downloadRsvpsCsv}
+                    className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                  >
+                    DOWNLOAD CSV
+                  </button>
+                </div>
+                <p className="text-ink/70 font-medium mb-3">{rsvps.length} RSVP{rsvps.length === 1 ? "" : "s"}</p>
+                <div className="border-4 border-ink chunk-shadow bg-cream overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-ink text-cream font-display">
+                      <tr>
+                        <th className="px-4 py-3">EVENT</th>
+                        <th className="px-4 py-3">NAME</th>
+                        <th className="px-4 py-3">EMAIL</th>
+                        <th className="px-4 py-3">+1s</th>
+                        <th className="px-4 py-3">SUBMITTED</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rsvps.map((r) => (
+                        <tr key={r.id} className="border-t-2 border-ink/20">
+                          <td className="px-4 py-3 font-display">{r.event_slug}</td>
+                          <td className="px-4 py-3 font-medium">{r.name}</td>
+                          <td className="px-4 py-3 text-ink/80">{r.email}</td>
+                          <td className="px-4 py-3 text-ink/80">{r.plus_ones}</td>
+                          <td className="px-4 py-3 text-ink/70">{new Date(r.created_at).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                      {rsvps.length === 0 && (
+                        <tr><td colSpan={5} className="px-4 py-8 text-center text-ink/60">{rsvpsLoaded ? "No RSVPs yet." : "Loading…"}</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         )}
