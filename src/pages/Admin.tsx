@@ -969,12 +969,21 @@ const CURATED_SOURCES = [
   { key: "bookmyshow", label: "BookMyShow" },
 ] as const;
 
+const CURATED_CITIES = [
+  { key: "bangalore", label: "Bangalore" },
+  { key: "mumbai", label: "Mumbai" },
+  { key: "delhi", label: "Delhi" },
+  { key: "pune", label: "Pune" },
+  { key: "all", label: "All Cities" },
+] as const;
+
 function CuratedEventsTab() {
   const [rows, setRows] = useState<CuratedRow[]>([]);
   const [draft, setDraft] = useState<CuratedRow>(emptyCurated());
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [crawlSource, setCrawlSource] = useState<string>("skillboxes");
+  const [crawlCity, setCrawlCity] = useState<string>("bangalore");
   const [lastRun, setLastRun] = useState<any>(null);
 
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -1033,12 +1042,12 @@ function CuratedEventsTab() {
       const res = await fetch(`${projectUrl}/functions/v1/curate-events`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ source: crawlSource, mode: "single", limit: 5 }),
+        body: JSON.stringify({ source: crawlSource, city: crawlCity, mode: "single", limit: 5 }),
       });
       const data = await res.json();
       if (res.ok) {
         setLastRun(data);
-        toast.success(`Upserted ${data.upserted ?? 0} from ${crawlSource}`);
+        toast.success(`Upserted ${data.upserted ?? 0} from ${crawlSource}/${crawlCity}`);
         load();
       } else {
         toast.error(data.error ?? "Refresh failed");
@@ -1066,6 +1075,16 @@ function CuratedEventsTab() {
           >
             {CURATED_SOURCES.map((s) => (
               <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+          <select
+            value={crawlCity}
+            onChange={(e) => setCrawlCity(e.target.value)}
+            disabled={refreshing}
+            className="border-4 border-ink bg-cream text-ink font-display px-3 py-2"
+          >
+            {CURATED_CITIES.map((c) => (
+              <option key={c.key} value={c.key}>{c.label}</option>
             ))}
           </select>
           <button

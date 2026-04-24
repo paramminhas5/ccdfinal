@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type CuratedEvent = {
@@ -12,6 +12,22 @@ type CuratedEvent = {
   blurb: string | null;
   genre: string[];
   is_featured: boolean;
+  city: string | null;
+};
+
+const CITY_TABS = [
+  { key: "all", label: "All" },
+  { key: "bangalore", label: "Bangalore" },
+  { key: "mumbai", label: "Mumbai" },
+  { key: "delhi", label: "Delhi" },
+  { key: "pune", label: "Pune" },
+] as const;
+
+const CITY_ALIASES: Record<string, string[]> = {
+  bangalore: ["bangalore", "bengaluru", "blr"],
+  mumbai: ["mumbai", "bombay"],
+  delhi: ["delhi", "new delhi", "ncr", "gurgaon", "gurugram", "noida"],
+  pune: ["pune"],
 };
 
 const sourceLabel = (s: string) => {
@@ -21,6 +37,8 @@ const sourceLabel = (s: string) => {
     case "insider": return "Insider";
     case "sortmyscene": return "SortMyScene";
     case "paytm-insider": return "Paytm Insider";
+    case "highape": return "HighApe";
+    case "bookmyshow": return "BookMyShow";
     case "manual": return "CCD Pick";
     default: return s;
   }
@@ -37,29 +55,36 @@ const formatDate = (d: string | null, t: string | null) => {
   }
 };
 
+const matchesCity = (e: CuratedEvent, cityKey: string) => {
+  if (cityKey === "all") return true;
+  const aliases = CITY_ALIASES[cityKey] ?? [cityKey];
+  if (e.city && aliases.includes(e.city.toLowerCase())) return true;
+  const hay = `${e.venue ?? ""} ${e.blurb ?? ""}`.toLowerCase();
+  return aliases.some((a) => hay.includes(a));
+};
+
 const CuratedEvents = () => {
   const [events, setEvents] = useState<CuratedEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [city, setCity] = useState<string>("bangalore");
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      // Try future + undated first
       let { data } = await supabase
         .from("curated_events")
         .select("*")
         .or(`event_date.gte.${today},event_date.is.null`)
         .order("is_featured", { ascending: false })
         .order("event_date", { ascending: true, nullsFirst: false })
-        .limit(12);
+        .limit(40);
 
-      // Fallback: most recent rows by created_at if filter returned nothing
       if (!data || data.length === 0) {
         const { data: recent } = await supabase
           .from("curated_events")
           .select("*")
           .order("created_at", { ascending: false })
-          .limit(12);
+          .limit(40);
         data = recent ?? [];
       }
       setEvents((data ?? []) as CuratedEvent[]);
@@ -67,29 +92,53 @@ const CuratedEvents = () => {
     })();
   }, []);
 
+  const filtered = useMemo(() => events.filter((e) => matchesCity(e, city)), [events, city]);
+
   return (
     <section className="container py-12 md:py-16">
       <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
         <div>
-          <p className="font-display text-magenta text-sm uppercase tracking-widest mb-1">/ THIS WEEK IN BLR</p>
+          <p className="font-display text-magenta text-sm uppercase tracking-widest mb-1">/ THIS WEEK</p>
           <h2 className="font-display text-4xl md:text-6xl text-ink">CURATED.</h2>
           <p className="text-ink/70 font-medium mt-2 max-w-2xl">
-            Hand-picked dance & electronic events in Bangalore — by us, from the wider scene.
+            Hand-picked dance & electronic events — by us, from the wider scene.
           </p>
         </div>
-        <p className="text-ink/50 text-xs font-mono uppercase tracking-wider">All times BLR</p>
+        <p className="text-ink/50 text-xs font-mono uppercase tracking-wider">All times local</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        {CITY_TABS.map((c) => {
+          const active = c.key === city;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setCity(c.key)}
+              className={`font-display text-sm px-4 py-2 border-4 border-ink uppercase transition-transform ${
+                active
+                  ? "bg-magenta text-cream chunk-shadow"
+                  : "bg-cream text-ink hover:bg-acid-yellow"
+              }`}
+            >
+              {c.label}
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
         <p className="text-ink/60 font-medium">Loading curated events…</p>
-      ) : events.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="border-4 border-dashed border-ink/40 p-8 text-center">
           <p className="font-display text-2xl text-ink mb-1">🔄 NO CURATED EVENTS YET</p>
-          <p className="text-ink/60 font-medium">Check back soon — we refresh this list weekly.</p>
+          <p className="text-ink/60 font-medium">
+            {city === "all" ? "Check back soon — we refresh this list weekly." : `No ${CITY_TABS.find((c) => c.key === city)?.label} events yet. Try another city.`}
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((e) => (
+          {filtered.map((e) => (
             <a
               key={e.id}
               href={e.url}
@@ -97,15 +146,22 @@ const CuratedEvents = () => {
               rel="noopener noreferrer"
               className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform"
             >
-              <div className="flex items-center justify-between mb-3 gap-2">
+              <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                 <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-acid-yellow text-ink">
                   {sourceLabel(e.source)}
                 </span>
-                {e.is_featured && (
-                  <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-magenta text-cream">
-                    Featured
-                  </span>
-                )}
+                <div className="flex gap-1">
+                  {e.city && (
+                    <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-cream text-ink">
+                      {e.city}
+                    </span>
+                  )}
+                  {e.is_featured && (
+                    <span className="text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase bg-magenta text-cream">
+                      Featured
+                    </span>
+                  )}
+                </div>
               </div>
               <h3 className="font-display text-xl md:text-2xl text-ink mb-2 leading-tight">
                 {e.title.toUpperCase()}

@@ -10,50 +10,81 @@ const FIRECRAWL = "https://api.firecrawl.dev/v2";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 type SourceKey = "sortmyscene" | "insider" | "skillboxes" | "district" | "highape" | "bookmyshow";
+type CityKey = "bangalore" | "mumbai" | "delhi" | "pune";
+
+type CityConfig = {
+  key: CityKey;
+  // Aliases used to match venue/text against the city
+  aliases: string[];
+  // Per-source slug overrides (if not set, falls back to key)
+  slugs: Partial<Record<SourceKey, string>>;
+};
+
+const CITIES: Record<CityKey, CityConfig> = {
+  bangalore: {
+    key: "bangalore",
+    aliases: ["bangalore", "bengaluru", "blr"],
+    slugs: { insider: "bengaluru", district: "bengaluru" },
+  },
+  mumbai: {
+    key: "mumbai",
+    aliases: ["mumbai", "bombay", "navi mumbai"],
+    slugs: {},
+  },
+  delhi: {
+    key: "delhi",
+    aliases: ["delhi", "new delhi", "ncr", "gurgaon", "gurugram", "noida"],
+    slugs: { insider: "new-delhi", district: "new-delhi", bookmyshow: "national-capital-region-ncr" },
+  },
+  pune: {
+    key: "pune",
+    aliases: ["pune"],
+    slugs: {},
+  },
+};
 
 type SourceConfig = {
   key: SourceKey;
-  listingUrl: string;
-  // a substring (or regex) candidate event links must contain
+  // Build the listing URL given a city
+  listingUrl: (city: CityConfig) => string;
   linkMatch: RegExp;
-  // links must NOT match these (filters category/index pages)
   linkReject: RegExp[];
 };
 
 const SOURCES: Record<SourceKey, SourceConfig> = {
   sortmyscene: {
     key: "sortmyscene",
-    listingUrl: "https://sortmyscene.com/bangalore",
+    listingUrl: (c) => `https://sortmyscene.com/${c.slugs.sortmyscene ?? c.key}`,
     linkMatch: /sortmyscene\.com\/[^/]+\/[^/?#]+/i,
     linkReject: [/\/category\//i, /\/tag\//i, /\/page\//i, /\/about/i, /\/contact/i],
   },
   insider: {
     key: "insider",
-    listingUrl: "https://insider.in/bengaluru/nightlife",
+    listingUrl: (c) => `https://insider.in/${c.slugs.insider ?? c.key}/nightlife`,
     linkMatch: /insider\.in\/[a-z0-9-]+\/event/i,
     linkReject: [/\/online-events/i],
   },
   skillboxes: {
     key: "skillboxes",
-    listingUrl: "https://skillboxes.com/bangalore",
+    listingUrl: (c) => `https://www.skillboxes.com/city/${c.slugs.skillboxes ?? c.key}`,
     linkMatch: /skillboxes\.com\/events\//i,
     linkReject: [/\/category\//i, /\/page\//i, /\/business\//i],
   },
   district: {
     key: "district",
-    listingUrl: "https://www.district.in/events-in-bengaluru",
+    listingUrl: (c) => `https://www.district.in/events-in-${c.slugs.district ?? c.key}`,
     linkMatch: /district\.in\/events?\//i,
     linkReject: [/\/categories\//i],
   },
   highape: {
     key: "highape",
-    listingUrl: "https://highape.com/bangalore/events",
-    linkMatch: /highape\.com\/bangalore\/[^/?#]+/i,
+    listingUrl: (c) => `https://highape.com/${c.slugs.highape ?? c.key}/events`,
+    linkMatch: /highape\.com\/[a-z]+\/[^/?#]+/i,
     linkReject: [/\/events$/i, /\/category\//i],
   },
   bookmyshow: {
     key: "bookmyshow",
-    listingUrl: "https://in.bookmyshow.com/explore/events-bengaluru",
+    listingUrl: (c) => `https://in.bookmyshow.com/explore/events-${c.slugs.bookmyshow ?? c.key}`,
     linkMatch: /bookmyshow\.com\/events\//i,
     linkReject: [/\/explore\//i],
   },
@@ -80,14 +111,15 @@ async function firecrawlScrape(
   return await res.json();
 }
 
-async function extractWithAI(text: string, sourceUrl: string, source: string, lovableKey: string) {
+async function extractWithAI(text: string, sourceUrl: string, source: string, city: CityConfig, lovableKey: string) {
   const today = new Date().toISOString().slice(0, 10);
   const sys = `You extract a SINGLE music event from one event page. Today is ${today}.
-Return the event if it is:
+Return the event ONLY if it is:
 - a real bookable individual event page (NOT a category, listing, or venue homepage)
 - music-related (any genre: dance, electronic, techno, house, indie, rock, jazz, live, club, festival)
 - happening in the future (event_date today or later)
-Always include the title. Use empty string for unknown fields. If page is clearly not an event, return events: [].`;
+- located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}). Reject if the venue is not in ${city.key}.
+Always include the title. Use empty string for unknown fields. If page is not a valid event in ${city.key}, return events: [].`;
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
@@ -95,7 +127,7 @@ Always include the title. Use empty string for unknown fields. If page is clearl
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: sys },
-        { role: "user", content: `Source: ${source}\nURL: ${sourceUrl}\n\nPage content:\n${text.slice(0, 6000)}` },
+        { role: "user", content: `Source: ${source}\nCity: ${city.key}\nURL: ${sourceUrl}\n\nPage content:\n${text.slice(0, 6000)}` },
       ],
       tools: [{
         type: "function",
@@ -143,33 +175,36 @@ Always include the title. Use empty string for unknown fields. If page is clearl
   }
 }
 
-async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovableKey: string, supabase: any) {
+function venueMatchesCity(venue: string | null | undefined, blurb: string | null | undefined, city: CityConfig): boolean {
+  const hay = `${venue ?? ""} ${blurb ?? ""}`.toLowerCase();
+  if (!hay.trim()) return false;
+  return city.aliases.some((a) => hay.includes(a));
+}
+
+async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcKey: string, lovableKey: string, supabase: any) {
+  const listingUrl = cfg.listingUrl(city);
   const stats: any = {
     source: cfg.key,
-    listingUrl: cfg.listingUrl,
+    city: city.key,
+    listingUrl,
     candidateLinks: 0,
     scrapedPages: 0,
     extracted: 0,
     upserted: 0,
+    rejectedCity: 0,
     errors: [] as string[],
     samples: [] as string[],
   };
 
-  // Step 1: scrape listing page for links
-  // JS-heavy sites need waitFor; skillbox returns links without it
   const needsWait = cfg.key !== "skillboxes";
-  const listing = await firecrawlScrape(cfg.listingUrl, fcKey, ["links", "markdown"], needsWait ? 5000 : 0);
+  const listing = await firecrawlScrape(listingUrl, fcKey, ["links", "markdown"], needsWait ? 5000 : 0);
   if (!listing) {
     stats.errors.push("listing scrape failed");
     return stats;
   }
-  const rawLinks: string[] =
-    listing?.data?.links ??
-    listing?.links ??
-    [];
-  console.log(cfg.key, "raw links from listing:", rawLinks.length);
+  const rawLinks: string[] = listing?.data?.links ?? listing?.links ?? [];
+  console.log(cfg.key, city.key, "raw links:", rawLinks.length);
 
-  // Step 2: filter to candidate event URLs
   const seen = new Set<string>();
   const candidates: string[] = [];
   for (const link of rawLinks) {
@@ -184,33 +219,38 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
   }
   stats.candidateLinks = candidates.length;
   stats.samples = candidates.slice(0, 5);
-  console.log(cfg.key, "candidates:", candidates.length, candidates.slice(0, 3));
 
   if (candidates.length === 0) {
     stats.errors.push("no candidate links matched");
     return stats;
   }
 
-  // Step 3: scrape + extract each, upsert immediately
   for (const url of candidates) {
     if (stats.upserted >= limit) break;
     if (stats.scrapedPages >= 8) break;
     try {
       const page = await firecrawlScrape(url, fcKey, ["markdown"]);
       stats.scrapedPages += 1;
-      const md: string =
-        page?.data?.markdown ?? page?.markdown ?? "";
+      const md: string = page?.data?.markdown ?? page?.markdown ?? "";
       if (!md || md.length < 100) {
         console.log(cfg.key, "skip short page", url);
         continue;
       }
-      const events = await extractWithAI(md, url, cfg.key, lovableKey);
+      const events = await extractWithAI(md, url, cfg.key, city, lovableKey);
       if (events.length === 0) {
         console.log(cfg.key, "AI returned 0 events for", url);
         continue;
       }
       const ev = events[0];
       stats.extracted += 1;
+
+      // Hard city filter: venue text must contain a city alias
+      if (!venueMatchesCity(ev.venue, ev.blurb, city)) {
+        stats.rejectedCity += 1;
+        console.log(cfg.key, "rejected (city mismatch):", ev.venue);
+        continue;
+      }
+
       const row = {
         title: String(ev.title).slice(0, 200),
         venue: ev.venue ?? null,
@@ -218,13 +258,12 @@ async function runSource(cfg: SourceConfig, limit: number, fcKey: string, lovabl
         event_time: ev.event_time ?? null,
         url,
         source: cfg.key,
+        city: city.key,
         blurb: ev.blurb ? String(ev.blurb).slice(0, 200) : null,
         genre: Array.isArray(ev.genre) ? ev.genre : [],
         updated_at: new Date().toISOString(),
       };
-      const { error } = await supabase
-        .from("curated_events")
-        .upsert(row, { onConflict: "url" });
+      const { error } = await supabase.from("curated_events").upsert(row, { onConflict: "url" });
       if (error) {
         console.error(cfg.key, "upsert error", error.message);
         stats.errors.push(`upsert: ${error.message}`);
@@ -254,6 +293,7 @@ Deno.serve(async (req) => {
   let body: any = {};
   try { body = await req.json(); } catch {}
   const requestedSource = (body?.source as SourceKey) || "skillboxes";
+  const requestedCity = (body?.city as CityKey | "all") || "bangalore";
   const mode = body?.mode === "all" ? "all" : "single";
   const limit = Math.min(Math.max(Number(body?.limit) || 5, 1), 8);
 
@@ -262,19 +302,28 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const targets: SourceConfig[] =
+  const sourceTargets: SourceConfig[] =
     mode === "all"
       ? Object.values(SOURCES)
       : SOURCES[requestedSource]
         ? [SOURCES[requestedSource]]
         : [SOURCES.skillboxes];
 
+  const cityTargets: CityConfig[] =
+    requestedCity === "all"
+      ? Object.values(CITIES)
+      : CITIES[requestedCity]
+        ? [CITIES[requestedCity]]
+        : [CITIES.bangalore];
+
   const runs: any[] = [];
   let totalUpserted = 0;
-  for (const cfg of targets) {
-    const s = await runSource(cfg, limit, fcKey, lovableKey, supabase);
-    runs.push(s);
-    totalUpserted += s.upserted;
+  for (const cfg of sourceTargets) {
+    for (const city of cityTargets) {
+      const s = await runSource(cfg, city, limit, fcKey, lovableKey, supabase);
+      runs.push(s);
+      totalUpserted += s.upserted;
+    }
   }
 
   return new Response(JSON.stringify({ ok: true, mode, upserted: totalUpserted, runs }), {
