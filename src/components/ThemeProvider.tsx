@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { applyTheme, THEME_PRESETS, ThemeConfig, DEFAULT_THEME } from "@/lib/theme";
+import { applyTheme, THEME_PRESETS, ThemeConfig, DEFAULT_THEME, FRONTEND_PRESET_IDS } from "@/lib/theme";
+
+const FRONTEND_IDS = FRONTEND_PRESET_IDS.filter((id) => THEME_PRESETS[id]);
 
 type Ctx = {
   config: ThemeConfig;
@@ -15,7 +17,7 @@ const ThemeCtx = createContext<Ctx>({
   setPreset: () => {},
   clearOverride: () => {},
   hasLocalOverride: false,
-  presetIds: Object.keys(THEME_PRESETS),
+  presetIds: FRONTEND_IDS,
 });
 
 const LOCAL_KEY = "ccd_theme_preset";
@@ -93,9 +95,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       if (e.shiftKey && (e.key === "T" || e.key === "t") && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const target = e.target as HTMLElement | null;
         if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-        const ids = Object.keys(THEME_PRESETS);
-        const idx = ids.indexOf(config.preset);
-        const next = ids[(idx + 1) % ids.length];
+        const ids = FRONTEND_IDS;
+        const currentIdx = ids.indexOf(config.preset);
+        const next = ids[(currentIdx + 1) % ids.length] ?? ids[0];
         setPreset(next);
       }
     };
@@ -105,7 +107,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ThemeCtx.Provider
-      value={{ config, setPreset, clearOverride, hasLocalOverride, presetIds: Object.keys(THEME_PRESETS) }}
+      value={{ config, setPreset, clearOverride, hasLocalOverride, presetIds: FRONTEND_IDS }}
     >
       {children}
     </ThemeCtx.Provider>
