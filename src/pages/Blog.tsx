@@ -23,13 +23,34 @@ const Blog = () => {
     })),
   };
 
+  const blogLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "Cats Can Dance — Journal",
+    description: "Long reads on Bangalore's underground party scene, India's drop culture, and the artists behind the nights.",
+    url: "https://catscandance.com/blog",
+    inLanguage: "en-IN",
+    publisher: {
+      "@type": "Organization",
+      name: "Cats Can Dance",
+      logo: { "@type": "ImageObject", url: "https://catscandance.com/ccd-logo.png" },
+    },
+    blogPost: posts.slice(0, 20).map((p) => ({
+      "@type": "BlogPosting",
+      headline: p.title,
+      url: `https://catscandance.com/blog/${p.slug}`,
+      datePublished: p.date,
+      author: { "@type": "Person", name: p.author },
+    })),
+  };
+
   return (
     <>
       <SEO
         title="Field Notes from Bangalore's Underground | Cats Can Dance"
         description="Long reads on Bangalore's party scene, apparel drops, cool culture & streetwear, and the artists behind the nights."
         path="/blog"
-        jsonLd={itemListLd}
+        jsonLd={[blogLd, itemListLd]}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
