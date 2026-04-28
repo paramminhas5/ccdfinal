@@ -8,6 +8,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import RsvpDialog from "@/components/RsvpDialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { getAllPosts } from "@/content/posts";
 import episode1Poster from "@/assets/episode-1-poster.png";
 
 type MediaItem = { type: "image" | "video"; url: string; caption?: string };
