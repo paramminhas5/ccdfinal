@@ -889,16 +889,17 @@ const Admin = () => {
               {/* THEME */}
               <TabsContent value="theme">
                 <p className="text-ink/70 font-medium mb-4">
-                  Pick a preset or override individual colors. Saves apply to every visitor (overrides their local choice on next visit).
+                  Pick a preset to re-skin the entire site. Saves apply live to every open visitor.
                 </p>
                 <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                  {(["default", "midnight", "sunburn"] as const).map((id) => {
-                    const tokens: Record<string, { brand: string; accent: string; surface: string; surfaceAlt: string; label: string; desc: string }> = {
-                      default: { brand: "0 72% 51%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%", label: "DEFAULT", desc: "Magenta · acid · cream · ink" },
-                      midnight: { brand: "221 83% 53%", accent: "142 76% 73%", surface: "222 47% 8%", surfaceAlt: "222 47% 4%", label: "MIDNIGHT", desc: "Electric · lime · ink" },
-                      sunburn: { brand: "21 90% 53%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%", label: "SUNBURN", desc: "Orange · acid · cream" },
+                  {(Object.keys(THEME_PRESETS) as Array<keyof typeof THEME_PRESETS>).map((id) => {
+                    const preset = THEME_PRESETS[id as string];
+                    const palette = resolvePalette({ preset: id as string });
+                    const t = {
+                      label: preset.label.toUpperCase(),
+                      desc: preset.description,
+                      swatches: [palette.magenta, palette.acidYellow, palette.electricBlue, palette.cream, palette.ink],
                     };
-                    const t = tokens[id];
                     const active = (settings?.theme?.preset ?? "default") === id;
                     return (
                       <button
