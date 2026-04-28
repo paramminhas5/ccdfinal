@@ -94,6 +94,44 @@ const normalizePlaylist = (p: any): PlaylistItem => ({
 const platformGlyph = (p: Platform) =>
   p === "spotify" ? "♫" : p === "youtube" ? "▶" : "☁";
 
+const MARQUEE_DEFAULTS: MarqueeConfig[] = [
+  { id: "above-about", enabled: true, bg: "bg-acid-yellow", reverse: false, size: "lg",
+    items: ["WHO WE ARE", "BANGALORE UNDERGROUND", "A CULTURE BRAND", "DANCE · PETS · STREETWEAR"] },
+  { id: "above-events", enabled: true, bg: "bg-orange", reverse: true, size: "sm",
+    items: ["EPISODE 01", "EPISODE 02", "CATCH US LIVE", "BANGALORE", "RSVP NOW"] },
+  { id: "above-videos", enabled: true, bg: "bg-magenta", reverse: false, size: "sm",
+    items: ["WATCH THE TAPES", "LIVE SETS", "RECAPS", "YOUTUBE"] },
+  { id: "above-playlist", enabled: true, bg: "bg-acid-yellow", reverse: true, size: "sm",
+    items: ["NOW SPINNING", "DANCE MUSIC", "LATE NIGHT", "WAREHOUSE CUTS"] },
+  { id: "above-drops", enabled: true, bg: "bg-electric-blue", reverse: false, size: "sm",
+    items: ["STREETWEAR", "LIMITED DROPS", "PET MERCH", "WEAR THE CULTURE"] },
+  { id: "above-instagram", enabled: true, bg: "bg-acid-yellow", reverse: true, size: "sm",
+    items: ["@CATSCANDANCE", "LATEST", "BTS", "FOLLOW"] },
+  { id: "above-early-access", enabled: true, bg: "bg-orange", reverse: false, size: "sm",
+    items: ["JOIN THE PACK", "EARLY ACCESS", "DON'T MISS A DROP"] },
+];
+
+const MARQUEE_BG_OPTIONS = [
+  { value: "bg-acid-yellow", label: "Acid Yellow", swatch: "bg-acid-yellow" },
+  { value: "bg-magenta", label: "Magenta", swatch: "bg-magenta" },
+  { value: "bg-lime", label: "Lime", swatch: "bg-lime" },
+  { value: "bg-electric-blue", label: "Electric Blue", swatch: "bg-electric-blue" },
+  { value: "bg-orange", label: "Orange", swatch: "bg-orange" },
+  { value: "bg-cream", label: "Cream", swatch: "bg-cream" },
+];
+
+const mergeMarquees = (raw?: MarqueeConfig[] | null): MarqueeConfig[] => {
+  const byId = new Map<string, MarqueeConfig>();
+  MARQUEE_DEFAULTS.forEach((m) => byId.set(m.id, { ...m }));
+  for (const r of raw ?? []) {
+    if (!r || typeof r.id !== "string") continue;
+    const base = byId.get(r.id);
+    if (!base) continue;
+    byId.set(r.id, { ...base, ...r, items: Array.isArray(r.items) && r.items.length ? r.items : base.items });
+  }
+  return MARQUEE_DEFAULTS.map((d) => byId.get(d.id)!);
+};
+
 const Admin = () => {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PASS_KEY) ?? "");
   const [authed, setAuthed] = useState(false);
