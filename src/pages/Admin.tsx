@@ -5,6 +5,8 @@ import Nav from "@/components/Nav";
 import SEO from "@/components/SEO";
 import BlogCover from "@/components/BlogCover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { THEME_PRESETS, resolvePalette, applyTheme } from "@/lib/theme";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Category = "GUIDES" | "CULTURE" | "ARTISTS" | "JOURNAL" | "DROPS" | "PETS";
 type DraftPost = {
@@ -141,6 +143,7 @@ const Admin = () => {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PASS_KEY) ?? "");
   const [authed, setAuthed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const themeCtx = useTheme();
 
   const [signups, setSignups] = useState<Signup[]>([]);
   const [signupSearch, setSignupSearch] = useState("");
@@ -889,16 +892,13 @@ const Admin = () => {
               {/* THEME */}
               <TabsContent value="theme">
                 <p className="text-ink/70 font-medium mb-4">
-                  Pick a preset or override individual colors. Saves apply to every visitor (overrides their local choice on next visit).
+                  Pick a preset to re-skin the entire site. Saves apply live to every open visitor.
                 </p>
                 <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                  {(["default", "midnight", "sunburn"] as const).map((id) => {
-                    const tokens: Record<string, { brand: string; accent: string; surface: string; surfaceAlt: string; label: string; desc: string }> = {
-                      default: { brand: "0 72% 51%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%", label: "DEFAULT", desc: "Magenta · acid · cream · ink" },
-                      midnight: { brand: "221 83% 53%", accent: "142 76% 73%", surface: "222 47% 8%", surfaceAlt: "222 47% 4%", label: "MIDNIGHT", desc: "Electric · lime · ink" },
-                      sunburn: { brand: "21 90% 53%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%", label: "SUNBURN", desc: "Orange · acid · cream" },
-                    };
-                    const t = tokens[id];
+                  {Object.keys(THEME_PRESETS).map((id) => {
+                    const preset = THEME_PRESETS[id];
+                    const palette = resolvePalette({ preset: id });
+                    const swatches = [palette.magenta, palette.acidYellow, palette.electricBlue, palette.cream, palette.ink];
                     const active = (settings?.theme?.preset ?? "default") === id;
                     return (
                       <button
@@ -907,13 +907,12 @@ const Admin = () => {
                         className={`text-left bg-cream border-4 border-ink chunk-shadow p-4 transition-transform hover:-translate-y-1 ${active ? "ring-4 ring-magenta" : ""}`}
                       >
                         <div className="flex gap-1 mb-3">
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.brand})` }} />
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.accent})` }} />
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.surface})` }} />
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.surfaceAlt})` }} />
+                          {swatches.map((c, i) => (
+                            <span key={i} className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${c})` }} />
+                          ))}
                         </div>
-                        <p className="font-display text-xl text-ink">{t.label}</p>
-                        <p className="text-ink/70 text-sm">{t.desc}</p>
+                        <p className="font-display text-xl text-ink">{preset.label.toUpperCase()}</p>
+                        <p className="text-ink/70 text-sm">{preset.description}</p>
                         {active && <p className="font-display text-xs text-magenta mt-2">★ ACTIVE</p>}
                       </button>
                     );
@@ -963,7 +962,11 @@ const Admin = () => {
                             payload: { theme: settings.theme ?? { preset: "default" } },
                           }),
                         });
-                        toast.success("Theme saved — refresh to see changes");
+                        // Apply locally right away: drop any local override and
+                        // apply the freshly-saved preset so the admin sees it instantly.
+                        themeCtx.clearOverride();
+                        applyTheme({ preset: settings.theme?.preset ?? "default", overrides: settings.theme?.overrides as any });
+                        toast.success("Theme saved — applied live");
                       } catch {
                         toast.error("Save failed");
                       }

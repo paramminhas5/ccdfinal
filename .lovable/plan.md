@@ -1,107 +1,61 @@
-# Design system + theming + content CMS
+## Why the theme switcher looks broken today
 
-Three things, in order of effort:
+Two real bugs, one UX issue:
 
-## 1. Quick fixes (events stats + about tagline)
+1. **Themes don't visibly change anything.** `ThemeProvider` only rewrites the semantic CSS vars (`--brand`, `--accent`, `--surface`, `--surface-alt`). But almost every component on the site uses the *fixed* palette classes — `bg-magenta`, `bg-acid-yellow`, `bg-electric-blue`, `bg-cream`, `bg-ink`, `text-ink`, etc. — which map to their own untouched vars (`--magenta`, `--cream`, …). So switching presets shuffles a handful of `bg-brand`/`bg-surface` usages (basically just the Theme Switcher itself) and the rest of the page stays identical. To the user it looks like nothing happened.
 
-`**src/pages/Events.tsx**` — Remove the stats grid (NIGHTS THROWN / CITIES / DANCERS). We've only thrown one event so it's misleading. Keep the magenta hero, the acid-yellow marquee strip, and the events list.
+2. **Backend saves are ignored on your own browser.** Saving in Admin → THEME does write to `site_settings.theme` (verified in the network log — currently `{preset: "midnight"}`). But `ThemeProvider` does `if (localStorage.getItem("ccd_theme_preset")) return;` before reading the CMS value. Once you've ever clicked the front-end switcher, the CMS preset never loads for you again.
 
-`**src/pages/About.tsx**` — Shorten the hero:
+3. **Switcher button is loud.** A 44×44 cream box with a chunky border and rainbow conic-gradient pinned bottom-left isn't an easter egg — it screams "dev tool".
 
-- Current: "AT THE INTERSECTION OF MUSIC, FASHION & PETS." (two lines, mouthful)
-- New: **"MUSIC. FASHION. PETS."** with kicker "A culture brand from Bangalore."
+## Plan
 
-## 2. Lock down a real design system
+### 1. Make presets actually re-skin the site (the real fix)
 
-Right now colors, shadows, and type sit half in `index.css`, half hardcoded in components (`bg-magenta`, `bg-electric-blue`, etc). Before we can theme anything, we need one source of truth.
+Map the fixed palette CSS variables to the active preset, instead of (or in addition to) the semantic tokens. So when "Midnight" is active, `--magenta`, `--cream`, `--acid-yellow`, etc. get *remapped* to that preset's palette, and every existing `bg-magenta`/`bg-cream`/`bg-ink` class on the site re-skins automatically — no component edits needed.
 
-**New file `src/lib/theme.ts**` — single object exporting semantic tokens:
-
-```text
-brand            → primary brand color (currently magenta)
-accent           → secondary highlight (currently acid-yellow)
-surface          → light section bg (cream)
-surface-alt      → dark section bg (ink)
-text-on-brand    → text color over brand
-text-on-surface  → text color over surface
-shadow           → chunk shadow color (ink)
-```
-
-`**src/index.css**` — add semantic CSS vars (`--brand`, `--accent`, `--surface`, `--surface-alt`, `--on-brand`, `--on-surface`) that map to the raw palette. Keep the raw palette (magenta, acid-yellow, lime, electric-blue, ink, cream) as-is so existing components keep working.
-
-`**tailwind.config.ts**` — register the new semantic colors (`brand`, `accent`, `surface`, `surface-alt`) alongside existing ones.
-
-**Documented usage rule** (added to `mem://design/` and a short README block): new sections use semantic tokens (`bg-brand`, `bg-surface`); raw palette colors stay allowed for accent flourishes only. We'll migrate components opportunistically — not in a big-bang refactor.
-
-## 3. Theme presets + content editor in Admin
-
-### 3a. Schema (one migration)
-
-Add to `site_settings`:
-
-- `theme jsonb default '{}'` — `{ preset: "default", overrides: { brand: "0 72% 51%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%" } }`
-- `home_content jsonb default '{}'` — editable copy for hero + key sections (see below)
-
-No data migration needed; defaults handle empty rows.
-
-### 3b. Theme presets
-
-Three starter presets defined in `src/lib/theme.ts`:
+Concretely, expand each `ThemePreset` in `src/lib/theme.ts` to also declare overrides for the named palette tokens it wants to remap:
 
 ```text
-default   — magenta + acid-yellow + cream + ink (current)
-midnight  — electric-blue + lime + ink + cream (dark-first)
-sunburn   — orange + acid-yellow + cream + ink (warm)
+default  → leave palette untouched (current look)
+midnight → magenta→electric-blue, cream→near-ink, ink stays, acid-yellow→lime
+sunburn  → magenta→orange, cream stays, acid-yellow stays, ink stays
 ```
 
-**Runtime application** — new `src/components/ThemeProvider.tsx` wraps the app in `App.tsx`:
+`applyTheme` will set `--magenta`, `--cream`, `--acid-yellow`, `--electric-blue`, `--orange`, `--lime`, `--ink` from the preset (falling back to the original defaults when a preset doesn't override that slot, so we never end up with broken contrast).
 
-1. Reads `site_settings.theme` once on mount.
-2. Applies `--brand`, `--accent`, `--surface`, `--surface-alt`, `--on-brand`, `--on-surface` to `:root` via `style.setProperty`.
-3. Falls back to default preset if the row is empty.
+Result: clicking Midnight in the switcher (or saving it in Admin) flips the entire homepage / events / about / nav from magenta-on-cream to electric-blue-on-near-ink in one go.
 
-### 3c. Editable home content
+### 2. Respect the CMS preset properly
 
-Move hardcoded strings out of `src/pages/Index.tsx` / `src/components/Hero.tsx` into `home_content`:
+In `ThemeProvider`:
+- Always fetch `site_settings.theme` on mount.
+- If there's no localStorage override, apply the CMS preset.
+- If there is a localStorage override, still apply it — but stop ignoring CMS updates silently. Add an "RESET TO SITE THEME" action in the switcher so users can drop back to whatever the admin chose.
+- Subscribe to realtime changes on `site_settings` so admin saves propagate to open tabs without a refresh (small win — also lets us drop the "refresh to see changes" toast in Admin).
 
-```text
-hero.kicker     hero.title       hero.subtitle    hero.ctaLabel    hero.ctaHref
-about.kicker    about.title      about.body
-cta.title       cta.body         cta.label        cta.href
-```
+### 3. Make the toggle a subtle easter egg
 
-A new hook `src/hooks/useHomeContent.ts` fetches and caches; components read with sensible fallbacks so the site never breaks if a field is empty.
+Replace the current pinned card with a **tiny 10×10px ink dot** in the very bottom-left corner (`fixed bottom-2 left-2`), no border, no shadow, ~40% opacity, hover bumps to 100%. No tooltip. Clicking it opens the same preset menu as today but styled smaller and lighter. Keyboard discoverable too: `Shift + T` cycles presets.
 
-### 3d. Admin tabs
+That way casual visitors won't notice it, but anyone curious enough to mouse into the corner finds it.
 
-Extend `src/pages/Admin.tsx` and `supabase/functions/admin-content/index.ts`:
+### 4. Small Admin polish
 
-**New "THEME" tab**
+- After "SAVE THEME", apply the new preset locally immediately (don't wait for refresh) by clearing the user's localStorage override and re-running `applyTheme`.
+- Show a live preview swatch row at the top of the THEME tab using the preset's *full* remapped palette, so admins see what each option will do to the site before saving.
 
-- Preset picker (3 cards — click to apply).
-- Color overrides: 4 swatches (brand / accent / surface / surface-alt) with HSL inputs and a live preview tile.
-- "Reset to preset" button.
+## Files touched
 
-**New "HOMEPAGE" tab**
+- `src/lib/theme.ts` — extend `ThemePreset` with full palette overrides; expand `applyTheme` to write `--magenta`, `--cream`, `--ink`, `--acid-yellow`, `--electric-blue`, `--orange`, `--lime` (with fallbacks to defaults).
+- `src/components/ThemeProvider.tsx` — always load CMS theme; add realtime subscription; expose `clearOverride()`.
+- `src/components/ThemeSwitcher.tsx` — redesign as a 10px easter-egg dot with a small popover; add `Shift+T` shortcut and "Reset to site theme" link.
+- `src/pages/Admin.tsx` — after save, clear local override + re-apply theme so admin sees the change instantly; update preset preview swatches to show full remapped palette.
 
-- Form fields for each `home_content` key above (text inputs + textareas).
-- Save writes `home_content` jsonb in one upsert.  
-  
+No DB migration, no edge function changes (the existing `admin-content` already persists `theme`).
 
+## Out of scope
 
-Both tabs use the existing admin-password edge function pattern — extend the `settings` upsert handler to accept `theme` and `home_content` payloads.
-
-## NEW theme switch button in frontend. - add a subtle and cool theme switch button as well.   
-  
-Out of scope (call out so we don't sprawl)
-
-- Full migration of every component to semantic tokens (we'll do it as we touch each one).
-- Per-page theming (themes are site-wide for now).
-- Font swapping in the theme editor (display + body fonts stay locked to Bowlby One + Space Grotesk).
-
-## Technical notes
-
-- Theme application happens client-side after fetch; to avoid a flash, we keep the default preset baked into `:root` in `index.css` so first paint matches the default until/unless an override loads.
-- `home_content` and `theme` both live on the single `site_settings` row (`id = 'main'`) — same pattern as `marquees`.
-- Edge function: extend the existing `settings` upsert branch, no new function needed.
-- Memory update: add a `mem://design/tokens` note documenting the semantic token rule once shipped.
+- Changing the existing palette classnames across components (not needed — the remap does it).
+- Per-page theme overrides.
+- Adding more than the existing three presets (default / midnight / sunburn).
