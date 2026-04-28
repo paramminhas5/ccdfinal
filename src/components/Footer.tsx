@@ -9,9 +9,28 @@ const groups = [
       { to: "/about", label: "About" },
       { to: "/events", label: "Events" },
       { to: "/shop", label: "Shop" },
-      { to: "/pets", label: "Pets" },
+    ],
+  },
+  {
+    title: "WATCH & LISTEN",
+    links: [
+      { to: "/videos", label: "Videos" },
+      { to: "/playlists", label: "Playlists" },
+    ],
+  },
+  {
+    title: "READ",
+    links: [
       { to: "/blog", label: "Blog" },
+      { to: "/press", label: "Press" },
       { to: "/media", label: "Media" },
+      { to: "/pets", label: "Pets" },
+    ],
+  },
+  {
+    title: "PLAY",
+    links: [
+      { to: "/cat-studio", label: "Cat Studio ✦" },
     ],
   },
   {
@@ -20,7 +39,6 @@ const groups = [
       { to: "/for-venues", label: "Venue Partners" },
       { to: "/for-artists", label: "For Artists" },
       { to: "/for-investors", label: "For Investors" },
-      { to: "/press", label: "Press Kit" },
     ],
   },
 ];
