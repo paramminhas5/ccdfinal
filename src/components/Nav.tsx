@@ -127,6 +127,9 @@ const Nav = () => {
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const hasCart = cartCount > 0;
 
+  const lightBgRoutes = ["/about", "/blog", "/media", "/press"];
+  const forceScrolledStyle = lightBgRoutes.some((r) => location.pathname === r || location.pathname.startsWith(r + "/"));
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
