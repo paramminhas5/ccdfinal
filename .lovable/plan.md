@@ -1,47 +1,36 @@
-# Pull themes from ccdthemes.lovable.app
+## Goal
 
-The sister project [ccdolddifferenttheme](https://ccdthemes.lovable.app) has a `PaletteSwitcher` with 11 fully-defined palettes. We'll port them into this site's existing theme system so the admin theme picker, the easter-egg switcher, and CMS-stored themes all gain those 11 presets.
-
-## What's coming over
-
-Each preset defines all 9 named palette colors (magenta, cream, ink, acid-yellow, electric-blue, orange, lime, hot-pink, bubblegum) plus surface/foreground:
-
-1. **Original** — cream / hot pink / acid yellow / electric blue
-2. **Synthwave** — deep indigo / hot pink / cyan / violet  *(this is what ccdthemes shows by default)*
-3. **Brutalist** — concrete grey / red / lime / blue
-4. **Y2K** — lavender / pink / yellow / cyan
-5. **Matcha** — beige / forest / amber / sage
-6. **Mono+1** — white / black / orange accent
-7. **Sunset** — peach / coral / amber / violet
-8. **Oceanic** — deep navy / cyan / yellow accent
-9. **Candy Pop** — blush / hot pink / mint / yellow
-10. **Forest** — dark green / chartreuse / cream / brick
-11. **Pink Punk** — black / white / hot pink
-12. **Linework** — pure black & white only
-
-Existing `default`, `midnight`, `sunburn` presets stay (rename-safe — IDs don't collide).
+Restrict the easter-egg theme switcher (and `Shift+T` cycle) on the public site to just **Brutalist, Matcha, Default, Candy Pop, Mono+1**, and stop the scroll from glitching when the switcher is on screen. Admin still sees the full library.
 
 ## Changes
 
 ### 1. `src/lib/theme.ts`
-Add the 11 presets to `THEME_PRESETS`. For each preset, populate:
-- `tokens` (brand/accent/surface/surface-alt/on-brand/on-surface/shadow) — derived from the source's `--primary`, `--accent`, `--background`, `--card`, `--foreground`
-- `palette` overrides for all 9 named colors so existing `bg-magenta`, `bg-electric-blue`, `bg-cream`, etc. classes re-skin everywhere
-- `description` — short tagline matching the vibe
+Add a small allowlist of frontend-visible preset IDs and export it:
 
-### 2. `src/pages/Admin.tsx` — THEME tab
-The preset dropdown reads from `THEME_PRESETS` so the new presets appear automatically. Confirm the swatch preview row renders all 11 without layout break (may need to wrap to a 2nd row).
+```ts
+export const FRONTEND_PRESET_IDS = ["default", "brutalist", "matcha", "candy", "mono"];
+```
 
-### 3. `src/components/ThemeSwitcher.tsx` (easter-egg dot)
-`Shift+T` cycles through `Object.keys(THEME_PRESETS)` — already dynamic, so new presets are picked up automatically. No code change needed beyond verifying.
+Keep all other presets in `THEME_PRESETS` so the Admin dropdown is unchanged.
 
-### 4. No DB migration
-`site_settings.theme` is JSONB and only stores `{ preset, overrides? }`. New preset IDs slot in without schema changes.
+### 2. `src/components/ThemeProvider.tsx`
+- Expose `presetIds` filtered to `FRONTEND_PRESET_IDS` (intersected with `THEME_PRESETS` so it stays safe).
+- Use that same filtered list for the `Shift+T` cycle so cycling only walks the 5 allowed themes.
+- If the CMS or `localStorage` selects a non-frontend preset (e.g. someone picked Synthwave in Admin), still honor it — just don't include it in the cycle.
 
-## Out of scope
-- Not copying the 🎨 floating switcher UI from the sister project — your current easter-egg dot stays.
-- Not changing the active site theme — admin picks which one is live.
+### 3. `src/components/ThemeSwitcher.tsx` — fix scroll glitch
+The current dot uses `fixed bottom-2 left-2 z-[60]`. On iOS / when Lenis smooth-scroll is active, a `fixed` element with a hover transition can cause repaint jitter on every scroll frame, which reads as "scroll glitching".
 
-## Technical notes
-- All HSL values are copied verbatim from the source `PaletteSwitcher.tsx` (format: `"H S% L%"`).
-- Where the source preset doesn't distinguish a token (e.g. Linework uses black/white for everything), we map `brand → primary`, `accent → accent`, `surface → background`, `surface-alt → card`.
+Fixes:
+- Wrap the dot+menu in a single `fixed` container that uses `pointer-events-none` by default and re-enables pointer events only on the dot/menu themselves. This stops the fixed layer from intercepting wheel/touch.
+- Promote it to its own compositor layer with `transform: translateZ(0)` and `will-change: transform` so it no longer triggers full-page repaints.
+- Drop the `transition-colors` on the dot (it's invisible at 30% opacity anyway) — removes per-frame style recalcs while hovering during scroll.
+- Render the dropdown menu only when `open` (already the case) and give it `will-change: transform` too.
+
+### 4. No DB / Admin changes
+Admin keeps the complete `THEME_PRESETS` list so you can still pick any of the 12 themes as the site default; only the frontend easter-egg is restricted.
+
+## Files touched
+- `src/lib/theme.ts` — add `FRONTEND_PRESET_IDS` export
+- `src/components/ThemeProvider.tsx` — filter `presetIds` and `Shift+T` cycle
+- `src/components/ThemeSwitcher.tsx` — pointer-events isolation + GPU layer

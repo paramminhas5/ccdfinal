@@ -359,6 +359,10 @@ export const THEME_PRESETS: Record<string, ThemePreset> = {
 
 export const DEFAULT_THEME = THEME_PRESETS.default;
 
+// Presets exposed in the public-site easter-egg switcher (and Shift+T cycle).
+// Admin still sees every preset in THEME_PRESETS.
+export const FRONTEND_PRESET_IDS = ["default", "brutalist", "matcha", "candy", "mono"];
+
 export type ThemeConfig = {
   preset: string;
   overrides?: Partial<ThemeTokens>;

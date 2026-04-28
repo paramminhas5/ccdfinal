@@ -18,9 +18,13 @@ const ThemeSwitcher = () => {
   }, [open]);
 
   return (
-    <div ref={ref} className="fixed bottom-2 left-2 z-[60]">
+    <div
+      ref={ref}
+      className="fixed bottom-2 left-2 z-[60] pointer-events-none"
+      style={{ transform: "translateZ(0)", willChange: "transform" }}
+    >
       {open && (
-        <div className="mb-2 bg-cream border border-ink/40 shadow-lg p-1.5 flex flex-col gap-0.5 min-w-[140px]">
+        <div className="mb-2 bg-cream border border-ink/40 shadow-lg p-1.5 flex flex-col gap-0.5 min-w-[140px] pointer-events-auto">
           {presetIds.map((id) => {
             const p = THEME_PRESETS[id];
             const active = config.preset === id;
@@ -56,7 +60,7 @@ const ThemeSwitcher = () => {
         onClick={() => setOpen((v) => !v)}
         aria-label="Theme"
         title=""
-        className="block w-2.5 h-2.5 rounded-full bg-ink/30 hover:bg-ink/90 transition-colors"
+        className="block w-2.5 h-2.5 rounded-full bg-ink/30 hover:bg-ink/90 pointer-events-auto"
       />
     </div>
   );
