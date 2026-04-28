@@ -77,21 +77,41 @@ const Dropdown = ({
       {open && (
         <div className="absolute top-full right-0 pt-2 min-w-[180px] z-50">
           <ul className="py-1 bg-cream border-4 border-ink chunk-shadow">
-            {links.map((l) => (
-              <li key={l.to}>
-                <RouterNavLink
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
-                      isActive ? "bg-acid-yellow" : ""
-                    }`
-                  }
-                >
-                  {l.label}
-                </RouterNavLink>
-              </li>
-            ))}
+            {links.map((l) => {
+              const isHash = l.to.includes("#");
+              return (
+                <li key={l.to}>
+                  <RouterNavLink
+                    to={l.to}
+                    onClick={(e) => {
+                      setOpen(false);
+                      if (isHash) {
+                        e.preventDefault();
+                        const [path, hash] = l.to.split("#");
+                        const scroll = () => {
+                          const el = document.getElementById(hash);
+                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        };
+                        if (location.pathname === (path || "/")) {
+                          scroll();
+                        } else {
+                          window.history.pushState({}, "", l.to);
+                          window.dispatchEvent(new PopStateEvent("popstate"));
+                          setTimeout(scroll, 120);
+                        }
+                      }
+                    }}
+                    className={({ isActive }) =>
+                      `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
+                        isActive && !isHash ? "bg-acid-yellow" : ""
+                      }`
+                    }
+                  >
+                    {l.label}
+                  </RouterNavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
