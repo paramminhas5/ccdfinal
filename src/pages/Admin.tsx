@@ -1610,6 +1610,31 @@ function CuratedEventsTab() {
     }
   };
 
+  const runFullNightly = async () => {
+    if (!confirm("Run the full nightly scraper now? This crawls all sources × all cities and may take 2–5 minutes.")) return;
+    setRefreshing(true);
+    setLastRun(null);
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/scheduled-curate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": pwd },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Nightly run complete: ${data.total_upserted ?? 0} upserted, ${data.featured ?? 0} featured, ${data.deduped ?? 0} deduped`);
+        setLastRun({ runs: data.runs ?? [] });
+        load();
+      } else {
+        toast.error(data.error ?? "Nightly run failed");
+      }
+    } catch {
+      toast.error("Nightly run failed (likely timed out — it may still be running server-side)");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-end gap-3">
@@ -1644,6 +1669,13 @@ function CuratedEventsTab() {
             className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
           >
             {refreshing ? "CRAWLING…" : "🔄 REFRESH SOURCE"}
+          </button>
+          <button
+            onClick={runFullNightly}
+            disabled={refreshing}
+            className="bg-magenta text-cream font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
+          >
+            {refreshing ? "RUNNING…" : "🌙 RUN NIGHTLY NOW"}
           </button>
         </div>
       </div>

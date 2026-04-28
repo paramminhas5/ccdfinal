@@ -229,7 +229,7 @@ const CuratedEvents = () => {
           <div className="border-4 border-dashed border-ink/40 p-12 text-center">
             <p className="font-display text-3xl text-ink mb-3">NOTHING YET</p>
             <p className="text-ink/60 font-medium mb-6">
-              {city === "all" ? "Check back soon — we refresh this weekly." : `No ${CITY_TABS.find((c) => c.key === city)?.label} events yet. Try another city or genre.`}
+              {city === "all" ? "Check back soon — we refresh this daily." : `No ${CITY_TABS.find((c) => c.key === city)?.label} events yet. Try another city or genre.`}
             </p>
             <Link to="/submit-event"
               className="inline-block bg-ink text-cream font-display px-5 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform">
@@ -251,7 +251,7 @@ const CuratedEvents = () => {
             </div>
 
             <p className="text-ink/40 text-xs font-mono uppercase tracking-wider mt-8 text-right">
-              {filtered.length} events · refreshed weekly · <Link to="/submit-event" className="underline hover:text-ink/70">submit yours →</Link>
+              {filtered.length} events · refreshed daily · <Link to="/submit-event" className="underline hover:text-ink/70">submit yours →</Link>
             </p>
           </>
         )}
