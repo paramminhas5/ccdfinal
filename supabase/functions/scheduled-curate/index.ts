@@ -26,12 +26,8 @@ Deno.serve(async (req) => {
   if (authHeader.includes(serviceKey.slice(-8))) authorized = true;
   else if (expectedPass && adminPass === expectedPass) authorized = true;
   else if (cronSecretHeader) {
-    const { data: vaultSecret } = await supabaseAuth
-      .from("vault.decrypted_secrets" as any)
-      .select("decrypted_secret")
-      .eq("name", "CRON_SECRET")
-      .maybeSingle();
-    if (vaultSecret && (vaultSecret as any).decrypted_secret === cronSecretHeader) authorized = true;
+    const { data: ok } = await supabaseAuth.rpc("verify_cron_secret" as any, { _input: cronSecretHeader });
+    if (ok === true) authorized = true;
   }
   if (!authorized) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
