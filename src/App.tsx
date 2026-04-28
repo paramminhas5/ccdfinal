@@ -20,6 +20,8 @@ import BlogPost from "./pages/BlogPost.tsx";
 import Blog from "./pages/Blog.tsx";
 import MediaPage from "./pages/Media.tsx";
 import Press from "./pages/Press.tsx";
+import Playlists from "./pages/Playlists.tsx";
+import VideosPage from "./pages/Videos.tsx";
 import Embed from "./pages/Embed.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
@@ -60,6 +62,8 @@ const App = () => (
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/media" element={<MediaPage />} />
                 <Route path="/press" element={<Press />} />
+                <Route path="/playlists" element={<Playlists />} />
+                <Route path="/videos" element={<VideosPage />} />
                 <Route path="/embed/upcoming" element={<Embed />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
