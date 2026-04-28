@@ -21,6 +21,7 @@ const partnersLinks = [
 ];
 
 const moreLinks = [
+  { to: "/#playlist", label: "Playlists" },
   { to: "/pets", label: "Pets" },
   { to: "/media", label: "Media" },
   { to: "/blog", label: "Blog" },
@@ -76,21 +77,41 @@ const Dropdown = ({
       {open && (
         <div className="absolute top-full right-0 pt-2 min-w-[180px] z-50">
           <ul className="py-1 bg-cream border-4 border-ink chunk-shadow">
-            {links.map((l) => (
-              <li key={l.to}>
-                <RouterNavLink
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
-                      isActive ? "bg-acid-yellow" : ""
-                    }`
-                  }
-                >
-                  {l.label}
-                </RouterNavLink>
-              </li>
-            ))}
+            {links.map((l) => {
+              const isHash = l.to.includes("#");
+              return (
+                <li key={l.to}>
+                  <RouterNavLink
+                    to={l.to}
+                    onClick={(e) => {
+                      setOpen(false);
+                      if (isHash) {
+                        e.preventDefault();
+                        const [path, hash] = l.to.split("#");
+                        const scroll = () => {
+                          const el = document.getElementById(hash);
+                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        };
+                        if (location.pathname === (path || "/")) {
+                          scroll();
+                        } else {
+                          window.history.pushState({}, "", l.to);
+                          window.dispatchEvent(new PopStateEvent("popstate"));
+                          setTimeout(scroll, 120);
+                        }
+                      }
+                    }}
+                    className={({ isActive }) =>
+                      `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
+                        isActive && !isHash ? "bg-acid-yellow" : ""
+                      }`
+                    }
+                  >
+                    {l.label}
+                  </RouterNavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -105,6 +126,9 @@ const Nav = () => {
   const navigate = useNavigate();
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const hasCart = cartCount > 0;
+
+  const lightBgRoutes = ["/about", "/blog", "/media", "/press"];
+  const forceScrolledStyle = lightBgRoutes.some((r) => location.pathname === r || location.pathname.startsWith(r + "/"));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -126,13 +150,14 @@ const Nav = () => {
     }
   };
 
-  const activeColor = scrolled ? "text-magenta" : "text-acid-yellow";
-  const baseColor = scrolled ? "text-ink" : "text-cream";
+  const effectiveScrolled = scrolled || forceScrolledStyle;
+  const activeColor = effectiveScrolled ? "text-magenta" : "text-acid-yellow";
+  const baseColor = effectiveScrolled ? "text-ink" : "text-cream";
 
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all ${
-        scrolled ? "bg-cream/95 backdrop-blur border-b-4 border-ink" : "bg-transparent"
+        effectiveScrolled ? "bg-cream/95 backdrop-blur border-b-4 border-ink" : "bg-transparent"
       }`}
     >
       <nav className="container flex items-center justify-between py-3 md:py-4 gap-3 md:gap-4">
@@ -140,7 +165,7 @@ const Nav = () => {
           <img
             src={ccdLogo}
             alt="Cats Can Dance logo"
-            style={{ filter: scrolled ? "none" : "invert(1) brightness(1.2)" }}
+            style={{ filter: effectiveScrolled ? "none" : "invert(1) brightness(1.2)" }}
             className="h-9 md:h-11 w-auto transition-transform duration-700 group-hover:rotate-[360deg]"
           />
           <span className="hidden sm:inline">CATS<span className="text-magenta">.</span>CAN<span className="text-magenta">.</span>DANCE</span>
@@ -162,8 +187,8 @@ const Nav = () => {
               </RouterNavLink>
             </li>
           ))}
-          <Dropdown label="Partners" links={partnersLinks} scrolled={scrolled} />
-          <Dropdown label="More" links={moreLinks} scrolled={scrolled} />
+          <Dropdown label="Partners" links={partnersLinks} scrolled={effectiveScrolled} />
+          <Dropdown label="More" links={moreLinks} scrolled={effectiveScrolled} />
         </ul>
         <div className="hidden lg:flex items-center gap-3">
           <span className="hidden xl:block"><DiscoMute /></span>

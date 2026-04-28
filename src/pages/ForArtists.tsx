@@ -36,7 +36,7 @@ const ForArtists = () => (
             BUILD AN<br/>AUDIENCE,<br/>NOT JUST A NIGHT.
           </h2>
           <p className="text-ink/80 text-lg md:text-xl font-medium mb-6">
-            Most gigs are transactional. CCD turns each set into a content drop, a community moment and a repeat booking.
+            Most gigs are transactional. CCD turns each set into a content drop, a community moment and people want to experience again.
           </p>
           <a
             href="mailto:artists@catscandance.com"

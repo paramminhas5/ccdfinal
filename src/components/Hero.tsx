@@ -81,7 +81,11 @@ const Hero = () => {
     <>
       <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
         {disco && <Lasers />}
-        {disco && !isMobile && <DiscoBall />}
+        {disco && (
+          <div className="scale-75 md:scale-100 origin-top">
+            <DiscoBall />
+          </div>
+        )}
 
         <motion.div
           style={{ rotate: starRotA, willChange: "transform" }}
