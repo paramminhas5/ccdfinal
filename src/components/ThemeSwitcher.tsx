@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEME_PRESETS } from "@/lib/theme";
 
 const ThemeSwitcher = () => {
-  const { config, setPreset, presetIds } = useTheme();
+  const { config, setPreset, clearOverride, hasLocalOverride, presetIds } = useTheme();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [open]);
 
   return (
-    <div className="fixed bottom-4 left-4 z-[60]">
+    <div ref={ref} className="fixed bottom-2 left-2 z-[60]">
       {open && (
-        <div className="mb-2 bg-cream border-4 border-ink chunk-shadow p-2 flex flex-col gap-1 min-w-[180px]">
+        <div className="mb-2 bg-cream border border-ink/40 shadow-lg p-1.5 flex flex-col gap-0.5 min-w-[140px]">
           {presetIds.map((id) => {
             const p = THEME_PRESETS[id];
             const active = config.preset === id;
@@ -17,33 +28,36 @@ const ThemeSwitcher = () => {
               <button
                 key={id}
                 onClick={() => { setPreset(id); setOpen(false); }}
-                className={`text-left px-3 py-2 font-display text-sm border-2 border-ink flex items-center gap-2 transition-transform hover:translate-x-1 ${active ? "bg-ink text-cream" : "bg-cream text-ink"}`}
+                className={`text-left px-2 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+                  active ? "bg-ink text-cream" : "bg-cream text-ink hover:bg-ink/5"
+                }`}
               >
                 <span
                   aria-hidden
-                  className="inline-block w-4 h-4 border-2 border-ink"
+                  className="inline-block w-3 h-3 border border-ink/40"
                   style={{ background: `hsl(${p.tokens.brand})` }}
                 />
-                {p.label.toUpperCase()}
+                {p.label}
               </button>
             );
           })}
+          {hasLocalOverride && (
+            <button
+              onClick={() => { clearOverride(); setOpen(false); }}
+              className="text-left px-2 py-1 text-[10px] text-ink/50 hover:text-ink border-t border-ink/10 mt-1 pt-1.5"
+            >
+              reset to site theme
+            </button>
+          )}
+          <p className="px-2 pt-1 text-[9px] text-ink/40 leading-tight">⇧ T to cycle</p>
         </div>
       )}
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label="Switch theme"
-        title="Switch theme"
-        className="w-11 h-11 bg-cream border-4 border-ink chunk-shadow flex items-center justify-center hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-      >
-        <span
-          aria-hidden
-          className="block w-5 h-5 rounded-full border-2 border-ink"
-          style={{
-            background: `conic-gradient(hsl(var(--brand)) 0 33%, hsl(var(--accent)) 33% 66%, hsl(var(--surface-alt)) 66% 100%)`,
-          }}
-        />
-      </button>
+        aria-label="Theme"
+        title=""
+        className="block w-2.5 h-2.5 rounded-full bg-ink/30 hover:bg-ink/90 transition-colors"
+      />
     </div>
   );
 };
