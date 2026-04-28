@@ -20,13 +20,13 @@ const WhyNow = () => {
   const lineHeight = useTransform(scrollYProgress, [0.1, 0.9], ["0%", "100%"]);
 
   return (
-    <section ref={ref} id="whynow" className="relative bg-magenta border-b-4 border-ink py-24 md:py-32 overflow-hidden">
+    <section ref={ref} id="whynow" className="relative bg-magenta border-b-4 border-ink py-12 md:py-20 overflow-hidden">
       <motion.img src={cloud} style={{ x: cloudX }} alt="" className="absolute top-20 right-0 w-72 opacity-80" />
       <motion.img src={catRaver} style={{ y: catY }} alt="" className="absolute right-4 md:right-16 top-1/2 w-40 md:w-64 hidden sm:block" />
 
       <div className="container relative z-10">
-        <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ WHY NOW</p>
-        <h2 className="font-display text-5xl md:text-8xl text-cream leading-[0.9] max-w-4xl drop-shadow-[5px_5px_0_hsl(var(--ink))]">
+        <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ WHY NOW</p>
+        <h2 className="font-display text-4xl md:text-6xl text-cream leading-[0.9] max-w-4xl drop-shadow-[5px_5px_0_hsl(var(--ink))]">
           THE PERFECT MOMENT.
         </h2>
 
