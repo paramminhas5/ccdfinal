@@ -6,6 +6,7 @@ import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CuratedEvents from "@/components/CuratedEvents";
+import Marquee from "@/components/Marquee";
 import { supabase } from "@/integrations/supabase/client";
 
 type EventRow = {
@@ -88,41 +89,93 @@ const Events = () => {
         <Nav />
         <PageHero
           eyebrow="EVENTS"
-          title="EVERY EDITION."
-          bg="bg-lime"
-          textColor="text-ink"
-          eyebrowColor="text-magenta"
-          shadow={false}
+          title="NIGHTS THAT MOVE."
+          bg="bg-magenta"
+          textColor="text-cream"
+          eyebrowColor="text-acid-yellow"
+          shadowColor="hsl(var(--ink))"
         >
-          <p className="text-ink/80 font-medium text-lg max-w-2xl">
+          <p className="text-cream/90 font-display text-2xl md:text-3xl mb-2">UNDERGROUND. LOUD. OURS.</p>
+          <p className="text-cream/80 font-medium text-lg max-w-2xl">
             The cult underground series. Every drop, every floor, every city.
           </p>
         </PageHero>
-        <section className="container py-16 md:py-20">
+        <Marquee
+          bg="bg-acid-yellow"
+          items={["DOORS OPEN LATE", "BRING YOUR PACK", "NO DRESS CODE — MOVE", "SOLD-OUT IS A LOVE LANGUAGE"]}
+        />
+        <section className="container py-12 md:py-16">
           <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Events" }]} />
-          <div className="grid gap-6 max-w-4xl">
-            {all.map((e) => (
-              <Link
-                key={e.slug}
-                to={`/events/${e.slug}`}
-                className={`block border-4 border-ink chunk-shadow p-6 md:p-8 hover:-translate-y-1 hover:translate-x-1 transition-transform ${
-                  e.status === "upcoming" ? "bg-magenta text-cream" : "bg-cream text-ink"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`text-xs font-bold px-3 py-1 border-2 border-ink uppercase ${
-                    e.status === "upcoming" ? "bg-acid-yellow text-ink" : "bg-ink text-cream"
-                  }`}>
-                    {e.status === "upcoming" ? "UPCOMING · RSVP" : "PAST"}
-                  </span>
-                  <span className="font-display text-lg">{e.date}</span>
-                </div>
-                <h2 className="font-display text-4xl md:text-6xl mb-2">{e.title.toUpperCase()}</h2>
-                <p className="font-medium opacity-90">{e.city} · {e.venue}</p>
-              </Link>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-12">
+            {[
+              { n: "24", l: "NIGHTS THROWN", bg: "bg-electric-blue", text: "text-cream" },
+              { n: "3", l: "CITIES", bg: "bg-acid-yellow", text: "text-ink" },
+              { n: "6K+", l: "DANCERS", bg: "bg-cream", text: "text-ink" },
+            ].map((s) => (
+              <div key={s.l} className={`${s.bg} ${s.text} border-4 border-ink chunk-shadow p-4 md:p-6 text-center`}>
+                <p className="font-display text-3xl md:text-6xl leading-none">{s.n}</p>
+                <p className="font-display text-xs md:text-base mt-2">{s.l}</p>
+              </div>
             ))}
           </div>
+
+          <div className="grid gap-6 max-w-4xl">
+            {all.map((e, i) => {
+              const upcomingPalette = [
+                { bg: "bg-magenta", text: "text-cream", chip: "bg-acid-yellow text-ink" },
+                { bg: "bg-electric-blue", text: "text-cream", chip: "bg-acid-yellow text-ink" },
+                { bg: "bg-acid-yellow", text: "text-ink", chip: "bg-magenta text-cream" },
+              ];
+              const isUpcoming = e.status === "upcoming";
+              const upIdx = all.filter((x, j) => j < i && x.status === "upcoming").length;
+              const palette = isUpcoming
+                ? upcomingPalette[upIdx % upcomingPalette.length]
+                : { bg: "bg-cream", text: "text-ink", chip: "bg-ink text-cream" };
+              return (
+                <Link
+                  key={e.slug}
+                  to={`/events/${e.slug}`}
+                  className={`relative block border-4 border-ink chunk-shadow p-6 md:p-8 hover:-translate-y-1 hover:translate-x-1 transition-transform ${palette.bg} ${palette.text}`}
+                >
+                  {isUpcoming && (
+                    <span className="absolute -top-3 -right-3 rotate-6 bg-ink text-acid-yellow font-display text-xs md:text-sm px-3 py-1 border-4 border-ink">
+                      LATE NIGHT ✦
+                    </span>
+                  )}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-bold px-3 py-1 border-2 border-ink uppercase ${palette.chip}`}>
+                      {isUpcoming ? "UPCOMING · RSVP" : "PAST"}
+                    </span>
+                    <span className="font-display text-lg">{e.date}</span>
+                  </div>
+                  <h2 className="font-display text-4xl md:text-6xl mb-2">{e.title.toUpperCase()}</h2>
+                  <p className="font-medium opacity-90">{e.city} · {e.venue}</p>
+                </Link>
+              );
+            })}
+          </div>
         </section>
+
+        {/* Host strip */}
+        <section className="bg-ink border-y-4 border-ink py-10 md:py-14">
+          <div className="container flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <p className="font-display text-acid-yellow text-lg mb-2">/ HOST WITH US</p>
+              <h3 className="font-display text-cream text-3xl md:text-5xl leading-[0.95]">
+                WANT TO HOST ONE?
+              </h3>
+            </div>
+            <Link
+              to="/for-venues"
+              className="bg-acid-yellow text-ink font-display text-lg px-6 py-3 border-4 border-cream chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform whitespace-nowrap"
+            >
+              FOR VENUES →
+            </Link>
+          </div>
+        </section>
+
         <CuratedEvents />
         <Footer />
       </main>

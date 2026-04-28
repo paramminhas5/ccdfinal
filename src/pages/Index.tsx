@@ -73,7 +73,7 @@ const Index = () => {
         <MarqueeBySlot id="above-events" />
         <SectionReveal><Events /></SectionReveal>
         <MarqueeBySlot id="above-videos" />
-        <Suspense fallback={<SectionFallback bg="bg-lime" />}>
+        <Suspense fallback={<SectionFallback bg="bg-ink" />}>
           <SectionReveal><Videos /></SectionReveal>
         </Suspense>
         <MarqueeBySlot id="above-playlist" />

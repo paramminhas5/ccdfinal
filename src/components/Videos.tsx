@@ -35,19 +35,19 @@ const Videos = () => {
   }, []);
 
   return (
-    <section id="videos" className="relative bg-lime border-b-4 border-ink py-12 md:py-20 overflow-hidden">
+    <section id="videos" className="relative bg-ink border-b-4 border-ink py-12 md:py-20 overflow-hidden">
       <div className="container">
         <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
           <div>
-            <p className="font-display text-magenta text-lg md:text-xl mb-3">/ VIDEOS · YOUTUBE</p>
+            <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ VIDEOS · YOUTUBE</p>
             <a href="/videos" className="inline-block hover:opacity-90 transition-opacity">
-              <h2 className="font-display text-ink text-4xl md:text-6xl leading-[0.9]">
+              <h2 className="font-display text-cream text-4xl md:text-6xl leading-[0.9] drop-shadow-[5px_5px_0_hsl(var(--magenta))]">
                 WATCH<br/>THE TAPES.
               </h2>
             </a>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a href="/videos" className="bg-cream text-ink font-display text-lg px-5 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform">
+            <a href="/videos" className="bg-acid-yellow text-ink font-display text-lg px-5 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform">
               ALL VIDEOS →
             </a>
             <a
