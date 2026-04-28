@@ -57,7 +57,7 @@ const EarlyAccess = () => {
   };
 
   return (
-    <section ref={ref} id="early-access" className="relative bg-electric-blue py-20 md:py-20 border-b-4 border-ink overflow-hidden">
+    <section ref={ref} id="early-access" className="relative bg-electric-blue py-12 md:py-20 border-b-4 border-ink overflow-hidden">
       <Confetti active={burst} />
       <motion.div style={{ rotate: orbit1 }} className="absolute top-1/2 left-1/2 -mt-40 -ml-40 w-80 h-80 pointer-events-none" aria-hidden>
         <img src={note} alt="" className="absolute top-0 left-1/2 -translate-x-1/2 w-16" />
@@ -66,11 +66,11 @@ const EarlyAccess = () => {
         <img src={note} alt="" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12" />
       </motion.div>
       <div className="container relative z-10 text-center max-w-3xl">
-        <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ EARLY ACCESS</p>
-        <motion.h2 style={{ textShadow: titleShadow }} className="font-display text-cream text-6xl md:text-8xl mb-6">
+        <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ EARLY ACCESS</p>
+        <motion.h2 style={{ textShadow: titleShadow }} className="font-display text-cream text-4xl md:text-6xl mb-4">
           BE FIRST<br/>IN THE DOOR
         </motion.h2>
-        <p className="text-cream/90 text-lg md:text-xl mb-10 font-medium">
+        <p className="text-cream/90 text-base md:text-lg mb-6 font-medium">
           Sign up for early access to drops, gigs, and the cult before everyone else catches on.
         </p>
         <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">

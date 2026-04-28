@@ -38,7 +38,7 @@ const Instagram = () => {
         <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
           <div className="min-w-0 max-w-full">
             <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ INSTAGRAM</p>
-            <h2 className="font-display text-cream text-4xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.9] drop-shadow-[5px_5px_0_hsl(var(--ink))] break-all">
+            <h2 className="font-display text-cream text-3xl sm:text-5xl md:text-6xl leading-[0.9] drop-shadow-[5px_5px_0_hsl(var(--ink))] break-all">
               @{HANDLE}
             </h2>
           </div>
