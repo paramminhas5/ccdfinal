@@ -1,61 +1,47 @@
-## Why the theme switcher looks broken today
+# Pull themes from ccdthemes.lovable.app
 
-Two real bugs, one UX issue:
+The sister project [ccdolddifferenttheme](https://ccdthemes.lovable.app) has a `PaletteSwitcher` with 11 fully-defined palettes. We'll port them into this site's existing theme system so the admin theme picker, the easter-egg switcher, and CMS-stored themes all gain those 11 presets.
 
-1. **Themes don't visibly change anything.** `ThemeProvider` only rewrites the semantic CSS vars (`--brand`, `--accent`, `--surface`, `--surface-alt`). But almost every component on the site uses the *fixed* palette classes — `bg-magenta`, `bg-acid-yellow`, `bg-electric-blue`, `bg-cream`, `bg-ink`, `text-ink`, etc. — which map to their own untouched vars (`--magenta`, `--cream`, …). So switching presets shuffles a handful of `bg-brand`/`bg-surface` usages (basically just the Theme Switcher itself) and the rest of the page stays identical. To the user it looks like nothing happened.
+## What's coming over
 
-2. **Backend saves are ignored on your own browser.** Saving in Admin → THEME does write to `site_settings.theme` (verified in the network log — currently `{preset: "midnight"}`). But `ThemeProvider` does `if (localStorage.getItem("ccd_theme_preset")) return;` before reading the CMS value. Once you've ever clicked the front-end switcher, the CMS preset never loads for you again.
+Each preset defines all 9 named palette colors (magenta, cream, ink, acid-yellow, electric-blue, orange, lime, hot-pink, bubblegum) plus surface/foreground:
 
-3. **Switcher button is loud.** A 44×44 cream box with a chunky border and rainbow conic-gradient pinned bottom-left isn't an easter egg — it screams "dev tool".
+1. **Original** — cream / hot pink / acid yellow / electric blue
+2. **Synthwave** — deep indigo / hot pink / cyan / violet  *(this is what ccdthemes shows by default)*
+3. **Brutalist** — concrete grey / red / lime / blue
+4. **Y2K** — lavender / pink / yellow / cyan
+5. **Matcha** — beige / forest / amber / sage
+6. **Mono+1** — white / black / orange accent
+7. **Sunset** — peach / coral / amber / violet
+8. **Oceanic** — deep navy / cyan / yellow accent
+9. **Candy Pop** — blush / hot pink / mint / yellow
+10. **Forest** — dark green / chartreuse / cream / brick
+11. **Pink Punk** — black / white / hot pink
+12. **Linework** — pure black & white only
 
-## Plan
+Existing `default`, `midnight`, `sunburn` presets stay (rename-safe — IDs don't collide).
 
-### 1. Make presets actually re-skin the site (the real fix)
+## Changes
 
-Map the fixed palette CSS variables to the active preset, instead of (or in addition to) the semantic tokens. So when "Midnight" is active, `--magenta`, `--cream`, `--acid-yellow`, etc. get *remapped* to that preset's palette, and every existing `bg-magenta`/`bg-cream`/`bg-ink` class on the site re-skins automatically — no component edits needed.
+### 1. `src/lib/theme.ts`
+Add the 11 presets to `THEME_PRESETS`. For each preset, populate:
+- `tokens` (brand/accent/surface/surface-alt/on-brand/on-surface/shadow) — derived from the source's `--primary`, `--accent`, `--background`, `--card`, `--foreground`
+- `palette` overrides for all 9 named colors so existing `bg-magenta`, `bg-electric-blue`, `bg-cream`, etc. classes re-skin everywhere
+- `description` — short tagline matching the vibe
 
-Concretely, expand each `ThemePreset` in `src/lib/theme.ts` to also declare overrides for the named palette tokens it wants to remap:
+### 2. `src/pages/Admin.tsx` — THEME tab
+The preset dropdown reads from `THEME_PRESETS` so the new presets appear automatically. Confirm the swatch preview row renders all 11 without layout break (may need to wrap to a 2nd row).
 
-```text
-default  → leave palette untouched (current look)
-midnight → magenta→electric-blue, cream→near-ink, ink stays, acid-yellow→lime
-sunburn  → magenta→orange, cream stays, acid-yellow stays, ink stays
-```
+### 3. `src/components/ThemeSwitcher.tsx` (easter-egg dot)
+`Shift+T` cycles through `Object.keys(THEME_PRESETS)` — already dynamic, so new presets are picked up automatically. No code change needed beyond verifying.
 
-`applyTheme` will set `--magenta`, `--cream`, `--acid-yellow`, `--electric-blue`, `--orange`, `--lime`, `--ink` from the preset (falling back to the original defaults when a preset doesn't override that slot, so we never end up with broken contrast).
-
-Result: clicking Midnight in the switcher (or saving it in Admin) flips the entire homepage / events / about / nav from magenta-on-cream to electric-blue-on-near-ink in one go.
-
-### 2. Respect the CMS preset properly
-
-In `ThemeProvider`:
-- Always fetch `site_settings.theme` on mount.
-- If there's no localStorage override, apply the CMS preset.
-- If there is a localStorage override, still apply it — but stop ignoring CMS updates silently. Add an "RESET TO SITE THEME" action in the switcher so users can drop back to whatever the admin chose.
-- Subscribe to realtime changes on `site_settings` so admin saves propagate to open tabs without a refresh (small win — also lets us drop the "refresh to see changes" toast in Admin).
-
-### 3. Make the toggle a subtle easter egg
-
-Replace the current pinned card with a **tiny 10×10px ink dot** in the very bottom-left corner (`fixed bottom-2 left-2`), no border, no shadow, ~40% opacity, hover bumps to 100%. No tooltip. Clicking it opens the same preset menu as today but styled smaller and lighter. Keyboard discoverable too: `Shift + T` cycles presets.
-
-That way casual visitors won't notice it, but anyone curious enough to mouse into the corner finds it.
-
-### 4. Small Admin polish
-
-- After "SAVE THEME", apply the new preset locally immediately (don't wait for refresh) by clearing the user's localStorage override and re-running `applyTheme`.
-- Show a live preview swatch row at the top of the THEME tab using the preset's *full* remapped palette, so admins see what each option will do to the site before saving.
-
-## Files touched
-
-- `src/lib/theme.ts` — extend `ThemePreset` with full palette overrides; expand `applyTheme` to write `--magenta`, `--cream`, `--ink`, `--acid-yellow`, `--electric-blue`, `--orange`, `--lime` (with fallbacks to defaults).
-- `src/components/ThemeProvider.tsx` — always load CMS theme; add realtime subscription; expose `clearOverride()`.
-- `src/components/ThemeSwitcher.tsx` — redesign as a 10px easter-egg dot with a small popover; add `Shift+T` shortcut and "Reset to site theme" link.
-- `src/pages/Admin.tsx` — after save, clear local override + re-apply theme so admin sees the change instantly; update preset preview swatches to show full remapped palette.
-
-No DB migration, no edge function changes (the existing `admin-content` already persists `theme`).
+### 4. No DB migration
+`site_settings.theme` is JSONB and only stores `{ preset, overrides? }`. New preset IDs slot in without schema changes.
 
 ## Out of scope
+- Not copying the 🎨 floating switcher UI from the sister project — your current easter-egg dot stays.
+- Not changing the active site theme — admin picks which one is live.
 
-- Changing the existing palette classnames across components (not needed — the remap does it).
-- Per-page theme overrides.
-- Adding more than the existing three presets (default / midnight / sunburn).
+## Technical notes
+- All HSL values are copied verbatim from the source `PaletteSwitcher.tsx` (format: `"H S% L%"`).
+- Where the source preset doesn't distinguish a token (e.g. Linework uses black/white for everything), we map `brand → primary`, `accent → accent`, `surface → background`, `surface-alt → card`.
