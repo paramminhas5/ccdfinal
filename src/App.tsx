@@ -22,6 +22,7 @@ import MediaPage from "./pages/Media.tsx";
 import Press from "./pages/Press.tsx";
 import Playlists from "./pages/Playlists.tsx";
 import VideosPage from "./pages/Videos.tsx";
+import CatStudio from "./pages/CatStudio.tsx";
 import Embed from "./pages/Embed.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/press" element={<Press />} />
                 <Route path="/playlists" element={<Playlists />} />
                 <Route path="/videos" element={<VideosPage />} />
+                <Route path="/cat-studio" element={<CatStudio />} />
                 <Route path="/embed/upcoming" element={<Embed />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
