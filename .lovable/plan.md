@@ -1,93 +1,87 @@
-## Goal
+# Curated Events — Sprint 1 + Sprint 2
 
-Three things in one sprint:
+## The diagnosis
 
-1. **SEO 10×**: wire static prerendering + per-route OG images + Lighthouse fixes.
-2. **Events page**: move the "Host with us" strip to the bottom (under curated events).
-3. **Contact UX**: replace every `mailto:` CTA button on partner/artist/investor/press/venue pages with a typed-form dialog. Email addresses stay as a small "or email us directly" fallback link.
+The DB only has **9 rows**, all from `skillboxes`, 4 of them with `city = NULL`, **0 with images**, **0 featured**. Causes:
 
----
+1. **Cron is wrong**: only runs weekly Mondays 02:30, calls `curate-events` directly with default body `{source:"skillboxes", city:"bangalore"}` — that's why only Skillbox/Bangalore rows exist.
+2. **No image extraction**: AI tool schema in `curate-events/index.ts` doesn't request `image_url`, and Firecrawl is only asked for `markdown` (not metadata).
+3. **City NULLs**: pre-existing rows from before `city` was added to the upsert payload — never backfilled.
+4. **Nothing featured**: `is_featured` defaults to `false` and nothing ever flips it.
+5. **No dedupe across sources**: same event on Insider + Skillbox = two cards.
 
-## 1. Static prerendering (the big SEO win)
 
-Add `vite-plugin-prerender` (puppeteer-based) to `vite.config.ts` and prerender every static route:
 
-```text
-/, /events, /shop, /pets, /videos, /playlists, /media, /press, /about,
-/blog, /scene-guide-bangalore, /for-venues, /for-artists, /for-investors,
-/submit-event, /privacy, /terms, /cookies, /cat-studio
+### 1. Fix the cron
+
+Replace `curate-events-weekly` with a daily 02:00 UTC (07:30 IST) job that hits `scheduled-curate` (the orchestrator that loops all sources × cities and prunes stale rows).
+
+```sql
+SELECT cron.unschedule('curate-events-weekly');
+SELECT cron.schedule(
+  'scheduled-curate-daily', '0 2 * * *',
+  $$ SELECT net.http_post(
+       url := '<project>/functions/v1/scheduled-curate',
+       headers := jsonb_build_object('Authorization','Bearer <service_key>','Content-Type','application/json'),
+       body := '{}'::jsonb) $$);
 ```
 
-Dynamic routes (`/events/:slug`, `/blog/:slug`, `/shop/:handle`) get a small build-time crawler step that reads the published list from Supabase + `src/content/posts.ts` and feeds those URLs into the prerender list. Output goes to `dist/<route>/index.html` so Netlify/Cloudflare serves real HTML to bots, ChatGPT, LinkedIn, Slack, WhatsApp on first request.
+### 2. Pull images + better metadata in `curate-events`
 
-Result: meta tags + JSON-LD + first paint exist in the raw HTML → fixes the social-scraper gap and speeds Google indexation.
+- Add `screenshot` + `metadata` to the Firecrawl scrape formats so we get `og:image`.
+- Add `image_url` (and explicit `city` echo) to the AI tool schema; instruct AI to prefer the og:image / first hero image URL it sees in the markdown.
+- Fall back to `firecrawl.metadata.ogImage` if AI returns empty.
+- Persist `image_url` on the upsert row.
 
-## 2. Per-route OG images
+### 3. Backfill / clean existing rows
 
-Add a tiny build-time script `scripts/generate-og.mjs` that uses `@vercel/og` (or `satori` + `sharp`) to render a 1200×630 PNG per route from a template (title + eyebrow + brand colors + magenta/ink palette). Output to `public/og/<slug>.png`. `SEO.tsx` picks `og/<slug>.png` when present, falls back to current default.
+- One-shot SQL: `UPDATE curated_events SET city='bangalore' WHERE city IS NULL AND source='skillboxes';`
+- Force-run `scheduled-curate` once via `curl_edge_functions` to seed Mumbai, Delhi + all sources with images.
 
-## 3. Lighthouse / Core Web Vitals pass
+### 4. Auto-feature logic
 
-- Add `<link rel="preload" as="image" ...>` for the homepage hero image.
-- Add `loading="lazy"` + `decoding="async"` to all non-hero `<img>` (audit `Posts`, `Drops`, `Videos`, `CuratedEvents`, `EventDetail`, `BlogPost`, `ProductDetail`).
-- Add `width`/`height` attributes where missing to kill CLS.
-- Add `fetchpriority="high"` to LCP image on `Index`.
-- Move the YouTube iframe in `Videos` behind a "click to play" thumbnail (saves ~500KB JS on first load).
-- Add `<link rel="preconnect">` for `cdn.shopify.com` and the Supabase project URL.
+After each `scheduled-curate` run, in the orchestrator:
 
-## 4. Events page reorder
+- Clear `is_featured` on all auto rows (keep manual/community untouched).
+- Pick top 2 per city by: has `image_url` + soonest future `event_date` + non-null venue → set `is_featured = true`.
 
-In `src/pages/Events.tsx`: move the **HOST WITH US** `<section class="bg-ink ...">` from above `<CuratedEvents />` to **below** it, just before `<Footer />`. No other changes.
+### 5. URL dedupe across sources
 
-## 5. Replace `mailto:` partner CTAs with a typed contact dialog
+Add a uniqueness layer on `(lower(title), event_date, lower(coalesce(venue,'')))` — when collision, prefer the row with an image, then prefer Skillbox/Insider over aggregators. Implement as a post-upsert cleanup query in `scheduled-curate`.
 
-Build a new shared component `src/components/PartnerContactDialog.tsx`:
 
-- Triggered by a button (`<PartnerContactButton kind="venues" label="PARTNER WITH US →" />`).
-- Opens a `Dialog` (shadcn) with the same brutalist styling as `Contact.tsx`.
-- Fields: Name, Email, Phone (optional), Reason (preselected based on `kind`), Message.
-- `kind` → preselected reason + email-fallback link:
-  - `venues` → "Venue partnership" → venues@catscandance.com
-  - `artists` → "Artist booking" → artists@catscandance.com
-  - `investors` → "Investor enquiry" → invest@catscandance.com
-  - `press` → "Press / interview" → hello@catscandance.com?subject=Press
-  - `team` → "Join the pack — {role}" → hello@catscandance.com
-  - `submit-event` → "Submit an event" → hello@catscandance.com
-- Reason options inside the dialog let users override (dropdown).
-- Submits to the existing `contact-submit` edge function, prefixing the message with `[kind][reason]` so admin can filter in `Admin.tsx`.
-- Below the submit button: small "Or email us directly: artists@catscandance.com" plain `mailto:` link as the user requested.
 
-Update `contact-submit` edge function: extend the Zod schema to accept optional `phone`, `kind`, `reason` fields, and store them in the message body (no schema change needed to `contact_messages` — concatenate into `message`).
+### 6. Manual seed of "CCD Picks"
 
-### Files updated to use the dialog
+Insert ~6 hand-picked rows with `source='manual'` so the magenta CCD-pick cards aren't empty on day one. (You give me the list, or I seed plausible BLR placeholders you can edit in Admin.)
 
-- `src/pages/ForVenues.tsx` → "PARTNER WITH US"
-- `src/pages/ForArtists.tsx` → "PLAY WITH US" / equivalent CTA
-- `src/pages/ForInvestors.tsx` → "INVEST WITH US"
-- `src/pages/Press.tsx` → "PRESS ENQUIRY"
-- `src/pages/SubmitEvent.tsx` → the inline "Email us" text becomes the dialog
-- `src/components/Team.tsx` → each role's "apply" button + the bottom "say hi anyway" link
-- `src/components/Footer.tsx` → keep the simple `mailto:` link (it's a link, not a CTA — user said that's fine)
-- `src/pages/Admin.tsx` → leave the admin inbox `mailto:` links (internal tool)
-- `src/pages/Privacy.tsx`, `Terms.tsx`, `Cookies.tsx` → leave (legal-text inline links, user said that's fine)
+### 7. Admin: feature toggle + image override
 
-## 6. Sitemap regeneration
+`Admin.tsx` already lists curated events — add:
 
-Add `scripts/generate-sitemap.mjs` (runs in `prebuild`) that pulls events from Supabase + posts from `src/content/posts.ts` and rewrites `public/sitemap.xml` + `public/rss.xml` automatically. No more drift.
+- ⭐ toggle button per row → calls `admin-curated-events` to flip `is_featured`.
+- Image URL text input per row (override broken/missing scrapes).
+- "Run scraper now" button → POSTs to `scheduled-curate` with admin password.
 
----
+### 8. Empty-state copy fix
+
+`CuratedEvents.tsx` says "refreshed weekly" — change to "refreshed daily" once cron is daily.
+
+### 9. Genre normalization
+
+AI returns inconsistent genres ("techno", "Techno", "tech-house"). Lowercase + map to the 8 filter buckets server-side before insert so the genre filter actually matches things.
 
 ## Technical notes
 
-- Prerender plugin: `vite-plugin-prerender` requires `puppeteer`; we'll pin to a small Chromium and only run during `vite build`. Local `vite dev` is unchanged.
-- The dialog uses existing shadcn `Dialog` — no new deps.
-- `contact-submit` change is backwards-compatible (new fields all optional).
-- Per-route OG generation runs in `prebuild`; cached via file mtime so rebuilds are fast.
+- `scheduled-curate` already prunes events older than 30 days and skips `is_featured` rows — keep that.
+- `curate-events` `extractWithAI` truncates page to 6000 chars — bump to 9000 so og:image lines aren't cut off.
+- pg_cron + pg_net are already enabled (existing `curate-events-weekly` proves it).
+- All edits are in `supabase/functions/curate-events/index.ts`, `supabase/functions/scheduled-curate/index.ts`, `supabase/functions/admin-curated-events/index.ts`, `src/pages/Admin.tsx`, `src/components/CuratedEvents.tsx`, plus 2 SQL ops (cron reschedule + city backfill) and one manual scraper invocation.
 
-## Files touched
+## Out of scope (flag for later)
 
-**New**: `src/components/PartnerContactDialog.tsx`, `src/components/PartnerContactButton.tsx`, `scripts/generate-og.mjs`, `scripts/generate-sitemap.mjs`, `scripts/prerender-routes.mjs`
+- Per-city featured carousels.
+- Saving event to user's calendar.
+- Genre auto-tagging via AI re-classification of historical rows.
 
-**Modified**: `vite.config.ts`, `package.json`, `index.html`, `src/components/SEO.tsx`, `src/pages/Events.tsx`, `src/pages/ForVenues.tsx`, `src/pages/ForArtists.tsx`, `src/pages/ForInvestors.tsx`, `src/pages/Press.tsx`, `src/pages/SubmitEvent.tsx`, `src/components/Team.tsx`, `src/components/Videos.tsx`, `src/components/Posts.tsx`, `src/components/Drops.tsx`, `src/components/CuratedEvents.tsx`, `supabase/functions/contact-submit/index.ts`, `public/sitemap.xml`, `public/rss.xml`
-
-Approve and I'll wire it all up in one go.
+Approve and I'll execute end-to-end in one pass.
