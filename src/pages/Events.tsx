@@ -107,21 +107,7 @@ const Events = () => {
         <section className="container py-12 md:py-16">
           <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Events" }]} />
 
-          {/* Stats strip */}
-          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-12">
-            {[
-              { n: "24", l: "NIGHTS THROWN", bg: "bg-electric-blue", text: "text-cream" },
-              { n: "3", l: "CITIES", bg: "bg-acid-yellow", text: "text-ink" },
-              { n: "6K+", l: "DANCERS", bg: "bg-cream", text: "text-ink" },
-            ].map((s) => (
-              <div key={s.l} className={`${s.bg} ${s.text} border-4 border-ink chunk-shadow p-4 md:p-6 text-center`}>
-                <p className="font-display text-3xl md:text-6xl leading-none">{s.n}</p>
-                <p className="font-display text-xs md:text-base mt-2">{s.l}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid gap-6 max-w-4xl">
+          <div className="grid gap-6 max-w-4xl mt-8">
             {all.map((e, i) => {
               const upcomingPalette = [
                 { bg: "bg-magenta", text: "text-cream", chip: "bg-acid-yellow text-ink" },

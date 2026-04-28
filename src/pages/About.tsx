@@ -31,12 +31,14 @@ const About = () => (
     <Nav />
     <PageHero
       eyebrow="ABOUT"
-      title={<>AT THE INTERSECTION OF<br/>MUSIC, FASHION & PETS.</>}
+      title="MUSIC. FASHION. PETS."
       bg="bg-magenta"
       textColor="text-cream"
       eyebrowColor="text-acid-yellow"
       shadowColor="hsl(var(--ink))"
-    />
+    >
+      <p className="text-cream/90 font-display text-2xl md:text-3xl mt-2">A CULTURE BRAND FROM BANGALORE.</p>
+    </PageHero>
 
     {/* Mission */}
     <section className="bg-cream border-b-4 border-ink py-12 md:py-20 bg-grain">

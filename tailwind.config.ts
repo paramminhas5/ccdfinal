@@ -22,6 +22,13 @@ export default {
         lime: "hsl(var(--lime))",
         orange: "hsl(var(--orange))",
         magenta: "hsl(var(--magenta))",
+        // Semantic theme tokens (CMS-driven)
+        brand: "hsl(var(--brand))",
+        accent: "hsl(var(--accent))",
+        surface: "hsl(var(--surface))",
+        "surface-alt": "hsl(var(--surface-alt))",
+        "on-brand": "hsl(var(--on-brand))",
+        "on-surface": "hsl(var(--on-surface))",
         primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
         secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
         destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },

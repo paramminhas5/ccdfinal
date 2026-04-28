@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
       if (payload?.featured_playlist_id !== undefined) updates.featured_playlist_id = payload.featured_playlist_id ?? null;
       if (payload?.seo_verifications !== undefined) updates.seo_verifications = payload.seo_verifications ?? {};
       if (payload?.marquees !== undefined) updates.marquees = Array.isArray(payload.marquees) ? payload.marquees : [];
+      if (payload?.theme !== undefined) updates.theme = payload.theme ?? {};
+      if (payload?.home_content !== undefined) updates.home_content = payload.home_content ?? {};
       const { error } = await supabase.from("site_settings").upsert(updates);
       if (error) return json({ error: error.message }, 500);
       return json({ ok: true });

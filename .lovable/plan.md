@@ -1,60 +1,107 @@
-# Nav + Copy + Color Refresh
+# Design system + theming + content CMS
 
-## 1. Nav — bring back "More" on desktop
+Three things, in order of effort:
 
-In `src/components/Nav.tsx`:
+## 1. Quick fixes (events stats + about tagline)
 
-- Add a new `moreLinks` array: **Videos** (`/videos`), **Playlists** (`/playlists`), **Pets** (`/pets`), **Blog** (`/blog`).
-- Render a second `<Dropdown label="More" links={moreLinks} … />` on the desktop list, right after the Partners dropdown.
-- Mobile menu already flattens via `mobileLinks`; extend it to include the new "More" links so mobile parity is kept (Cat Studio / Press / Media stay in the footer as agreed).
+`**src/pages/Events.tsx**` — Remove the stats grid (NIGHTS THROWN / CITIES / DANCERS). We've only thrown one event so it's misleading. Keep the magenta hero, the acid-yellow marquee strip, and the events list.
 
-## 2. About — headline + background
+`**src/pages/About.tsx**` — Shorten the hero:
 
-`src/components/About.tsx` (homepage section) and `src/pages/About.tsx`:
+- Current: "AT THE INTERSECTION OF MUSIC, FASHION & PETS." (two lines, mouthful)
+- New: **"MUSIC. FASHION. PETS."** with kicker "A culture brand from Bangalore."
 
-- Change the homepage About headline from "A CULTURE FOR PEOPLE WHO MOVE." — keep that as the lead. Change the `/about` page hero title from "WE THROW PARTIES. WE BUILD CULTURE." to something truer to the brand:
-  - New hero title: **"AT THE INTERSECTION OF MUSIC, FASHION AND PETS""**
-  - Eyebrow stays `ABOUT`.
-- Background swap on `/about`:
-  - Hero: switch from `bg-cream` to `bg-magenta` with `text-cream` (eyebrow `text-acid-yellow`, shadow ink) — gives the page an immediate identity instead of beige-on-beige.
-  - Mission section: keep `bg-cream` (good for long-form reading).
-  - "What we do" strip: change from `bg-electric-blue` to `bg-ink` with cream text so the three colored pillar cards (magenta / acid-yellow / lime) pop against black instead of fighting the blue.
-  - Re-check the color-rotation rule (`mem://design/color-rotation`) so no marquee neighbors share a bg — the existing `bg-acid-yellow` marquee before Team is fine because Team renders on cream.
+## 2. Lock down a real design system
 
-## 3. Videos — kill the lime green
+Right now colors, shadows, and type sit half in `index.css`, half hardcoded in components (`bg-magenta`, `bg-electric-blue`, etc). Before we can theme anything, we need one source of truth.
 
-`src/components/Videos.tsx` (homepage "WATCH THE TAPES" section):
+**New file `src/lib/theme.ts**` — single object exporting semantic tokens:
 
-- Change section bg from `bg-lime` to `bg-ink` with `text-cream`.
-- Eyebrow stays magenta. Headline becomes `text-cream` with `drop-shadow-[5px_5px_0_hsl(var(--magenta))]` so it still feels punchy.
-- "ALL VIDEOS" button: switch to `bg-acid-yellow text-ink` (currently cream-on-cream-ish next to lime).
-- Update fallback skeleton bg in `src/pages/Index.tsx` from `bg-lime` to `bg-ink` so the lazy fallback matches.
-- Update color-rotation memory note: Videos is now ink, so adjacent marquees (`above-videos`, `above-playlist`) must not be ink — confirm defaults, adjust in Admin → MARQUEES if needed (no code change required since marquees are CMS-driven; just verify defaults in the seeded `site_settings.marquees`).
+```text
+brand            → primary brand color (currently magenta)
+accent           → secondary highlight (currently acid-yellow)
+surface          → light section bg (cream)
+surface-alt      → dark section bg (ink)
+text-on-brand    → text color over brand
+text-on-surface  → text color over surface
+shadow           → chunk shadow color (ink)
+```
 
-## 4. Events page — make it less generic
+`**src/index.css**` — add semantic CSS vars (`--brand`, `--accent`, `--surface`, `--surface-alt`, `--on-brand`, `--on-surface`) that map to the raw palette. Keep the raw palette (magenta, acid-yellow, lime, electric-blue, ink, cream) as-is so existing components keep working.
 
-`src/pages/Events.tsx`:
+`**tailwind.config.ts**` — register the new semantic colors (`brand`, `accent`, `surface`, `surface-alt`) alongside existing ones.
 
-- **Hero**: switch `bg-lime` → `bg-magenta` with `text-cream`, eyebrow `text-acid-yellow`, add chunky shadow back. New title: **"NIGHTS THAT MOVE."** with a kicker line "Underground. Loud. Ours." The current "Every drop, every floor, every city." copy moves below as supporting text.
-- **Playful flourishes**:
-  - Add a thin `Marquee` strip directly under the hero with items like `["DOORS OPEN LATE", "BRING YOUR PACK", "NO DRESS CODE — MOVE", "SOLD-OUT IS A LOVE LANGUAGE"]` on `bg-acid-yellow`.
-  - Add a small "STATS" row above the events grid: 3 chunky tiles (events thrown, cities, dancers through the door) using existing `bg-electric-blue` / `bg-acid-yellow` / `bg-cream` brutalist cards. Numbers can be hardcoded for now (e.g. 24 / 3 / 6,000+).
-  - Replace the plain alternating cream/magenta event cards with a rotating palette: cycle `bg-magenta`, `bg-electric-blue`, `bg-acid-yellow` (text-ink for yellow, text-cream for the others) by index for upcoming events; past events stay muted on cream.
-  - Add a small rotated sticker ("LATE NIGHT ✦") absolutely positioned on each upcoming card for personality.
-- **Closing strip** before `CuratedEvents`: a `bg-ink text-cream` band with "WANT TO HOST ONE? →" linking to `/for-venues`.
-- Keep `CuratedEvents` as-is (already a different vibe).
+**Documented usage rule** (added to `mem://design/` and a short README block): new sections use semantic tokens (`bg-brand`, `bg-surface`); raw palette colors stay allowed for accent flourishes only. We'll migrate components opportunistically — not in a big-bang refactor.
 
-## 5. Color rhythm sanity pass
+## 3. Theme presets + content editor in Admin
 
-After the changes, walk the page stacks and confirm no two adjacent sections share a `bg-*`:
+### 3a. Schema (one migration)
 
-- Homepage: Hero(ink) → marquee → About(cream) → marquee → Events(cream) → marquee → Videos(**ink**) → marquee(must not be ink) → Playlist(magenta) → … (existing).
-- About page: Hero(**magenta**) → Mission(cream) → What(**ink**) → marquee(acid-yellow) → Team(cream).
-- Events page: Hero(**magenta**) → marquee(acid-yellow) → Stats strip(cream) → events grid(cream container, varied cards) → host-strip(ink) → CuratedEvents.
+Add to `site_settings`:
+
+- `theme jsonb default '{}'` — `{ preset: "default", overrides: { brand: "0 72% 51%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%" } }`
+- `home_content jsonb default '{}'` — editable copy for hero + key sections (see below)
+
+No data migration needed; defaults handle empty rows.
+
+### 3b. Theme presets
+
+Three starter presets defined in `src/lib/theme.ts`:
+
+```text
+default   — magenta + acid-yellow + cream + ink (current)
+midnight  — electric-blue + lime + ink + cream (dark-first)
+sunburn   — orange + acid-yellow + cream + ink (warm)
+```
+
+**Runtime application** — new `src/components/ThemeProvider.tsx` wraps the app in `App.tsx`:
+
+1. Reads `site_settings.theme` once on mount.
+2. Applies `--brand`, `--accent`, `--surface`, `--surface-alt`, `--on-brand`, `--on-surface` to `:root` via `style.setProperty`.
+3. Falls back to default preset if the row is empty.
+
+### 3c. Editable home content
+
+Move hardcoded strings out of `src/pages/Index.tsx` / `src/components/Hero.tsx` into `home_content`:
+
+```text
+hero.kicker     hero.title       hero.subtitle    hero.ctaLabel    hero.ctaHref
+about.kicker    about.title      about.body
+cta.title       cta.body         cta.label        cta.href
+```
+
+A new hook `src/hooks/useHomeContent.ts` fetches and caches; components read with sensible fallbacks so the site never breaks if a field is empty.
+
+### 3d. Admin tabs
+
+Extend `src/pages/Admin.tsx` and `supabase/functions/admin-content/index.ts`:
+
+**New "THEME" tab**
+
+- Preset picker (3 cards — click to apply).
+- Color overrides: 4 swatches (brand / accent / surface / surface-alt) with HSL inputs and a live preview tile.
+- "Reset to preset" button.
+
+**New "HOMEPAGE" tab**
+
+- Form fields for each `home_content` key above (text inputs + textareas).
+- Save writes `home_content` jsonb in one upsert.  
+  
+
+
+Both tabs use the existing admin-password edge function pattern — extend the `settings` upsert handler to accept `theme` and `home_content` payloads.
+
+## NEW theme switch button in frontend. - add a subtle and cool theme switch button as well.   
+  
+Out of scope (call out so we don't sprawl)
+
+- Full migration of every component to semantic tokens (we'll do it as we touch each one).
+- Per-page theming (themes are site-wide for now).
+- Font swapping in the theme editor (display + body fonts stay locked to Bowlby One + Space Grotesk).
 
 ## Technical notes
 
-- All color tokens referenced (`bg-magenta`, `bg-ink`, `bg-acid-yellow`, `bg-electric-blue`, `bg-lime`, `bg-cream`, `text-ink`, `text-cream`) already exist in `tailwind.config.ts` / `src/index.css`.
-- No DB migrations needed. Marquee defaults can be tweaked through the existing Admin → MARQUEES UI; we will only update the seed defaults in `site_settings.marquees` if a neighbor color clash is found after the Videos recolor.
-- Files touched: `src/components/Nav.tsx`, `src/components/About.tsx`, `src/pages/About.tsx`, `src/components/Videos.tsx`, `src/pages/Index.tsx`, `src/pages/Events.tsx`, and `mem://design/color-rotation` (memory update only).
-- No new dependencies, no edge function changes.
+- Theme application happens client-side after fetch; to avoid a flash, we keep the default preset baked into `:root` in `index.css` so first paint matches the default until/unless an override loads.
+- `home_content` and `theme` both live on the single `site_settings` row (`id = 'main'`) — same pattern as `marquees`.
+- Edge function: extend the existing `settings` upsert branch, no new function needed.
+- Memory update: add a `mem://design/tokens` note documenting the semantic token rule once shipped.

@@ -2,9 +2,11 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import catDancer from "@/assets/cat-dancer.svg";
+import { useHomeContent } from "@/hooks/useHomeContent";
 
 const About = () => {
   const ref = useRef<HTMLDivElement>(null);
+  const { about } = useHomeContent();
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
 
@@ -27,19 +29,18 @@ const About = () => {
     >
       <div className="container grid md:grid-cols-2 gap-6 md:gap-10 items-center">
         <div>
-          <p className="font-display text-magenta text-xl sm:text-2xl md:text-3xl mb-3 md:mb-4">/ THE BRAND</p>
+          <p className="font-display text-magenta text-xl sm:text-2xl md:text-3xl mb-3 md:mb-4">{about?.kicker}</p>
           <h2 className="font-display text-ink leading-[0.95] mb-5 md:mb-6 break-words text-[2rem] sm:text-5xl md:text-6xl">
-            A CULTURE FOR PEOPLE WHO MOVE.
+            {about?.title}
           </h2>
           <p className="text-ink/80 text-base sm:text-lg md:text-xl font-medium mb-6 max-w-xl">
-            Cats Can Dance is dance music, pet culture and streetwear in one club.
-            Drops, parties, playlists and a community that shows up.
+            {about?.body}
           </p>
           <Link
-            to="/about"
+            to={about?.ctaHref || "/about"}
             className="inline-block bg-ink text-cream font-display text-base sm:text-lg px-5 sm:px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
           >
-            READ THE STORY →
+            {about?.ctaLabel}
           </Link>
         </div>
 

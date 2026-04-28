@@ -47,6 +47,11 @@ type Settings = {
   featured_playlist_id: string | null;
   seo_verifications?: Verifications;
   marquees?: MarqueeConfig[];
+  theme?: { preset?: string; overrides?: Record<string, string> };
+  home_content?: {
+    about?: { kicker?: string; title?: string; body?: string; ctaLabel?: string; ctaHref?: string };
+    cta?: { title?: string; body?: string; label?: string; href?: string };
+  };
 };
 type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 type EventRow = {
@@ -236,6 +241,8 @@ const Admin = () => {
               playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
               seo_verifications: s.settings.seo_verifications ?? {},
               marquees: mergeMarquees(s.settings.marquees),
+              theme: s.settings.theme ?? { preset: "default" },
+              home_content: s.settings.home_content ?? {},
             }
           : null
       );
@@ -464,6 +471,8 @@ const Admin = () => {
                 <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
                 <TabsTrigger value="marquees" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MARQUEES</TabsTrigger>
+                <TabsTrigger value="theme" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">THEME</TabsTrigger>
+                <TabsTrigger value="homepage" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">HOMEPAGE</TabsTrigger>
                 <TabsTrigger
                   value="rsvps"
                   onClick={() => { if (!rsvpsLoaded) loadRsvps(); }}
@@ -877,7 +886,173 @@ const Admin = () => {
                 </div>
               </TabsContent>
 
-              {/* RSVPS */}
+              {/* THEME */}
+              <TabsContent value="theme">
+                <p className="text-ink/70 font-medium mb-4">
+                  Pick a preset or override individual colors. Saves apply to every visitor (overrides their local choice on next visit).
+                </p>
+                <div className="grid sm:grid-cols-3 gap-4 mb-6">
+                  {(["default", "midnight", "sunburn"] as const).map((id) => {
+                    const tokens: Record<string, { brand: string; accent: string; surface: string; surfaceAlt: string; label: string; desc: string }> = {
+                      default: { brand: "0 72% 51%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%", label: "DEFAULT", desc: "Magenta · acid · cream · ink" },
+                      midnight: { brand: "221 83% 53%", accent: "142 76% 73%", surface: "222 47% 8%", surfaceAlt: "222 47% 4%", label: "MIDNIGHT", desc: "Electric · lime · ink" },
+                      sunburn: { brand: "21 90% 53%", accent: "84 81% 56%", surface: "20 6% 90%", surfaceAlt: "222 47% 4%", label: "SUNBURN", desc: "Orange · acid · cream" },
+                    };
+                    const t = tokens[id];
+                    const active = (settings?.theme?.preset ?? "default") === id;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => settings && setSettings({ ...settings, theme: { preset: id } })}
+                        className={`text-left bg-cream border-4 border-ink chunk-shadow p-4 transition-transform hover:-translate-y-1 ${active ? "ring-4 ring-magenta" : ""}`}
+                      >
+                        <div className="flex gap-1 mb-3">
+                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.brand})` }} />
+                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.accent})` }} />
+                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.surface})` }} />
+                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.surfaceAlt})` }} />
+                        </div>
+                        <p className="font-display text-xl text-ink">{t.label}</p>
+                        <p className="text-ink/70 text-sm">{t.desc}</p>
+                        {active && <p className="font-display text-xs text-magenta mt-2">★ ACTIVE</p>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="bg-cream border-4 border-ink chunk-shadow p-4 mb-4">
+                  <p className="font-display text-ink mb-3">COLOR OVERRIDES (HSL — e.g. <code>0 72% 51%</code>)</p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {(["brand", "accent", "surface", "surfaceAlt", "onBrand", "onSurface"] as const).map((k) => {
+                      const v = settings?.theme?.overrides?.[k] ?? "";
+                      return (
+                        <div key={k}>
+                          <label className="block font-display text-xs text-ink/70 mb-1">{k.toUpperCase()}</label>
+                          <div className="flex gap-2">
+                            <span className="w-10 h-10 border-2 border-ink shrink-0" style={{ background: v ? `hsl(${v})` : "transparent" }} />
+                            <input
+                              value={v}
+                              placeholder="leave blank to use preset"
+                              onChange={(e) => {
+                                if (!settings) return;
+                                const next = { ...(settings.theme?.overrides ?? {}) };
+                                if (e.target.value.trim()) next[k] = e.target.value.trim();
+                                else delete next[k];
+                                setSettings({
+                                  ...settings,
+                                  theme: { preset: settings.theme?.preset ?? "default", overrides: next },
+                                });
+                              }}
+                              className="flex-1 bg-cream text-ink border-4 border-ink px-3 py-2 font-display text-sm"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      if (!settings) return;
+                      try {
+                        await callContent({
+                          method: "POST",
+                          body: JSON.stringify({
+                            type: "settings",
+                            action: "upsert",
+                            payload: { theme: settings.theme ?? { preset: "default" } },
+                          }),
+                        });
+                        toast.success("Theme saved — refresh to see changes");
+                      } catch {
+                        toast.error("Save failed");
+                      }
+                    }}
+                    className="bg-ink text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                  >
+                    💾 SAVE THEME
+                  </button>
+                  <button
+                    onClick={() => settings && setSettings({ ...settings, theme: { preset: settings.theme?.preset ?? "default" } })}
+                    className="bg-cream text-ink font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                  >
+                    RESET OVERRIDES
+                  </button>
+                </div>
+              </TabsContent>
+
+              {/* HOMEPAGE */}
+              <TabsContent value="homepage">
+                <p className="text-ink/70 font-medium mb-4">
+                  Edit copy that appears on the homepage. Leave a field blank to use the default.
+                </p>
+                <div className="space-y-6">
+                  <div className="bg-cream border-4 border-ink chunk-shadow p-4">
+                    <p className="font-display text-xl text-ink mb-3">ABOUT STRIP</p>
+                    {([
+                      { k: "kicker", label: "Kicker (e.g. / THE BRAND)", multiline: false },
+                      { k: "title", label: "Title", multiline: false },
+                      { k: "body", label: "Body", multiline: true },
+                      { k: "ctaLabel", label: "CTA label", multiline: false },
+                      { k: "ctaHref", label: "CTA link", multiline: false },
+                    ] as const).map((f) => {
+                      const val = (settings?.home_content?.about as any)?.[f.k] ?? "";
+                      const onChange = (v: string) => {
+                        if (!settings) return;
+                        setSettings({
+                          ...settings,
+                          home_content: {
+                            ...(settings.home_content ?? {}),
+                            about: { ...(settings.home_content?.about ?? {}), [f.k]: v },
+                          },
+                        });
+                      };
+                      return (
+                        <div key={f.k} className="mb-3">
+                          <label className="block font-display text-xs text-ink/70 mb-1">{f.label.toUpperCase()}</label>
+                          {f.multiline ? (
+                            <textarea
+                              value={val}
+                              onChange={(e) => onChange(e.target.value)}
+                              rows={3}
+                              className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-medium"
+                            />
+                          ) : (
+                            <input
+                              value={val}
+                              onChange={(e) => onChange(e.target.value)}
+                              className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-medium"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!settings) return;
+                      try {
+                        await callContent({
+                          method: "POST",
+                          body: JSON.stringify({
+                            type: "settings",
+                            action: "upsert",
+                            payload: { home_content: settings.home_content ?? {} },
+                          }),
+                        });
+                        toast.success("Homepage content saved");
+                      } catch {
+                        toast.error("Save failed");
+                      }
+                    }}
+                    className="bg-ink text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                  >
+                    💾 SAVE HOMEPAGE
+                  </button>
+                </div>
+              </TabsContent>
+
+
               <TabsContent value="rsvps">
                 <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
                   <div className="flex flex-wrap items-end gap-3">
