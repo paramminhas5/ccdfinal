@@ -235,6 +235,7 @@ const Admin = () => {
               ...s.settings,
               playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
               seo_verifications: s.settings.seo_verifications ?? {},
+              marquees: mergeMarquees(s.settings.marquees),
             }
           : null
       );
