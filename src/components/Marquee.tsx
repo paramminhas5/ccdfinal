@@ -1,4 +1,4 @@
-const items = [
+const defaultItems = [
   "DANCE MUSIC 🎧",
   "PET CULTURE 🐾",
   "STREETWEAR 👕",
@@ -13,16 +13,19 @@ const Marquee = ({
   bg = "bg-acid-yellow",
   reverse = false,
   size = "sm",
+  items,
 }: {
   bg?: string;
   reverse?: boolean;
   size?: Size;
+  items?: string[];
 }) => {
-  const loop = [...items, ...items, ...items];
+  const list = items && items.length ? items : defaultItems;
+  const loop = [...list, ...list, ...list];
   const isLg = size === "lg";
-  const padding = isLg ? "py-4 md:py-8" : "py-3 md:py-5";
-  const text = isLg ? "text-3xl md:text-7xl" : "text-xl md:text-4xl";
-  const gap = isLg ? "gap-10 md:gap-16" : "gap-8 md:gap-12";
+  const padding = isLg ? "py-2 md:py-4" : "py-1.5 md:py-2.5";
+  const text = isLg ? "text-2xl md:text-5xl" : "text-base md:text-2xl";
+  const gap = isLg ? "gap-8 md:gap-12" : "gap-6 md:gap-10";
   return (
     <div className={`${bg} border-y-4 border-ink ${padding} overflow-hidden`}>
       <div className={`flex ${gap} whitespace-nowrap marquee marquee-speed ${reverse ? "[animation-direction:reverse]" : ""}`}>
