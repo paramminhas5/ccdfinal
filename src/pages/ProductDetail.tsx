@@ -216,6 +216,28 @@ const ProductDetail = () => {
             </div>
           )}
         </section>
+
+        {/* Internal linking — more from CCD */}
+        <section className="border-t-4 border-ink bg-acid-yellow py-12 md:py-16">
+          <div className="container">
+            <p className="font-display text-magenta text-base md:text-lg mb-4">/ MORE FROM CATS CAN DANCE</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Link to="/shop" className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+                <p className="font-display text-ink text-2xl mb-1">SEE ALL CCD STREETWEAR →</p>
+                <p className="text-ink/70 text-sm font-medium">Limited drops, no restocks. Bangalore-made.</p>
+              </Link>
+              <Link to="/pets" className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+                <p className="font-display text-ink text-2xl mb-1">PET DROPS & TREATS →</p>
+                <p className="text-ink/70 text-sm font-medium">Cat bandanas, bucket hats, CCD treats.</p>
+              </Link>
+              <Link to="/events" className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+                <p className="font-display text-ink text-2xl mb-1">UPCOMING EPISODES →</p>
+                <p className="text-ink/70 text-sm font-medium">RSVP an underground night in Bangalore.</p>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <Footer />
       </main>
     </>
