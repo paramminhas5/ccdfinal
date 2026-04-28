@@ -1,66 +1,135 @@
-# Fixes: About page, home order, nav dropdown, copy + disco ball
+# Compact, contextual, and clearer — site-wide pass
 
-## 1. /about — remove "Who We Are" red hero, route to current What
+A coordinated pass to reduce visual weight, fix specific issues, and tighten the storytelling flow across pages.
 
-The About page currently opens with a magenta `PageHero` ("WHO WE ARE.") followed by `Why → What → Team → WhyNow`. The user wants clicking About to land directly on the current `What` content (the "four engines" section), with the red Who-We-Are intro page gone.
+---
 
-**Edit `src/pages/About.tsx`:**
-- Remove the `<PageHero …>` block entirely (and the `PageHero` import).
-- Reorder so `What` is the first section: `What → Why → Team → WhyNow` (Marquee between What and Why).
-- `What` already has its own eyebrow/title ("/ WHAT — A CULTURE BRAND WITH FOUR ENGINES.") so no extra heading needed. Add `pt-32 md:pt-40` wrapper (or pass extra top padding) so the fixed nav doesn't overlap the first line — simplest: wrap `<What />` in a `<div className="pt-24 md:pt-28">` for breathing room, OR bump `What`'s `py-24 md:py-32` to `pt-32 md:pt-40 pb-24 md:pb-32`. Use the wrapper approach to avoid changing `What.tsx`.
+## 1. Contextual marquees (not one generic ticker)
 
-## 2. Home — move Events + Videos above Playlist
+Today `Marquee.tsx` has a single shared word list (`DANCE MUSIC / PET CULTURE / STREETWEAR / EXPERIENCES / DROPS / COMMUNITY`) used between every section.
 
-In `src/pages/Index.tsx`, current order under About is: Playlist → Events → Drops → Instagram → Videos → EarlyAccess.
+Change: accept an `items?: string[]` prop and place a marquee tuned to the section that follows (or precedes) it.
 
-New order: **Events → Videos → Playlist → Drops → Instagram → EarlyAccess**.
+Examples:
+- Before **About**: `WHO WE ARE · BANGALORE · UNDERGROUND · A CULTURE BRAND ·`
+- Before **Events**: `EPISODE 01 · EPISODE 02 · CATCH US LIVE · BANGALORE · RSVP NOW ·`
+- Before **Videos**: `WATCH THE TAPES · LIVE SETS · RECAPS · YOUTUBE ·`
+- Before **Playlist**: `NOW SPINNING · DANCE MUSIC · LATE NIGHT · WAREHOUSE ·`
+- Before **Drops**: `STREETWEAR · LIMITED · MERCH · PET DROPS ·`
+- Before **Instagram**: `@CATSCANDANCE · LATEST · BTS ·`
+- Before **EarlyAccess**: `JOIN THE PACK · EARLY ACCESS · DON'T MISS A DROP ·`
 
-Edit `src/pages/Index.tsx`:
-- Move `<SectionReveal><Events /></SectionReveal>` and the `Suspense`-wrapped `Videos` to come right after the About marquee.
-- Then Playlist, Drops, Instagram, EarlyAccess in that order.
-- Keep marquees but rearrange so background colors still alternate (e.g. After About marquee → Events → `bg-orange` marquee → Videos → Playlist → Drops → Instagram → `bg-acid-yellow` marquee → EarlyAccess).
+Default (no prop) keeps the existing list so other pages don't break.
 
-## 3. "More" dropdown — add Playlists
+## 2. Compact everything — less scroll on every screen
 
-In `src/components/Nav.tsx`, `moreLinks` currently has Pets, Media, Blog, Press. The user expects Playlists too.
+Reduce vertical rhythm and headline scale across home + page sections (mobile and desktop):
 
-There is no `/playlists` route. Easiest: add an entry that scrolls to the home `#playlist` section.
-- Add `{ to: "/#playlist", label: "Playlists" }` to `moreLinks`.
-- The `Dropdown` uses `RouterNavLink` which doesn't smooth-scroll to hashes after navigation. Add a small `onClick` handler in the dropdown item: if the `to` contains `#`, `e.preventDefault()`, navigate to `/`, then `setTimeout(() => document.getElementById("playlist")?.scrollIntoView({ behavior: "smooth" }), 80)`. Mirror the existing `goToEarlyAccess` pattern.
+- Section padding: `py-24 md:py-32` → `py-12 md:py-20`. Apply in `Hero` button band, `What`, `Why`, `Team`, `Videos`, `Playlist`, `Drops`, `Instagram`, `EarlyAccess`, `Events`, `WhyNow`.
+- Hero headline: `text-[18vw] md:text-[14vw]` → `text-[15vw] md:text-[11vw]`; adjust DJ cat sizing so it doesn't swallow the screen.
+- Section H2s: `text-6xl md:text-8xl` → `text-4xl md:text-6xl`. Eyebrow `text-2xl md:text-3xl` → `text-lg md:text-xl`.
+- Marquee: `py-3 md:py-5` → `py-2 md:py-3`; large variant smaller too.
+- Card grids: tighten `gap-6 mt-16` → `gap-4 mt-8`.
+- Lazy `SectionFallback` height: `min-h-[400px]` → `min-h-[220px]`.
 
-## 4. Copy fix on /for-artists
+Net effect: significantly less scrolling, tighter pacing, same content.
 
-In `src/pages/ForArtists.tsx` line 39, replace:
-- `"a content drop, a community moment and a repeat booking."`
-- with: `"a content drop, a community moment and people want to experience again."`
+## 3. Disco ball — center + drop lower on mobile
 
-(The user said "Replace 'and a repeat booking' with 'people want to experience again'".)
+In `Hero.tsx`, the wrapper that scales `DiscoBall` with `scale-75 md:scale-100 origin-top` doesn't reposition. The ball's own container is `top-0 left-1/2 -translate-x-1/2`.
 
-## 5. Disco ball on disco mode (mobile + everywhere)
+Change: pass a `mobileOffsetY` to `DiscoBall` (or wrap with `top-[12vh] md:top-0` and ensure `left: 50%` centering wins on mobile). Result: on phones the rod + ball start ~12vh down and stay center-aligned, not clipped under the fixed nav.
 
-Currently in `src/components/Hero.tsx` line 84: `{disco && !isMobile && <DiscoBall />}` — disco ball is suppressed on mobile. The user explicitly asked to "Add the disco ball on disco mode."
+## 4. Three Worlds — better visual story
 
-- Drop the `!isMobile` guard so the ball appears on mobile too: `{disco && <DiscoBall />}`.
-- Scale `DiscoBall` slightly smaller on mobile via a `className` prop or wrap it in a `scale-75 md:scale-100` container so it doesn't crowd the small viewport.
+Currently `Why.tsx` shows two stacked headline lines and a left-side paragraph mentioning the three worlds inline — visually flat for the most important idea.
 
-## 6. Color collisions on links/logo
+New layout (still in `Why.tsx`, electric-blue bg):
+- Eyebrow `/ WHY` + tighter headline `THREE WORLDS. ONE ECOSYSTEM.`
+- A 3-tile row (stack on mobile) — each tile is a chunky card with an emoji/SVG, color, and one line:
+  - **DANCE MUSIC** — magenta, vinyl glyph, "Nights people remember."
+  - **PET CULTURE** — acid-yellow, paw glyph, "The internet's favorite obsession."
+  - **STREETWEAR** — cream, shirt glyph, "Pieces you actually wear."
+- Below: a single ink "ecosystem" strip that visually fuses them — three colored dots merging into a magenta star with the line "ONE AUDIENCE · URBAN · GEN Z & MILLENNIAL".
+- The 4-bullet list (`bullets`) becomes a compact 2x2 chip grid below, not a tall column.
 
-The user reports cases where link text or logo are invisible because they match the background. Inspect and fix the two known offenders:
+This makes "three worlds → one ecosystem" the literal visual.
 
-a) **Nav at top of `/about`** — when not scrolled, nav uses `text-cream` on `bg-transparent`. Old About had a magenta hero so cream text read fine. After removing the PageHero (step 1), the first section is `What` on `bg-cream` → cream nav text on cream bg = invisible until scroll.
-- Fix: make the nav default to scrolled-style coloring on the About page (and any page whose first section is cream). Simplest universal fix: set `setScrolled(true)` initial state on routes whose first section is light, OR detect first section background.
-- Cleaner: change Nav to read a `data-nav-theme` attribute on `<body>` or accept a prop. Minimal change: in `Nav.tsx`, if `location.pathname === "/about"`, treat as `scrolled = true` always (force ink/cream-bg styling). Apply same to any other page with a light first section if discovered.
+## 5. Team / Co-founders
 
-b) **CCD logo** — in `Nav.tsx` line 143 the logo is inverted to white when `!scrolled`. On a cream first section it'd be invisible. Tying logo invert to the same `scrolled` flag fix above resolves it.
+Replace the four-generic-roles grid in `Team.tsx` with two co-founder cards + a "join the pack" CTA grid:
 
-c) **Audit pass** — quick visual check of `/about` (now What-first), `/blog`, `/media`, `/press`, `/pets` for the same nav-on-light-bg issue. Apply the same forced-scrolled treatment to any page that opens on a non-dark background.
+Co-founders (2-up, larger cards):
+- **Param Minhas** — Co-founder
+- **Satwik Harisenany** — Co-founder
 
-## Files touched
+(Roles/short bios left as TBD placeholders the user can fill in.)
 
-- `src/pages/About.tsx` — remove PageHero, reorder sections, add top padding wrapper.
-- `src/pages/Index.tsx` — reorder home sections (Events + Videos above Playlist), rebalance marquees.
-- `src/components/Nav.tsx` — add Playlists to More dropdown with hash-scroll handler; force scrolled-style coloring on light-background routes so links + logo stay visible.
-- `src/pages/ForArtists.tsx` — copy change.
-- `src/components/Hero.tsx` — remove `!isMobile` guard so DiscoBall renders on mobile too; mobile scale wrapper.
+Below — "WE'RE HIRING THE PACK" 4-up smaller cards, each a CTA mailto:
+- Music & Curation
+- Brand & Design
+- Community & Ops
+- Content & Video
 
-No DB or edge function changes. No new dependencies.
+Each card: role title, one-line description, "APPLY →" link to `mailto:hello@catscandance.com?subject=Join%20the%20Pack%20—%20{Role}`.
+
+## 6. Playlist + Videos get their own pages
+
+Both currently live only as home sections. Add real routes:
+
+- **`/playlists`** (new page `src/pages/Playlists.tsx`) — `Nav` + `PageHero` ("THE PLAYLISTS — what we play, on rotation") + the existing `Playlist` component (already lists multiple playlists with platform tabs) + `Footer`.
+- **`/videos`** (new page `src/pages/Videos.tsx`) — `Nav` + `PageHero` ("THE TAPES — sets, recaps, and behind the scenes") + the existing `Videos` component + `Footer`.
+
+Wire up in `App.tsx` routes.
+
+Update the home sections so their headings link to the dedicated pages:
+- `Playlist` H2 wraps in `<Link to="/playlists">`; add a "See all playlists →" link.
+- `Videos` H2 wraps in `<Link to="/videos">`; "Visit the channel" stays, plus "All videos →" to `/videos`.
+
+Update `Nav.tsx` `moreLinks`: `/#playlist` → `/playlists`, and add `{ to: "/videos", label: "Videos" }` (or replace the implicit Watch link). This also fixes Playlists missing in mobile dropdown.
+
+## 7. Site-wide narrative & flow improvements
+
+A consistent storytelling spine, applied with small copy + ordering tweaks:
+
+**Home (`Index.tsx`) order — already partially done. Final spine:**
+1. Hero — identity + CTA
+2. About — one-line "what is this"
+3. Events — "catch us live" (proof of activity)
+4. Videos — "watch the tapes" (proof it's real)
+5. Playlist — "this is the sound"
+6. Drops — "wear the culture"
+7. Instagram — "the daily feed"
+8. Early Access — convert
+
+**About page (`About.tsx`) — clearer arc:**
+1. `What` (the brand, four engines)
+2. `Why` (three worlds → one ecosystem) — now visually upgraded
+3. `WhyNow` (the timing)
+4. `Team` (the people + join us)
+5. `Footer`
+
+(Move `WhyNow` before `Team` so the page ends on "people" — humans last is a stronger close.)
+
+**Partners pages (`/for-venues`, `/for-artists`, `/for-investors`):** add a small consistent footer-CTA row "Talk to us → hello@catscandance.com" so each partner page closes with one action, matching home's Early Access close.
+
+**Shop, Pets, Blog, Press, Media:** add a thin breadcrumb-style eyebrow under the page hero (`HOME / SHOP`) so users always know where they are — the `Breadcrumbs` component already exists; just include it on these pages.
+
+## 8. Files to touch
+
+- `src/components/Marquee.tsx` — accept `items` prop
+- `src/pages/Index.tsx` — pass per-section marquee items, smaller fallback heights
+- `src/pages/About.tsx` — reorder (`Team` last, `WhyNow` before it)
+- `src/components/Hero.tsx` — compact paddings/headline; disco ball wrapper offset
+- `src/components/DiscoBall.tsx` — accept `mobileOffsetY` (or use Tailwind responsive top)
+- `src/components/Why.tsx` — new 3-tile + ecosystem strip layout
+- `src/components/Team.tsx` — co-founders + hiring CTAs
+- `src/components/What.tsx`, `WhyNow.tsx`, `Events.tsx`, `Videos.tsx`, `Playlist.tsx`, `Drops.tsx`, `Instagram.tsx`, `EarlyAccess.tsx` — compact spacing/typography pass
+- `src/components/Playlist.tsx`, `src/components/Videos.tsx` — link headings to new pages
+- `src/components/Nav.tsx` — `/playlists` + `/videos` in More dropdown
+- `src/pages/Playlists.tsx` (new), `src/pages/Videos.tsx` (new)
+- `src/App.tsx` — register `/playlists` and `/videos` routes
+- `src/pages/ForVenues.tsx`, `ForArtists.tsx`, `ForInvestors.tsx` — closing CTA row
+- `src/pages/Shop.tsx`, `Pets.tsx`, `Blog.tsx`, `Press.tsx`, `Media.tsx` — add `Breadcrumbs`
+
+No new dependencies, no DB or edge function changes. After deploy: tighter pages, contextual marquees that match each section, a proper visual story for the three worlds, real co-founders and a hiring grid, dedicated `/playlists` and `/videos` pages linked from the home sections, and a consistent narrative arc on every page.
