@@ -82,7 +82,7 @@ const Hero = () => {
       <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
         {disco && <Lasers />}
         {disco && (
-          <div className="scale-75 md:scale-100 origin-top">
+          <div className="absolute top-[10vh] md:top-0 left-1/2 -translate-x-1/2 z-40 scale-75 md:scale-100 origin-top">
             <DiscoBall />
           </div>
         )}
