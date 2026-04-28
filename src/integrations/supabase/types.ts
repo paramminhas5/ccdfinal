@@ -202,30 +202,36 @@ export type Database = {
           backlinks: Json
           blog_posts: Json
           featured_playlist_id: string | null
+          home_content: Json
           id: string
           marquees: Json
           playlists: Json
           seo_verifications: Json
+          theme: Json
           updated_at: string
         }
         Insert: {
           backlinks?: Json
           blog_posts?: Json
           featured_playlist_id?: string | null
+          home_content?: Json
           id: string
           marquees?: Json
           playlists?: Json
           seo_verifications?: Json
+          theme?: Json
           updated_at?: string
         }
         Update: {
           backlinks?: Json
           blog_posts?: Json
           featured_playlist_id?: string | null
+          home_content?: Json
           id?: string
           marquees?: Json
           playlists?: Json
           seo_verifications?: Json
+          theme?: Json
           updated_at?: string
         }
         Relationships: []
