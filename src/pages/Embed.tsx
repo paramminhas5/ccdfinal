@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 
 type Ev = { id: string; slug: string; title: string; date: string; city: string; venue: string; status: string };
@@ -20,6 +21,10 @@ const Embed = () => {
 
   return (
     <html lang="en">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>CCD Upcoming · Embed</title>
+      </Helmet>
       <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>
         <div
           style={{

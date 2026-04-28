@@ -41,6 +41,14 @@ const groups = [
       { to: "/for-investors", label: "For Investors" },
     ],
   },
+  {
+    title: "LEGAL",
+    links: [
+      { to: "/privacy", label: "Privacy" },
+      { to: "/terms", label: "Terms" },
+      { to: "/cookies", label: "Cookies" },
+    ],
+  },
 ];
 
 const Footer = () => {
@@ -103,7 +111,16 @@ const Footer = () => {
         <p className="mt-16 text-cream/70 text-sm font-display text-center tracking-wide">
           BANGALORE
         </p>
-        <p className="mt-2 text-cream/50 text-sm font-medium text-center">© Cats Can Dance — so can you.</p>
+        <p className="mt-2 text-cream/50 text-sm font-medium text-center">© {new Date().getFullYear()} Cats Can Dance — so can you.</p>
+        <nav aria-label="Legal" className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-cream/60">
+          <Link to="/privacy" className="hover:text-acid-yellow transition-colors">Privacy</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/terms" className="hover:text-acid-yellow transition-colors">Terms</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/cookies" className="hover:text-acid-yellow transition-colors">Cookies</Link>
+          <span aria-hidden="true">·</span>
+          <a href="mailto:hello@catscandance.com" className="hover:text-acid-yellow transition-colors">Contact</a>
+        </nav>
       </div>
     </section>
   );

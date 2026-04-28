@@ -24,6 +24,9 @@ import Playlists from "./pages/Playlists.tsx";
 import VideosPage from "./pages/Videos.tsx";
 import CatStudio from "./pages/CatStudio.tsx";
 import Embed from "./pages/Embed.tsx";
+import Privacy from "./pages/Privacy.tsx";
+import Terms from "./pages/Terms.tsx";
+import Cookies from "./pages/Cookies.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -70,6 +73,9 @@ const App = () => (
                   <Route path="/videos" element={<VideosPage />} />
                   <Route path="/cat-studio" element={<CatStudio />} />
                   <Route path="/embed/upcoming" element={<Embed />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/cookies" element={<Cookies />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <ThemeSwitcher />
