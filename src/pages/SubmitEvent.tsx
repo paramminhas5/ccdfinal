@@ -45,7 +45,7 @@ const SubmitEvent = () => {
     }
     setBusy(true);
     try {
-      const { error } = await supabase.from("promoter_applications").insert({
+      const { error } = await (supabase as any).from("promoter_applications").insert({
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         instagram: form.instagram.trim() || null,
