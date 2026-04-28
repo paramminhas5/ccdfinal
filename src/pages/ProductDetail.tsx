@@ -106,7 +106,7 @@ const ProductDetail = () => {
         path={`/product/${handle}`}
         image={img?.url}
         type="product"
-        jsonLd={productLd ?? undefined}
+        jsonLd={productLd ? [productLd, ...(productFaqLd ? [productFaqLd] : [])] : undefined}
       />
       <main className="bg-cream text-ink min-h-screen">
         <Nav />
