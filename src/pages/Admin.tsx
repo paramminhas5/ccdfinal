@@ -472,6 +472,7 @@ const Admin = () => {
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
                 <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
+                <TabsTrigger value="promoters" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PROMOTERS</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
                 <TabsTrigger value="marquees" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MARQUEES</TabsTrigger>
                 <TabsTrigger value="theme" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">THEME</TabsTrigger>
@@ -649,6 +650,11 @@ const Admin = () => {
               {/* CURATED EVENTS */}
               <TabsContent value="curated">
                 <CuratedEventsTab />
+              </TabsContent>
+
+              {/* PROMOTERS */}
+              <TabsContent value="promoters">
+                <PromoterApplicationsTab />
               </TabsContent>
 
               {/* SEO CHECKLIST */}
@@ -2154,3 +2160,180 @@ function BlogTab() {
   );
 }
 
+
+// ============= PROMOTER APPLICATIONS TAB =============
+type PromoterApplication = {
+  id: string;
+  name: string;
+  email: string;
+  instagram: string | null;
+  website: string | null;
+  city: string;
+  genres: string[];
+  bio: string;
+  sample_event: string | null;
+  status: "pending" | "approved" | "rejected";
+  notes: string | null;
+  created_at: string;
+};
+
+function PromoterApplicationsTab() {
+  const [apps, setApps] = useState<PromoterApplication[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
+  const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+  const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+  const headers = {
+    "x-admin-password": pwd,
+    "Content-Type": "application/json",
+    apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+  };
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/admin-promoters`, { headers });
+      const data = await res.json();
+      if (res.ok) setApps(data.applications ?? []);
+      else toast.error(data?.error ?? "Could not load applications");
+    } catch { toast.error("Could not load applications"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const updateStatus = async (id: string, status: "approved" | "rejected", note?: string) => {
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/admin-promoters`, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "update_status", id, status, notes: note ?? notes[id] ?? "" }),
+      });
+      if (res.ok) {
+        toast.success(status === "approved" ? "✓ Approved" : "Rejected");
+        setApps(apps.map((a) => a.id === id ? { ...a, status, notes: note ?? notes[id] ?? a.notes } : a));
+      } else toast.error("Update failed");
+    } catch { toast.error("Update failed"); }
+  };
+
+  const triggerScheduled = async () => {
+    toast.info("Running scraper… this takes ~2 minutes");
+    try {
+      const res = await fetch(`${projectUrl}/functions/v1/scheduled-curate`, {
+        method: "POST",
+        headers: { "x-admin-password": pwd, "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (res.ok) toast.success(`Scraper done: ${data.total_upserted} events upserted, ${data.pruned} old pruned`);
+      else toast.error(data?.error ?? "Scraper failed");
+    } catch { toast.error("Scraper failed"); }
+  };
+
+  const filtered = apps.filter((a) => filter === "all" || a.status === filter);
+  const counts = { pending: apps.filter((a) => a.status === "pending").length, approved: apps.filter((a) => a.status === "approved").length, rejected: apps.filter((a) => a.status === "rejected").length };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h3 className="font-display text-2xl text-ink">PROMOTER APPLICATIONS</h3>
+          <p className="text-ink/70 font-medium text-sm">
+            {counts.pending} pending · {counts.approved} approved · {counts.rejected} rejected
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={triggerScheduled}
+            className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-sm">
+            🔄 RUN SCRAPER NOW
+          </button>
+          <button onClick={load}
+            className="bg-cream text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-sm">
+            REFRESH
+          </button>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2">
+        {(["pending", "approved", "rejected", "all"] as const).map((f) => (
+          <button key={f} onClick={() => setFilter(f)}
+            className={`font-display text-sm px-4 py-2 border-4 border-ink uppercase ${filter === f ? "bg-ink text-cream" : "bg-cream text-ink hover:bg-acid-yellow"}`}>
+            {f}{f !== "all" && ` (${counts[f] ?? 0})`}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="text-ink/60">Loading…</p>}
+
+      <div className="space-y-4">
+        {filtered.map((app) => (
+          <div key={app.id} className={`bg-cream border-4 border-ink chunk-shadow p-5 ${app.status === "approved" ? "border-lime" : app.status === "rejected" ? "opacity-60" : ""}`}>
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="font-display text-xl text-ink">{app.name}</p>
+                <a href={`mailto:${app.email}`} className="text-magenta underline font-medium text-sm">{app.email}</a>
+                <span className={`ml-3 text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase ${
+                  app.status === "approved" ? "bg-lime text-ink" : app.status === "rejected" ? "bg-ink text-cream" : "bg-acid-yellow text-ink"}`}>
+                  {app.status}
+                </span>
+              </div>
+              <p className="text-ink/50 text-xs">{new Date(app.created_at).toLocaleDateString()}</p>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-3 mb-3 text-sm">
+              <div><span className="font-display text-ink/50 text-xs">CITY</span><p className="font-medium text-ink">{app.city}</p></div>
+              <div><span className="font-display text-ink/50 text-xs">INSTAGRAM</span>
+                {app.instagram ? <a href={`https://instagram.com/${app.instagram.replace("@","")}`} target="_blank" rel="noopener noreferrer" className="block text-magenta underline font-medium">{app.instagram}</a> : <p className="text-ink/50">—</p>}
+              </div>
+              <div><span className="font-display text-ink/50 text-xs">WEBSITE</span>
+                {app.website ? <a href={app.website} target="_blank" rel="noopener noreferrer" className="block text-magenta underline font-medium truncate">{app.website}</a> : <p className="text-ink/50">—</p>}
+              </div>
+            </div>
+
+            {app.genres.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {app.genres.map((g) => <span key={g} className="text-[10px] uppercase bg-ink text-cream px-2 py-0.5 font-bold">{g}</span>)}
+              </div>
+            )}
+
+            <p className="text-ink/80 font-medium text-sm mb-3 bg-background/50 p-3 border-2 border-ink/20">{app.bio}</p>
+
+            {app.sample_event && (
+              <a href={app.sample_event} target="_blank" rel="noopener noreferrer"
+                className="text-magenta underline text-sm font-medium block mb-3">
+                Sample event ↗
+              </a>
+            )}
+
+            {app.status === "pending" && (
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block font-display text-xs text-ink/50 mb-1">NOTES (optional)</label>
+                  <input value={notes[app.id] ?? ""} onChange={(e) => setNotes({ ...notes, [app.id]: e.target.value })}
+                    placeholder="Internal note…"
+                    className="w-full bg-cream text-ink border-2 border-ink px-3 py-2 font-medium text-sm focus:outline-none focus:bg-acid-yellow" />
+                </div>
+                <button onClick={() => updateStatus(app.id, "approved")}
+                  className="bg-lime text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform">
+                  ✓ APPROVE
+                </button>
+                <button onClick={() => updateStatus(app.id, "rejected")}
+                  className="bg-destructive text-cream font-display px-5 py-2 border-4 border-ink">
+                  REJECT
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        {!loading && filtered.length === 0 && (
+          <p className="text-ink/60 py-8 text-center font-display text-xl">NO {filter.toUpperCase()} APPLICATIONS.</p>
+        )}
+      </div>
+    </div>
+  );
+}
