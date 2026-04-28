@@ -6,6 +6,7 @@ import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CuratedEvents from "@/components/CuratedEvents";
+import Marquee from "@/components/Marquee";
 import { supabase } from "@/integrations/supabase/client";
 
 type EventRow = {
