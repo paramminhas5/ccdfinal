@@ -21,6 +21,7 @@ const partnersLinks = [
 ];
 
 const moreLinks = [
+  { to: "/#playlist", label: "Playlists" },
   { to: "/pets", label: "Pets" },
   { to: "/media", label: "Media" },
   { to: "/blog", label: "Blog" },
