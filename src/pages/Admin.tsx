@@ -965,7 +965,7 @@ const Admin = () => {
                         // Apply locally right away: drop any local override and
                         // apply the freshly-saved preset so the admin sees it instantly.
                         themeCtx.clearOverride();
-                        applyTheme(settings.theme ?? { preset: "default" });
+                        applyTheme({ preset: settings.theme?.preset ?? "default", overrides: settings.theme?.overrides as any });
                         toast.success("Theme saved — applied live");
                       } catch {
                         toast.error("Save failed");
