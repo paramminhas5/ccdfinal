@@ -150,13 +150,14 @@ const Nav = () => {
     }
   };
 
-  const activeColor = scrolled ? "text-magenta" : "text-acid-yellow";
-  const baseColor = scrolled ? "text-ink" : "text-cream";
+  const effectiveScrolled = scrolled || forceScrolledStyle;
+  const activeColor = effectiveScrolled ? "text-magenta" : "text-acid-yellow";
+  const baseColor = effectiveScrolled ? "text-ink" : "text-cream";
 
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all ${
-        scrolled ? "bg-cream/95 backdrop-blur border-b-4 border-ink" : "bg-transparent"
+        effectiveScrolled ? "bg-cream/95 backdrop-blur border-b-4 border-ink" : "bg-transparent"
       }`}
     >
       <nav className="container flex items-center justify-between py-3 md:py-4 gap-3 md:gap-4">
@@ -164,7 +165,7 @@ const Nav = () => {
           <img
             src={ccdLogo}
             alt="Cats Can Dance logo"
-            style={{ filter: scrolled ? "none" : "invert(1) brightness(1.2)" }}
+            style={{ filter: effectiveScrolled ? "none" : "invert(1) brightness(1.2)" }}
             className="h-9 md:h-11 w-auto transition-transform duration-700 group-hover:rotate-[360deg]"
           />
           <span className="hidden sm:inline">CATS<span className="text-magenta">.</span>CAN<span className="text-magenta">.</span>DANCE</span>
