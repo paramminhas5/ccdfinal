@@ -121,6 +121,33 @@ const EventDetail = () => {
     url: `https://catscandance.com/events/${slug}`,
   };
 
+  const eventFaqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `When is the Cats Can Dance ${event.title} event?`,
+        acceptedAnswer: { "@type": "Answer", text: `Cats Can Dance ${event.title} takes place on ${event.date} at ${event.venue}, Bengaluru.` },
+      },
+      {
+        "@type": "Question",
+        name: "What music does Cats Can Dance play?",
+        acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance events feature House, Disco, Jungle, Garage, and Drum & Bass — underground dance music curated by resident and guest selectors in Bengaluru." },
+      },
+      {
+        "@type": "Question",
+        name: "How do I RSVP to a Cats Can Dance event?",
+        acceptedAnswer: { "@type": "Answer", text: `RSVP for this event at catscandance.com/events/${slug}. Capacity is limited — RSVP early. Most episodes are free entry with name on the door.` },
+      },
+      {
+        "@type": "Question",
+        name: "Who organises Cats Can Dance events in Bangalore?",
+        acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance is a Bengaluru-based underground dance music collective and event organiser, running RSVP-only Episodes with curated lineups at intimate venues across the city." },
+      },
+    ],
+  };
+
   return (
     <>
       <SEO
@@ -129,7 +156,7 @@ const EventDetail = () => {
         path={`/events/${slug}`}
         image={event.poster_url ?? undefined}
         type="event"
-        jsonLd={eventLd}
+        jsonLd={[eventLd, eventFaqLd]}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />

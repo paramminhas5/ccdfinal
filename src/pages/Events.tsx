@@ -75,7 +75,33 @@ const Events = () => {
       }
     : null;
 
-  const jsonLd = itemListLd ? [...eventLd, itemListLd] : eventLd;
+  const eventsFaqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What underground dance music events does Cats Can Dance host in Bangalore?",
+        acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance hosts RSVP-only underground dance music episodes in Bengaluru featuring House, Disco, Jungle, Garage, and Drum & Bass. Events are held at venues including Bar Wild in Indiranagar. All upcoming events are listed at catscandance.com/events." },
+      },
+      {
+        "@type": "Question",
+        name: "How do I RSVP to a Cats Can Dance event in Bangalore?",
+        acceptedAnswer: { "@type": "Answer", text: "RSVP links for upcoming Cats Can Dance events are at catscandance.com/events. Capacity is limited — RSVP early. Most episodes are free entry with name on the door." },
+      },
+      {
+        "@type": "Question",
+        name: "Are Cats Can Dance events free?",
+        acceptedAnswer: { "@type": "Answer", text: "Most Cats Can Dance episodes are free entry with RSVP. Capacity is controlled to keep the room right. Check individual event pages for details." },
+      },
+      {
+        "@type": "Question",
+        name: "What venues does Cats Can Dance use in Bengaluru?",
+        acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance regularly hosts events at Bar Wild in Indiranagar, Bengaluru, and other underground venues across the city. Venues vary by episode." },
+      },
+    ],
+  };
+  const jsonLd = itemListLd ? [...eventLd, itemListLd, eventsFaqLd] : [...eventLd, eventsFaqLd];
 
   return (
     <>

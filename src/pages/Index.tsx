@@ -60,6 +60,37 @@ const Index = () => {
               { "@type": "ListItem", position: 3, name: "Shop", item: "https://catscandance.com/shop" },
             ],
           },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: "What is Cats Can Dance?",
+                acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance is a Bengaluru-based underground dance music event series and streetwear collective, hosting House, Disco, Jungle, Garage, and Drum & Bass nights across Bengaluru venues, and producing limited-edition streetwear drops rooted in dance music culture." },
+              },
+              {
+                "@type": "Question",
+                name: "Where does Cats Can Dance host events in Bangalore?",
+                acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance hosts RSVP-only underground dance music episodes at venues including Bar Wild in Indiranagar, Bengaluru. All upcoming events are listed at catscandance.com/events." },
+              },
+              {
+                "@type": "Question",
+                name: "What music genres does Cats Can Dance play?",
+                acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance events feature House, Disco, Jungle, Garage, and Drum & Bass — underground dance music genres curated by resident and guest selectors in Bengaluru." },
+              },
+              {
+                "@type": "Question",
+                name: "Does Cats Can Dance sell streetwear?",
+                acceptedAnswer: { "@type": "Answer", text: "Yes. Cats Can Dance produces limited-edition streetwear drops rooted in underground dance music culture, screen-printed in Bangalore. No restocks. Available at catscandance.com/shop." },
+              },
+              {
+                "@type": "Question",
+                name: "How do I RSVP to a Cats Can Dance event?",
+                acceptedAnswer: { "@type": "Answer", text: "RSVP to upcoming Cats Can Dance events at catscandance.com/events. Capacity is limited — RSVP early. Most episodes are free entry with name on the door." },
+              },
+            ],
+          },
         ]}
       />
       <main className="bg-background text-foreground">

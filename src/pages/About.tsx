@@ -20,13 +20,45 @@ const aboutLd = {
   description: "Cats Can Dance is a Bangalore underground crew. Dance music nights, limited drops, and a community built around sound and culture.",
 };
 
+const aboutFaqLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What is Cats Can Dance?",
+      acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance (CCD) is a Bengaluru-based underground dance music event series and streetwear collective. We host House, Disco, Jungle, Garage, and Drum & Bass parties across Bengaluru, and produce limited-edition streetwear drops rooted in dance music culture. A culture for people who move." },
+    },
+    {
+      "@type": "Question",
+      name: "Where is Cats Can Dance based?",
+      acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance is based in Bengaluru, Karnataka, India. Our events are held at venues across the city, most regularly at Bar Wild in Indiranagar." },
+    },
+    {
+      "@type": "Question",
+      name: "How do I attend a Cats Can Dance event?",
+      acceptedAnswer: { "@type": "Answer", text: "Check catscandance.com/events for upcoming parties and RSVP. Follow @catscan.dance on Instagram for announcements. Most events are RSVP-only with controlled capacity — free entry." },
+    },
+    {
+      "@type": "Question",
+      name: "What is the Cats Can Dance Episode format?",
+      acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance Episodes are RSVP-only underground dance music parties with curated lineups, small rooms, no flyer marketing. A safe space with good music and immaculate vibes." },
+    },
+    {
+      "@type": "Question",
+      name: "Who are the DJs at Cats Can Dance events?",
+      acceptedAnswer: { "@type": "Answer", text: "Cats Can Dance resident selectors include Djazz, Hedz, and Sartdawg, alongside rotating guest DJs playing House, Disco, Jungle, Garage, and Drum & Bass in Bengaluru." },
+    },
+  ],
+};
+
 const About = () => (
   <main className="bg-background text-foreground">
     <SEO
       title="About Cats Can Dance | Bangalore's Underground Crew"
       description="The mission, the people and the pack behind Cats Can Dance — Bangalore's underground dance music and culture crew."
       path="/about"
-      jsonLd={aboutLd}
+      jsonLd={[aboutLd, aboutFaqLd]}
     />
     <Nav />
     <PageHero
