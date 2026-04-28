@@ -9,9 +9,28 @@ const groups = [
       { to: "/about", label: "About" },
       { to: "/events", label: "Events" },
       { to: "/shop", label: "Shop" },
-      { to: "/pets", label: "Pets" },
+    ],
+  },
+  {
+    title: "WATCH & LISTEN",
+    links: [
+      { to: "/videos", label: "Videos" },
+      { to: "/playlists", label: "Playlists" },
+    ],
+  },
+  {
+    title: "READ",
+    links: [
       { to: "/blog", label: "Blog" },
+      { to: "/press", label: "Press" },
       { to: "/media", label: "Media" },
+      { to: "/pets", label: "Pets" },
+    ],
+  },
+  {
+    title: "PLAY",
+    links: [
+      { to: "/cat-studio", label: "Cat Studio ✦" },
     ],
   },
   {
@@ -20,7 +39,6 @@ const groups = [
       { to: "/for-venues", label: "Venue Partners" },
       { to: "/for-artists", label: "For Artists" },
       { to: "/for-investors", label: "For Investors" },
-      { to: "/press", label: "Press Kit" },
     ],
   },
 ];
@@ -56,7 +74,7 @@ const Footer = () => {
           GET IN TOUCH →
         </a>
 
-        <div className="mt-20 grid sm:grid-cols-2 md:grid-cols-3 gap-10 max-w-4xl mx-auto">
+        <div className="mt-20 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10 max-w-6xl mx-auto">
           {groups.map((g) => (
             <div key={g.title}>
               <p className="font-display text-acid-yellow text-lg mb-3">{g.title}</p>

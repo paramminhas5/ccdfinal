@@ -20,18 +20,8 @@ const partnersLinks = [
   { to: "/for-investors", label: "For Investors" },
 ];
 
-const moreLinks = [
-  { to: "/playlists", label: "Playlists" },
-  { to: "/videos", label: "Videos" },
-  { to: "/cat-studio", label: "Cat Studio ✦" },
-  { to: "/pets", label: "Pets" },
-  { to: "/media", label: "Media" },
-  { to: "/blog", label: "Blog" },
-  { to: "/press", label: "Press" },
-];
-
 // Flat list for mobile hamburger
-const mobileLinks = [...primaryLinks, ...moreLinks, ...partnersLinks];
+const mobileLinks = [...primaryLinks, ...partnersLinks];
 
 const scrollToEarlyAccess = () => {
   setTimeout(() => {
@@ -190,7 +180,6 @@ const Nav = () => {
             </li>
           ))}
           <Dropdown label="Partners" links={partnersLinks} scrolled={effectiveScrolled} />
-          <Dropdown label="More" links={moreLinks} scrolled={effectiveScrolled} />
         </ul>
         <div className="hidden lg:flex items-center gap-3">
           <span className="hidden xl:block"><DiscoMute /></span>

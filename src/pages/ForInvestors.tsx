@@ -2,6 +2,10 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
 import Marquee from "@/components/Marquee";
+import SectionReveal from "@/components/SectionReveal";
+import What from "@/components/What";
+import Why from "@/components/Why";
+import WhyNow from "@/components/WhyNow";
 import SEO from "@/components/SEO";
 
 const bullets = [
@@ -27,7 +31,13 @@ const ForInvestors = () => (
       textColor="text-cream"
       eyebrowColor="text-acid-yellow"
     />
-    <Marquee bg="bg-lime" />
+    <Marquee bg="bg-acid-yellow" items={["WHY THIS", "WHY NOW", "THREE WORLDS", "ONE ECOSYSTEM"]} />
+    <SectionReveal><What /></SectionReveal>
+    <Marquee bg="bg-lime" items={["FOUR ENGINES", "ONE FLYWHEEL", "BUILT TO COMPOUND"]} />
+    <SectionReveal><Why /></SectionReveal>
+    <Marquee bg="bg-acid-yellow" reverse items={["THE PERFECT MOMENT", "CULTURE IS COMMERCE", "INDIA IS READY"]} />
+    <WhyNow />
+    <Marquee bg="bg-lime" items={["REQUEST THE DECK", "LET'S TALK", "INVEST@CATSCANDANCE.COM"]} />
     <section className="bg-ink text-cream border-b-4 border-ink py-24 md:py-32">
       <div className="container grid md:grid-cols-2 gap-12">
         <div>
