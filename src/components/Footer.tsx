@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ccdLogo from "@/assets/ccd-logo.png";
+import { getAllPosts } from "@/content/posts";
 
 const groups = [
   {
@@ -51,6 +52,21 @@ const groups = [
   },
 ];
 
+const buildDiscover = () => {
+  const links: { to: string; label: string }[] = [
+    { to: "/blog", label: "The Journal" },
+    { to: "/bengaluru-underground-dance-music", label: "Bengaluru Scene Guide" },
+  ];
+  try {
+    const posts = getAllPosts();
+    const featured = posts.find((p) => p.category === "GUIDES") ?? posts[0];
+    if (featured) links.push({ to: `/blog/${featured.slug}`, label: featured.coverTitle || featured.title.slice(0, 32) });
+  } catch { /* noop */ }
+  links.push({ to: "/events", label: "Next Episode" });
+  return links;
+};
+
+
 const Footer = () => {
   return (
     <section className="relative bg-ink text-cream py-24 md:py-32 overflow-hidden">
@@ -82,7 +98,7 @@ const Footer = () => {
           GET IN TOUCH →
         </a>
 
-        <div className="mt-20 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10 max-w-6xl mx-auto">
+        <div className="mt-20 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-10 max-w-6xl mx-auto">
           {groups.map((g) => (
             <div key={g.title}>
               <p className="font-display text-acid-yellow text-lg mb-3">{g.title}</p>
@@ -97,6 +113,18 @@ const Footer = () => {
               </ul>
             </div>
           ))}
+          <div>
+            <p className="font-display text-acid-yellow text-lg mb-3">DISCOVER</p>
+            <ul className="space-y-2">
+              {buildDiscover().map((l) => (
+                <li key={l.to}>
+                  <Link to={l.to} className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
           <div>
             <p className="font-display text-acid-yellow text-lg mb-3">FOLLOW</p>
             <ul className="space-y-2">

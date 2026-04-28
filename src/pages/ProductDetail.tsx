@@ -63,6 +63,35 @@ const ProductDetail = () => {
       }
     : null;
 
+  const productFaqLd = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "Is this a limited drop?",
+            acceptedAnswer: { "@type": "Answer", text: "Yes — every Cats Can Dance piece is a limited drop with no restocks. Once it's gone, it's gone." },
+          },
+          {
+            "@type": "Question",
+            name: "Where does it ship from?",
+            acceptedAnswer: { "@type": "Answer", text: "All Cats Can Dance orders ship from Bangalore, India. Pan-India shipping is available on every order." },
+          },
+          {
+            "@type": "Question",
+            name: "What's the return and exchange policy?",
+            acceptedAnswer: { "@type": "Answer", text: "We offer size exchanges within 7 days of delivery on unworn pieces. Limited drops are not eligible for refund." },
+          },
+          {
+            "@type": "Question",
+            name: "How is it made?",
+            acceptedAnswer: { "@type": "Answer", text: "Screen-printed in Bangalore on heavyweight cotton. Cats Can Dance drops are produced in small runs tied to our underground music Episodes." },
+          },
+        ],
+      }
+    : null;
+
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareText = product ? `${product.title} — Cats Can Dance` : "";
 
@@ -77,7 +106,7 @@ const ProductDetail = () => {
         path={`/product/${handle}`}
         image={img?.url}
         type="product"
-        jsonLd={productLd ?? undefined}
+        jsonLd={productLd ? [productLd, ...(productFaqLd ? [productFaqLd] : [])] : undefined}
       />
       <main className="bg-cream text-ink min-h-screen">
         <Nav />
@@ -187,6 +216,28 @@ const ProductDetail = () => {
             </div>
           )}
         </section>
+
+        {/* Internal linking — more from CCD */}
+        <section className="border-t-4 border-ink bg-acid-yellow py-12 md:py-16">
+          <div className="container">
+            <p className="font-display text-magenta text-base md:text-lg mb-4">/ MORE FROM CATS CAN DANCE</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Link to="/shop" className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+                <p className="font-display text-ink text-2xl mb-1">SEE ALL CCD STREETWEAR →</p>
+                <p className="text-ink/70 text-sm font-medium">Limited drops, no restocks. Bangalore-made.</p>
+              </Link>
+              <Link to="/pets" className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+                <p className="font-display text-ink text-2xl mb-1">PET DROPS & TREATS →</p>
+                <p className="text-ink/70 text-sm font-medium">Cat bandanas, bucket hats, CCD treats.</p>
+              </Link>
+              <Link to="/events" className="block bg-cream border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform">
+                <p className="font-display text-ink text-2xl mb-1">UPCOMING EPISODES →</p>
+                <p className="text-ink/70 text-sm font-medium">RSVP an underground night in Bangalore.</p>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <Footer />
       </main>
     </>

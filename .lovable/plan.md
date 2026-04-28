@@ -1,77 +1,104 @@
-# SEO Overhaul & Launch Hygiene
+# SEO Sprint — final pass
 
-Goal: tight SEO hygiene, legal coverage, and a clean publish so the site is shareable today.
+A note on the "GitHub pull": Lovable manages git state internally, so the codebase you see in the editor is already in sync with your repo — there is no separate manual pull step for me to run. I've audited the current tree (HEAD) and the plan below targets every gap I found.
 
-## 1. Legal pages (new)
+## Status check (what's already done)
+- `EventDetail` already has `MusicEvent` + `FAQPage` JSON-LD ✓
+- `Index`, `Events`, `About`, `Pets`, `BengaluruSceneGuide` already have `FAQPage` ✓
+- `ProductDetail` has `Product` schema (no FAQ yet) ✗
+- `BlogPost` has `BlogPosting` schema (no FAQ, weak image, no `wordCount`/`articleSection`) ✗
+- `sitemap.xml` and `rss.xml` exist but blog list is hand-maintained and out of date relative to `src/content/posts.ts` ✗
+- Internal linking from blog posts → events / shop / related guides is sparse ✗
 
-Create three pages with proper SEO + last-updated dates and link them in the footer + a small "Legal" strip.
+## 1. FAQ structured data on blog + product pages
 
-- `/privacy` — `src/pages/Privacy.tsx`: data collected (RSVPs, signups, cart, analytics), Lovable Cloud (Supabase) storage, Shopify checkout, cookies, third parties (YouTube, Spotify, Instagram, Plausible if enabled), user rights (access/delete via hello@catscandance.com), children, contact.
-- `/terms` — `src/pages/Terms.tsx`: site use, RSVP rules, ticket/door policy, shop terms (defer to Shopify for orders/refunds), IP, disclaimers, governing law (India / Karnataka), contact.
-- `/cookies` — `src/pages/Cookies.tsx`: essential vs analytics cookies, opt-out guidance.
+**`src/pages/BlogPost.tsx`** — add a generic `FAQPage` JSON-LD built from the post (3 evergreen Q&As tied to its category) plus a richer `BlogPosting`:
+- Use `BlogCover` colour as a hint for `articleSection` (= `post.category`).
+- Add `wordCount` (computed from `post.body.join(" ")`), `keywords` (from tag/category), `isPartOf` → `Blog` `@type`.
+- Use the post's actual cover (server-rendered OG fallback `og-image.jpg`) instead of hardcoded `og-image.png`.
+- Inject 3 FAQ entries derived from category:
+  - GUIDES → "Where are the best underground parties in Bangalore?", "How do I find dance music events in Bengaluru?", "What's the RSVP culture in Bangalore?"
+  - DROPS → "Where can I buy Cats Can Dance streetwear?", "Do drops restock?", "Is shipping available across India?"
+  - ARTISTS → "Who plays at Cats Can Dance?", "How do artists get booked?", "Where can I listen to CCD sets?"
+  - CULTURE / JOURNAL → "What is Cats Can Dance?", "Where do CCD events happen?", "How do I join the pack?"
+  - Default fallback set for any unrecognised category.
 
-Wire routes in `src/App.tsx`. Add a "LEGAL" column to `src/components/Footer.tsx` (Privacy, Terms, Cookies, Contact) and a thin bottom bar with © + legal links.
+**`src/pages/ProductDetail.tsx`** — add a small `FAQPage` block:
+- "Is this a limited drop?" → yes, no restocks
+- "Where does it ship from?" → Bangalore, India; pan-India shipping
+- "What's the return policy?" → exchanges within 7 days for sizing
+- "How is it made?" → screen-printed in Bangalore
 
-## 2. Sitemap + robots
+Pass both schemas via the existing `jsonLd={[productLd, faqLd]}` array.
 
-- Regenerate `public/sitemap.xml` with **all** current routes (currently missing: `/playlists`, `/videos`, `/cat-studio`, `/privacy`, `/terms`, `/cookies`; admin/embed stay excluded).
-- Update `<lastmod>` to today, fix priorities, keep image entries for shop/pets.
-- Build `public/sitemap.xml` dynamically at build time from a small script so it never goes stale (optional — included as a `scripts/build-sitemap.mjs` run in `prebuild`). If user prefers static, skip the script.
-- Add `Sitemap:` line is already there; also add `Disallow: /admin` and `Disallow: /embed/` to `robots.txt`.
+## 2. Internal linking sprint
 
-## 3. Per-page SEO completeness
+**Blog → site cross-links** (in `BlogPost.tsx`):
+- After the body, before "Read next", add a contextual **"Take it further"** strip with 2–3 inline links chosen by category:
+  - GUIDES / CULTURE → `/events`, `/bengaluru-underground-dance-music`, next upcoming event slug
+  - DROPS → `/shop`, `/pets`, top product handle
+  - ARTISTS → `/playlists`, `/videos`, `/events`
+  - JOURNAL → `/about`, `/events`, `/blog`
+- Make the existing "Read next" cards include the post excerpt (1 line) for richer anchor context.
 
-- Add `<SEO>` to `src/pages/Embed.tsx` with `noindex`.
-- Audit each page's title/description for length (≤60 / ≤155 chars), uniqueness, and a real `image`/`imageAlt`. Quick pass over: Index, About, Events, EventDetail, Shop, ProductDetail, Pets, Blog, BlogPost, Press, Media, Playlists, Videos, CatStudio, ForVenues/Artists/Investors.
-- Add JSON-LD where missing:
-  - `EventDetail` → `Event` schema (name, startDate, location, offers, performer, image).
-  - `ProductDetail` → `Product` + `Offer` schema (price, availability, brand).
-  - `BlogPost` → `Article` schema (headline, datePublished, author, image).
-  - `Blog` index → `Blog` + `BreadcrumbList`.
-  - `About`, `ForVenues/Artists/Investors` → `BreadcrumbList`.
-- Ensure every page renders `<Breadcrumbs>` (component exists) + matching `BreadcrumbList` JSON-LD.
-- Standardize H1: exactly one per page.
+**Events → blog cross-links** (in `EventDetail.tsx`):
+- Below the lineup section add a "Read more from the journal" block linking to 2 related blog posts (filter by tag/category match, fallback to latest 2). Strengthens topical hub.
 
-## 4. Indexability + share previews
+**Product → related** (in `ProductDetail.tsx`):
+- Add a "More from the drop" strip that links to `/shop` and `/pets` with descriptive anchor text ("See all CCD streetwear", "Pet drops & treats").
 
-- Add `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` if available, keep `.ico` fallback.
-- Add `<meta name="format-detection" content="telephone=no">` to avoid auto phone-styling on iOS.
-- Confirm OG image is 1200×630 JPG <300KB (already done) and is reachable at the production domain.
-- Add `<meta property="article:publisher">` + `<meta property="og:see_also">` for socials.
-- Add a real `/favicon.ico` if it's still the placeholder.
+**Footer (`src/components/Footer.tsx`):**
+- Add a "DISCOVER" column with 4 high-value internal links: `/blog`, `/bengaluru-underground-dance-music`, latest event detail, latest blog post (computed at module level from `getAllPosts()`/static fallback).
+- Adds 4 site-wide links to every page → big internal-link boost.
 
-## 5. Performance hygiene (affects SEO)
+**Breadcrumbs:** verified all major pages already use `<Breadcrumbs>`. No change needed.
 
-- Add `<link rel="preload" as="image" href="<hero image>" fetchpriority="high">` for the LCP image on `/`.
-- Lazy-load below-the-fold images (`loading="lazy" decoding="async"`) — pass over Hero/Drops/Events/Posts/Media.
-- Add `width`/`height` (or aspect-ratio CSS) on remaining `<img>` to remove CLS.
-- Defer non-critical scripts (Spotify/YouTube embeds already lazy via routes — verify).
+## 3. Sitemap + RSS auto-sync
 
-## 6. Accessibility hygiene (Google ranks it)
+`public/sitemap.xml` and `public/rss.xml` are static and have drifted from `src/content/posts.ts`. Two fixes:
 
-- Confirm every interactive element has accessible text (icon-only buttons need `aria-label`).
-- `html lang="en"` already set; add `lang="en-IN"` consideration kept as-is.
-- Color contrast spot-check on `text-cream/70` over `bg-ink` (passes), `acid-yellow` on cream (verify large-text only).
+a) **Refresh both files now** so every post in `posts.ts` is listed, with correct `lastmod`, plus the missing `/bengaluru-underground-dance-music` lastmod bump.
 
-## 7. Analytics + verification
+b) **Add a build-time generator** `scripts/generate-seo.mjs` that reads `src/content/posts.ts` (via tsx) and rewrites `public/sitemap.xml` and `public/rss.xml`. Wire it into `package.json` as `"prebuild": "node scripts/generate-seo.mjs"` so future post additions auto-propagate. (Falls back gracefully — never breaks the build.)
 
-- Keep `SeoVerification.tsx` — confirm `site_settings.seo_verifications` row supports `google`, `bing`, `plausible_domain`. Document in README how to set them from Admin.
-- Add a one-line note in `README.md` for post-launch: submit sitemap in Google Search Console + Bing Webmaster.
+## 4. Per-page SEO polish
 
-## 8. Publish
+- **`src/pages/Blog.tsx`** — add `Blog` JSON-LD (`@type: Blog`) in addition to the existing `ItemList`, with `blogPost` array entries (headline + url + datePublished). Better than ItemList alone for Google Discover.
+- **`src/pages/Shop.tsx`** — add `CollectionPage` + `ItemList` of products if not already present.
+- **`src/pages/Events.tsx`** — already has `FAQPage`; add `ItemList` of upcoming/past events for richer SERP.
+- **`src/components/SEO.tsx`** — add support for `prevUrl` / `nextUrl` (rel=prev/next for paginated lists, future-proof) and an `article:published_time` / `article:modified_time` pair when `type="article"`.
 
-- Set publish visibility to `public` (`update_visibility: public`) so the live URL is open.
-- Confirm custom domain `catscandance.com` is pointed and primary (already in project URLs).
-- Re-check OG via Facebook Debugger / LinkedIn Inspector / Twitter card validator after deploy (manual, user-side).
+## 5. Hygiene checks
 
-## Files touched (summary)
+- **`index.html`** — add `<link rel="dns-prefetch" href="//cdn.shopify.com">` (Shopify storefront images), and `<link rel="preload" as="image" href="/og-image.jpg" fetchpriority="low">` only if it ends up being the LCP — otherwise skip to avoid waste. Confirm `<meta name="google" content="notranslate">` is **not** added (we want translation).
+- **`public/robots.txt`** — verify `Sitemap:` line is present; add a second `Sitemap:` for any future sub-sitemap (none today, no-op).
+- **404 (`NotFound.tsx`)** — add `<SEO noindex title="Page not found — Cats Can Dance" .../>` so dead URLs don't pollute the index.
+- **Image alts audit** — quick pass on `Hero`, `Drops`, `Instagram`, `Videos`, `BlogCover` to ensure no `alt=""` on meaningful images.
+- **`<a target="_blank">` audit** — ensure every external link has `rel="noopener noreferrer"` (already true in Footer; verify Press, Media, Instagram).
+- **Canonical on `/embed/upcoming`** — already `noindex`; add explicit `canonical` to `/events` so any accidental backlink consolidates.
 
-- New: `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/Cookies.tsx`
-- Edited: `src/App.tsx`, `src/components/Footer.tsx`, `public/sitemap.xml`, `public/robots.txt`, `index.html`, `src/components/SEO.tsx` (minor), `src/pages/Embed.tsx`, `src/pages/EventDetail.tsx`, `src/pages/ProductDetail.tsx`, `src/pages/BlogPost.tsx`, `src/pages/Blog.tsx`, plus light per-page title/description tightening
-- Optional: `scripts/build-sitemap.mjs` + `package.json` `prebuild` hook
+## 6. Technical reference (collapsed)
 
-## Out of scope (ask if you want them)
+```text
+Files to edit:
+  src/pages/BlogPost.tsx        # FAQ + richer BlogPosting + internal links
+  src/pages/ProductDetail.tsx   # FAQ + related links
+  src/pages/EventDetail.tsx     # related blog posts strip
+  src/pages/Blog.tsx            # Blog JSON-LD
+  src/pages/Shop.tsx            # CollectionPage + ItemList
+  src/pages/Events.tsx          # ItemList of events
+  src/pages/NotFound.tsx        # noindex SEO tag
+  src/components/Footer.tsx     # DISCOVER column
+  src/components/SEO.tsx        # prev/next + article time meta
+  index.html                    # dns-prefetch shopify
+  public/sitemap.xml            # regenerated
+  public/rss.xml                # regenerated
 
-- Cookie consent banner (only needed if you target EU traffic).
-- Programmatic image sitemap for every blog post.
-- AMP / RSS feed expansion (RSS already exists).
+Files to create:
+  scripts/generate-seo.mjs      # prebuild sitemap+rss generator
+  package.json                  # add "prebuild" script
+```
+
+## Out of scope (call out)
+- Server-side rendering / prerendering — would 10× SEO further but is a much bigger refactor (Vite SSR or pre-render plugin). Happy to do this next sprint; meta/JSON-LD via react-helmet works for Google but not for some social scrapers without prerender. Flag if you want me to add `vite-plugin-prerender` for the static pages now.
+- GSC / Bing sitemap re-submission — must be done by you after deploy.

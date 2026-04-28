@@ -5,8 +5,70 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BlogCover from "@/components/BlogCover";
-import { getPost, getRelatedPosts, subscribePosts, getAllPosts } from "@/content/posts";
+import { getPost, getRelatedPosts, subscribePosts, getAllPosts, type Category } from "@/content/posts";
 import { useDynamicPosts } from "@/hooks/useDynamicPosts";
+
+const SITE = "https://catscandance.com";
+
+const FAQ_BY_CATEGORY: Record<string, { q: string; a: string }[]> = {
+  GUIDES: [
+    { q: "Where are the best underground parties in Bangalore?", a: "The best underground parties in Bangalore are RSVP-driven, 200–400 capacity nights run by independent crews — Cats Can Dance Episodes, plus rotating pop-ups in CBD, Indiranagar, and Whitefield. Full guide and upcoming dates at catscandance.com/events." },
+    { q: "How do I find dance music events in Bengaluru?", a: "Follow independent organisers on Instagram, sign up to Cats Can Dance early-access at catscandance.com, and check our curated /events feed — most real underground nights never hit aggregator apps." },
+    { q: "What is RSVP culture in Bangalore's party scene?", a: "Most credible Bangalore underground nights are RSVP-only with capped capacity. RSVP early, show up on time, and respect the room. Cats Can Dance episodes are free entry with name on the door — RSVP at catscandance.com/events." },
+  ],
+  DROPS: [
+    { q: "Where can I buy Cats Can Dance streetwear?", a: "All current Cats Can Dance drops are at catscandance.com/shop. Pet streetwear (cat bandanas, bucket hats, treats) lives at /pets." },
+    { q: "Do Cats Can Dance drops restock?", a: "No. Every drop is limited and screen-printed in Bangalore. Once a piece sells out, it doesn't come back." },
+    { q: "Does Cats Can Dance ship across India?", a: "Yes — pan-India shipping is available on every order from catscandance.com/shop." },
+  ],
+  ARTISTS: [
+    { q: "Who plays at Cats Can Dance events?", a: "Cats Can Dance lineups feature resident selectors and guest DJs from Bangalore and across India playing House, Disco, Jungle, Garage, and Drum & Bass. Recent lineups are at catscandance.com/events." },
+    { q: "How do artists get booked at Cats Can Dance?", a: "We curate small lineups per Episode. Send a mix and a short note to hello@catscandance.com or read /for-artists for the long version." },
+    { q: "Where can I listen to Cats Can Dance sets?", a: "Recordings, mixes, and curator playlists live at catscandance.com/playlists and /videos." },
+  ],
+  CULTURE: [
+    { q: "What is Cats Can Dance?", a: "Cats Can Dance is a Bengaluru-based underground dance music collective and streetwear label running RSVP-only Episodes and limited drops rooted in dance music culture." },
+    { q: "Where do Cats Can Dance events happen?", a: "Cats Can Dance Episodes run at intimate venues across Bengaluru including Bar Wild in Indiranagar. All upcoming dates and RSVP links are at catscandance.com/events." },
+    { q: "How do I join the Cats Can Dance pack?", a: "Sign up for early access at catscandance.com — we send drop alerts, RSVP openings, and the journal." },
+  ],
+  JOURNAL: [
+    { q: "Who writes the Cats Can Dance journal?", a: "The Pack — the people running the floor and the drops in Bangalore. Honest, by humans." },
+    { q: "How often does Cats Can Dance publish?", a: "Roughly weekly. Subscribe via RSS at catscandance.com/rss.xml." },
+    { q: "What does Cats Can Dance write about?", a: "Bangalore's underground party scene, India's drop culture, the artists behind the nights, and the brand's own Episodes." },
+  ],
+};
+
+const FAQ_DEFAULT = FAQ_BY_CATEGORY.CULTURE;
+
+const TAKE_IT_FURTHER: Record<string, { to: string; label: string; desc: string }[]> = {
+  GUIDES: [
+    { to: "/events", label: "RSVP an upcoming Episode", desc: "Live dates and lineups in Bangalore." },
+    { to: "/bengaluru-underground-dance-music", label: "The Bengaluru underground guide", desc: "Our deep map of the scene." },
+    { to: "/blog", label: "More guides", desc: "Read the full journal." },
+  ],
+  DROPS: [
+    { to: "/shop", label: "Shop the current drop", desc: "Limited streetwear, no restocks." },
+    { to: "/pets", label: "Pet streetwear", desc: "Bandanas, bucket hats, CCD treats." },
+    { to: "/about", label: "Why we drop the way we do", desc: "The brand behind the print." },
+  ],
+  ARTISTS: [
+    { to: "/playlists", label: "Curator playlists", desc: "Mixes from the lineup." },
+    { to: "/videos", label: "Watch sets & recaps", desc: "Footage from the floor." },
+    { to: "/events", label: "Upcoming Episodes", desc: "Catch them live." },
+  ],
+  CULTURE: [
+    { to: "/about", label: "About Cats Can Dance", desc: "Who we are." },
+    { to: "/events", label: "Upcoming nights", desc: "RSVP." },
+    { to: "/shop", label: "The drop", desc: "Limited streetwear from Bangalore." },
+  ],
+  JOURNAL: [
+    { to: "/blog", label: "All posts", desc: "Browse the journal." },
+    { to: "/events", label: "Episodes", desc: "Live dates." },
+    { to: "/about", label: "About the Pack", desc: "Who's behind it." },
+  ],
+};
+
+const TAKE_IT_FURTHER_DEFAULT = TAKE_IT_FURTHER.CULTURE;
 
 const BlogPost = () => {
   useDynamicPosts();
@@ -18,27 +80,48 @@ const BlogPost = () => {
   if (!post) return <Navigate to="/" replace />;
 
   const related = getRelatedPosts(post.slug, 3);
+  const cat = (post.category as Category | undefined) ?? "JOURNAL";
+  const faqEntries = FAQ_BY_CATEGORY[cat] ?? FAQ_DEFAULT;
+  const takeFurther = TAKE_IT_FURTHER[cat] ?? TAKE_IT_FURTHER_DEFAULT;
+  const wordCount = post.body.join(" ").split(/\s+/).filter(Boolean).length;
+  const keywords = [post.tag, post.category, "Bangalore", "underground", "dance music", "Cats Can Dance"]
+    .filter(Boolean)
+    .join(", ");
 
   const articleLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
-    image: ["https://catscandance.com/og-image.png"],
+    image: [`${SITE}/og-image.jpg`],
     datePublished: post.date,
     dateModified: post.date,
     inLanguage: "en-IN",
+    wordCount,
+    keywords,
+    articleSection: post.category || post.tag,
     author: { "@type": "Person", name: post.author },
     publisher: {
       "@type": "Organization",
       name: "Cats Can Dance",
-      logo: { "@type": "ImageObject", url: "https://catscandance.com/ccd-logo.png" },
+      logo: { "@type": "ImageObject", url: `${SITE}/ccd-logo.png` },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://catscandance.com/blog/${post.slug}`,
+      "@id": `${SITE}/blog/${post.slug}`,
     },
+    isPartOf: { "@type": "Blog", name: "Cats Can Dance — Journal", url: `${SITE}/blog` },
     about: ["dance music", "events in Bangalore", "underground parties India"],
+  };
+
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqEntries.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
   };
 
   return (
@@ -48,7 +131,8 @@ const BlogPost = () => {
         description={post.excerpt}
         path={`/blog/${post.slug}`}
         type="article"
-        jsonLd={articleLd}
+        keywords={keywords}
+        jsonLd={[articleLd, faqLd]}
       />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
@@ -133,6 +217,26 @@ const BlogPost = () => {
               </p>
             </div>
 
+            {/* Take it further — internal linking */}
+            <aside className="mt-12 bg-cream border-4 border-ink chunk-shadow p-5 sm:p-6">
+              <p className="font-display text-magenta text-base sm:text-lg mb-4">/ TAKE IT FURTHER</p>
+              <ul className="grid gap-3 sm:grid-cols-3">
+                {takeFurther.map((l) => (
+                  <li key={l.to}>
+                    <Link
+                      to={l.to}
+                      className="block bg-acid-yellow border-4 border-ink p-4 hover:-translate-y-1 hover:translate-x-1 transition-transform h-full"
+                    >
+                      <p className="font-display text-ink text-base sm:text-lg leading-tight mb-1">
+                        {l.label} →
+                      </p>
+                      <p className="text-ink/70 text-xs sm:text-sm font-medium">{l.desc}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+
             {related.length > 0 && (
               <aside className="mt-16 pt-10 border-t-4 border-ink">
                 <h2 className="font-display text-2xl sm:text-3xl text-ink mb-6">/ READ NEXT</h2>
@@ -146,7 +250,8 @@ const BlogPost = () => {
                         <span className="inline-block bg-ink text-cream text-[10px] font-bold px-2 py-0.5 mb-2">
                           {r.tag}
                         </span>
-                        <p className="font-display text-ink text-lg leading-tight">{r.title}</p>
+                        <p className="font-display text-ink text-lg leading-tight mb-1">{r.title}</p>
+                        <p className="text-ink/70 text-xs font-medium line-clamp-2">{r.excerpt}</p>
                       </Link>
                     </li>
                   ))}

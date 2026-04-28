@@ -13,7 +13,7 @@ const NotFound = () => {
 
   return (
     <>
-      <SEO title="404 — Cats Can Dance" description="This page wandered off. Head back home." path="/404" />
+      <SEO title="404 — Cats Can Dance" description="This page wandered off. Head back home." path="/404" noindex />
       <main className="bg-background text-foreground min-h-screen">
         <Nav />
         <section className="container pt-40 pb-32 text-center">

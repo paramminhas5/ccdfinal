@@ -8,6 +8,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import RsvpDialog from "@/components/RsvpDialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { getAllPosts } from "@/content/posts";
 import episode1Poster from "@/assets/episode-1-poster.png";
 
 type MediaItem = { type: "image" | "video"; url: string; caption?: string };
@@ -319,6 +320,39 @@ const EventDetail = () => {
             )}
           </div>
         </section>
+
+        {(() => {
+          const journal = getAllPosts()
+            .filter((p) => p.category === "GUIDES" || p.category === "CULTURE" || p.category === "JOURNAL")
+            .slice(0, 2);
+          if (journal.length === 0) return null;
+          return (
+            <section className="bg-cream border-t-4 border-ink py-12 md:py-16">
+              <div className="container max-w-5xl">
+                <p className="font-display text-magenta text-base md:text-lg mb-4">/ READ MORE FROM THE JOURNAL</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {journal.map((p) => (
+                    <Link
+                      key={p.slug}
+                      to={`/blog/${p.slug}`}
+                      className="block bg-acid-yellow border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 hover:translate-x-1 transition-transform"
+                    >
+                      <span className="inline-block bg-ink text-cream text-[10px] font-bold px-2 py-0.5 mb-2">{p.category || p.tag}</span>
+                      <p className="font-display text-ink text-xl md:text-2xl leading-tight mb-1">{p.title}</p>
+                      <p className="text-ink/70 text-sm font-medium line-clamp-2">{p.excerpt}</p>
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  to="/blog"
+                  className="inline-block mt-6 font-display text-ink text-lg underline decoration-4 decoration-magenta underline-offset-4 hover:text-magenta transition"
+                >
+                  All journal posts →
+                </Link>
+              </div>
+            </section>
+          );
+        })()}
 
         <Footer />
       </main>
