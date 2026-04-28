@@ -15,16 +15,28 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Auth: service token (from cron) OR admin password
+  // Auth: cron secret (from vault), service token, or admin password
+  const supabaseAuth = createClient(supabaseUrl, serviceKey);
+  const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.includes(serviceKey.slice(-8))) {
-    const adminPass = req.headers.get("x-admin-password") ?? "";
-    const expectedPass = Deno.env.get("ADMIN_PASSWORD") ?? "";
-    if (!expectedPass || adminPass !== expectedPass) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+  const adminPass = req.headers.get("x-admin-password") ?? "";
+  const expectedPass = Deno.env.get("ADMIN_PASSWORD") ?? "";
+
+  let authorized = false;
+  if (authHeader.includes(serviceKey.slice(-8))) authorized = true;
+  else if (expectedPass && adminPass === expectedPass) authorized = true;
+  else if (cronSecretHeader) {
+    const { data: vaultSecret } = await supabaseAuth
+      .from("vault.decrypted_secrets" as any)
+      .select("decrypted_secret")
+      .eq("name", "CRON_SECRET")
+      .maybeSingle();
+    if (vaultSecret && (vaultSecret as any).decrypted_secret === cronSecretHeader) authorized = true;
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const sources = ["sortmyscene", "insider", "skillboxes", "highape", "bookmyshow"];
