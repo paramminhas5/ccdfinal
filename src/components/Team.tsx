@@ -3,6 +3,7 @@ import catDancer from "@/assets/cat-dancer.svg";
 import catLeft from "@/assets/cat-left.svg";
 import catRight from "@/assets/cat-right.svg";
 import catHeadphones from "@/assets/cat-headphones.png";
+import PartnerContactDialog from "@/components/PartnerContactDialog";
 
 const founders = [
   { name: "Param Minhas", role: "Co-founder", img: catDj, bg: "bg-magenta", text: "text-cream" },
@@ -15,9 +16,6 @@ const roles = [
   { name: "Community & Ops", desc: "Run the door, the pack, the experience.", bg: "bg-electric-blue", text: "text-cream", img: catRight },
   { name: "Content & Video", desc: "Capture nights, edit recaps, grow channels.", bg: "bg-cream", text: "text-ink", img: catDancer },
 ];
-
-const mailto = (role: string) =>
-  `mailto:hello@catscandance.com?subject=${encodeURIComponent(`Join the Pack — ${role}`)}`;
 
 const Team = () => (
   <section id="team" className="relative bg-cream border-b-4 border-ink py-12 md:py-20 bg-grain overflow-hidden">
@@ -35,7 +33,7 @@ const Team = () => (
             className={`${f.bg} ${f.text} border-4 border-ink chunk-shadow-lg hover:-translate-y-1 transition-transform`}
           >
             <div className="aspect-[4/3] bg-cream border-b-4 border-ink p-6 grid place-items-center">
-              <img src={f.img} alt="" className="max-h-48 w-auto object-contain wiggle" />
+              <img src={f.img} alt="" className="max-h-48 w-auto object-contain wiggle" loading="lazy" decoding="async" />
             </div>
             <div className="p-5">
               <p className="font-display text-2xl md:text-3xl leading-tight">{f.name.toUpperCase()}</p>
@@ -53,20 +51,37 @@ const Team = () => (
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {roles.map((r) => (
-          <a
+          <PartnerContactDialog
             key={r.name}
-            href={mailto(r.name)}
-            className={`${r.bg} ${r.text} border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 transition-transform block`}
-          >
-            <p className="font-display text-xl md:text-2xl leading-tight mb-2">{r.name.toUpperCase()}</p>
-            <p className="font-medium text-sm md:text-base opacity-90 mb-3">{r.desc}</p>
-            <span className="font-display text-sm underline decoration-2 underline-offset-4">APPLY →</span>
-          </a>
+            kind="team"
+            defaultReason={r.name}
+            defaultMessage={`Hi! I'd love to apply for the ${r.name} role.\n\nA bit about me: `}
+            trigger={
+              <button
+                type="button"
+                className={`${r.bg} ${r.text} border-4 border-ink chunk-shadow p-5 hover:-translate-y-1 transition-transform block text-left w-full`}
+              >
+                <p className="font-display text-xl md:text-2xl leading-tight mb-2">{r.name.toUpperCase()}</p>
+                <p className="font-medium text-sm md:text-base opacity-90 mb-3">{r.desc}</p>
+                <span className="font-display text-sm underline decoration-2 underline-offset-4">APPLY →</span>
+              </button>
+            }
+          />
         ))}
       </div>
 
       <p className="mt-8 max-w-2xl text-ink/70 font-medium">
-        Don't see your role? <a href="mailto:hello@catscandance.com" className="underline decoration-magenta decoration-4 underline-offset-4">say hi anyway</a>.
+        Don't see your role?{" "}
+        <PartnerContactDialog
+          kind="team"
+          defaultReason="Other"
+          trigger={
+            <button type="button" className="underline decoration-magenta decoration-4 underline-offset-4">
+              say hi anyway
+            </button>
+          }
+        />
+        .
       </p>
     </div>
   </section>

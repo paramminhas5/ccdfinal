@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PartnerContactDialog from "@/components/PartnerContactDialog";
 import ccdLogo from "@/assets/ccd-logo.png";
 
 const SHORT_BIO_50 =
@@ -109,12 +110,23 @@ const Press = () => {
           </div>
 
           <h2 className="font-display text-3xl mb-4 mt-12">/ PRESS CONTACT</h2>
-          <a
-            href="mailto:hello@catscandance.com?subject=Press%20enquiry"
-            className="inline-block bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-          >
-            hello@catscandance.com
-          </a>
+          <PartnerContactDialog
+            kind="press"
+            trigger={
+              <button
+                type="button"
+                className="inline-block bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+              >
+                START A PRESS ENQUIRY →
+              </button>
+            }
+          />
+          <p className="text-ink/60 text-sm mt-3">
+            Or email us directly:{" "}
+            <a href="mailto:hello@catscandance.com?subject=Press%20enquiry" className="text-magenta underline decoration-2 underline-offset-2 hover:text-ink">
+              hello@catscandance.com
+            </a>
+          </p>
         </section>
         <Footer />
       </main>

@@ -10,7 +10,10 @@ const corsHeaders = {
 const Body = z.object({
   name: z.string().trim().min(1).max(100),
   email: z.string().trim().email().max(255),
-  message: z.string().trim().min(1).max(2000),
+  message: z.string().trim().min(1).max(2200),
+  kind: z.string().trim().max(40).optional(),
+  reason: z.string().trim().max(120).optional(),
+  phone: z.string().trim().max(40).optional(),
   website: z.string().optional(), // honeypot
 });
 
@@ -26,7 +29,6 @@ Deno.serve(async (req) => {
       });
     }
     if (parsed.data.website) {
-      // honeypot — pretend success
       return new Response(JSON.stringify({ ok: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -36,10 +38,22 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // Compose final message — kind/reason/phone are encoded into the message body
+    // so we don't need a schema migration. Admin can filter on the [kind] tag.
+    const tag = parsed.data.kind ? `[${parsed.data.kind}]` : "";
+    const reasonTag = parsed.data.reason ? `[${parsed.data.reason}]` : "";
+    const header = [tag, reasonTag].filter(Boolean).join(" ");
+    const phoneLine = parsed.data.phone ? `Phone: ${parsed.data.phone}\n` : "";
+    const messageHasHeader = parsed.data.message.startsWith("[");
+    const finalMessage = messageHasHeader
+      ? parsed.data.message
+      : [header, phoneLine, parsed.data.message].filter(Boolean).join("\n").trim();
+
     const { error } = await supabase.from("contact_messages").insert({
       name: parsed.data.name,
       email: parsed.data.email,
-      message: parsed.data.message,
+      message: finalMessage,
       user_agent: req.headers.get("user-agent") ?? null,
     });
     if (error) {

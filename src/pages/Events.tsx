@@ -170,7 +170,9 @@ const Events = () => {
           </div>
         </section>
 
-        {/* Host strip */}
+        <CuratedEvents />
+
+        {/* Host strip — moved to bottom per request */}
         <section className="bg-ink border-y-4 border-ink py-10 md:py-14">
           <div className="container flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
@@ -188,7 +190,6 @@ const Events = () => {
           </div>
         </section>
 
-        <CuratedEvents />
         <Footer />
       </main>
     </>

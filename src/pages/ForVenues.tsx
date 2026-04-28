@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
 import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
+import PartnerContactDialog from "@/components/PartnerContactDialog";
 
 const bullets = [
   "Dedicated, higher-value crowd",
@@ -43,12 +44,17 @@ const ForVenues = () => (
           <p className="text-ink/80 text-base sm:text-lg md:text-xl font-medium mb-6">
             We partner with venues to bring the right crowd, stronger spend and recurring moments that grow over time.
           </p>
-          <a
-            href="mailto:venues@catscandance.com"
-            className="inline-block bg-magenta text-cream font-display text-lg sm:text-xl px-5 sm:px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-          >
-            PARTNER WITH US →
-          </a>
+          <PartnerContactDialog
+            kind="venues"
+            trigger={
+              <button
+                type="button"
+                className="inline-block bg-magenta text-cream font-display text-lg sm:text-xl px-5 sm:px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+              >
+                PARTNER WITH US →
+              </button>
+            }
+          />
         </div>
         <ul className="space-y-3">
           {bullets.map((b, i) => (
