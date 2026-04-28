@@ -114,6 +114,18 @@ const Footer = () => {
             </div>
           ))}
           <div>
+            <p className="font-display text-acid-yellow text-lg mb-3">DISCOVER</p>
+            <ul className="space-y-2">
+              {buildDiscover().map((l) => (
+                <li key={l.to}>
+                  <Link to={l.to} className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
             <p className="font-display text-acid-yellow text-lg mb-3">FOLLOW</p>
             <ul className="space-y-2">
               <li><a href="https://instagram.com/catscandance" target="_blank" rel="noopener noreferrer" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">Instagram</a></li>
