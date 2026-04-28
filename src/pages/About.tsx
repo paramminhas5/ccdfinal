@@ -1,68 +1,83 @@
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import Why from "@/components/Why";
-import WhyNow from "@/components/WhyNow";
-import What from "@/components/What";
+import PageHero from "@/components/PageHero";
 import Team from "@/components/Team";
 import SectionReveal from "@/components/SectionReveal";
 import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
 
-const faqLd = {
+const pillars = [
+  { label: "NIGHTS", desc: "Underground dance music parties built around sound, design and the room.", bg: "bg-magenta", text: "text-cream" },
+  { label: "DROPS", desc: "Limited apparel and goods for humans and pets — wearable culture.", bg: "bg-acid-yellow", text: "text-ink" },
+  { label: "COMMUNITY", desc: "A pack of dancers, designers, DJs, photographers and pet people.", bg: "bg-lime", text: "text-ink" },
+];
+
+const aboutLd = {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "Who organises the best parties in Bangalore?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Cats Can Dance is one of Bangalore's top independent event organisers, producing curated underground dance music parties and electronic events across the city.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Where can I find the best dance music events in Bangalore?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "All upcoming Cats Can Dance Episodes — Bangalore's leading underground dance music events — are listed at https://catscandance.com/events with free RSVP.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How do I RSVP to a Cats Can Dance event?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Visit https://catscandance.com/events, pick the upcoming Episode, and submit your name and email through the RSVP form. Capacity is limited.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Where is Cats Can Dance based?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Cats Can Dance is based in Bangalore, Karnataka, India and tours select Indian cities for special editions.",
-      },
-    },
-  ],
+  "@type": "AboutPage",
+  name: "About Cats Can Dance",
+  url: "https://catscandance.com/about",
+  description: "Cats Can Dance is a Bangalore underground crew. Dance music nights, limited drops, and a community built around sound and culture.",
 };
 
 const About = () => (
   <main className="bg-background text-foreground">
     <SEO
       title="About Cats Can Dance | Bangalore's Underground Crew"
-      description="Dance music nights, limited apparel drops, and cool culture & streetwear out of Bangalore."
+      description="The mission, the people and the pack behind Cats Can Dance — Bangalore's underground dance music and culture crew."
       path="/about"
-      jsonLd={faqLd}
+      jsonLd={aboutLd}
     />
     <Nav />
-    <div className="pt-24 md:pt-28">
-      <SectionReveal><What /></SectionReveal>
-    </div>
-    <Marquee bg="bg-acid-yellow" items={["WHY THIS", "WHY NOW", "THREE WORLDS", "ONE ECOSYSTEM"]} />
-    <SectionReveal><Why /></SectionReveal>
-    <WhyNow />
-    <Marquee bg="bg-lime" reverse items={["MEET THE PACK", "JOIN THE PACK", "WE'RE HIRING"]} />
+    <PageHero
+      eyebrow="ABOUT"
+      title={<>WE THROW PARTIES.<br/>WE BUILD CULTURE.</>}
+      bg="bg-cream"
+      textColor="text-ink"
+      eyebrowColor="text-magenta"
+      shadowColor="hsl(var(--magenta))"
+    />
+
+    {/* Mission */}
+    <section className="bg-cream border-b-4 border-ink py-12 md:py-20 bg-grain">
+      <div className="container max-w-4xl">
+        <p className="font-display text-magenta text-lg md:text-xl mb-3">/ MISSION</p>
+        <h2 className="font-display text-ink text-3xl md:text-5xl leading-[0.95] mb-6">
+          A HOME FOR PEOPLE<br/>WHO MOVE.
+        </h2>
+        <div className="space-y-4 text-ink/85 text-lg md:text-xl font-medium">
+          <p>
+            Cats Can Dance started in Bangalore as a small crew obsessed with dance music, design and the
+            feeling of a great room. We're building a culture brand for the people who actually show up —
+            dancers, DJs, designers, pet people and the kind of crowd that travels for a night.
+          </p>
+          <p>
+            We make nights worth remembering, drops worth keeping and a community worth being part of.
+            That's it. That's the brief.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* What we do — short strip */}
+    <section className="bg-electric-blue border-b-4 border-ink py-12 md:py-20">
+      <div className="container">
+        <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ WHAT WE DO</p>
+        <h2 className="font-display text-cream text-3xl md:text-5xl leading-[0.95] mb-8 drop-shadow-[5px_5px_0_hsl(var(--ink))]">
+          THREE THINGS.<br/>DONE PROPERLY.
+        </h2>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {pillars.map((p) => (
+            <div key={p.label} className={`${p.bg} ${p.text} border-4 border-ink chunk-shadow p-6`}>
+              <p className="font-display text-3xl md:text-4xl mb-2">{p.label}</p>
+              <p className="font-medium leading-snug">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <Marquee bg="bg-acid-yellow" items={["MEET THE PACK", "JOIN THE PACK", "WE'RE HIRING", "RUN BY HUMANS WHO MOVE"]} />
     <SectionReveal><Team /></SectionReveal>
     <Footer />
   </main>
