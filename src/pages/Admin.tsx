@@ -1670,6 +1670,13 @@ function CuratedEventsTab() {
           >
             {refreshing ? "CRAWLING…" : "🔄 REFRESH SOURCE"}
           </button>
+          <button
+            onClick={runFullNightly}
+            disabled={refreshing}
+            className="bg-magenta text-cream font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform disabled:opacity-60"
+          >
+            {refreshing ? "RUNNING…" : "🌙 RUN NIGHTLY NOW"}
+          </button>
         </div>
       </div>
 
