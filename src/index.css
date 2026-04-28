@@ -20,6 +20,15 @@
     --cream: 20 6% 90%;                 /* stone */
     --ink: 222 47% 4%;
 
+    /* Semantic theme tokens — overridden at runtime by ThemeProvider */
+    --brand: 0 72% 51%;
+    --accent: 84 81% 56%;
+    --surface: 20 6% 90%;
+    --surface-alt: 222 47% 4%;
+    --on-brand: 20 6% 90%;
+    --on-surface: 222 47% 4%;
+    --shadow: 222 47% 4%;
+
     --card: 20 6% 90%;
     --card-foreground: 222 47% 4%;
     --popover: 20 6% 90%;
