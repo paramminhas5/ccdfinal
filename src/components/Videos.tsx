@@ -35,24 +35,31 @@ const Videos = () => {
   }, []);
 
   return (
-    <section id="videos" className="relative bg-lime border-b-4 border-ink py-24 md:py-32 overflow-hidden">
+    <section id="videos" className="relative bg-lime border-b-4 border-ink py-12 md:py-20 overflow-hidden">
       <div className="container">
-        <div className="flex items-end justify-between flex-wrap gap-6 mb-12">
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
           <div>
-            <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ VIDEOS · YOUTUBE</p>
-            <h2 className="font-display text-ink text-6xl md:text-8xl leading-[0.9]">
-              WATCH<br/>THE TAPES.
-            </h2>
+            <p className="font-display text-magenta text-lg md:text-xl mb-3">/ VIDEOS · YOUTUBE</p>
+            <a href="/videos" className="inline-block hover:opacity-90 transition-opacity">
+              <h2 className="font-display text-ink text-4xl md:text-6xl leading-[0.9]">
+                WATCH<br/>THE TAPES.
+              </h2>
+            </a>
           </div>
-          <a
-            href={CHANNEL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="bg-magenta text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-          >
-            SUBSCRIBE →
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <a href="/videos" className="bg-cream text-ink font-display text-lg px-5 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform">
+              ALL VIDEOS →
+            </a>
+            <a
+              href={CHANNEL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="bg-magenta text-cream font-display text-lg px-5 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+            >
+              SUBSCRIBE →
+            </a>
+          </div>
         </div>
 
         {videos === null && !error && (

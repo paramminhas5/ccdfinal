@@ -22,7 +22,7 @@ const Videos = lazy(() => import("@/components/Videos"));
 const EarlyAccess = lazy(() => import("@/components/EarlyAccess"));
 
 const SectionFallback = ({ bg = "bg-cream" }: { bg?: string }) => (
-  <div className={`${bg} border-b-4 border-ink min-h-[400px] animate-pulse`} aria-hidden />
+  <div className={`${bg} border-b-4 border-ink min-h-[220px] animate-pulse`} aria-hidden />
 );
 
 const Index = () => {
@@ -69,24 +69,27 @@ const Index = () => {
         <Catbot />
         <MoonwalkCat />
         <Hero />
-        <Marquee bg="bg-acid-yellow" size="lg" />
+        <Marquee bg="bg-acid-yellow" size="lg" items={["WHO WE ARE", "BANGALORE UNDERGROUND", "A CULTURE BRAND", "DANCE · PETS · STREETWEAR"]} />
         <SectionReveal><About /></SectionReveal>
-        <Marquee bg="bg-lime" reverse />
+        <Marquee bg="bg-lime" reverse items={["EPISODE 01", "EPISODE 02", "CATCH US LIVE", "BANGALORE", "RSVP NOW"]} />
         <SectionReveal><Events /></SectionReveal>
-        <Marquee bg="bg-orange" />
+        <Marquee bg="bg-orange" items={["WATCH THE TAPES", "LIVE SETS", "RECAPS", "YOUTUBE"]} />
         <Suspense fallback={<SectionFallback bg="bg-lime" />}>
           <SectionReveal><Videos /></SectionReveal>
         </Suspense>
+        <Marquee bg="bg-magenta" reverse items={["NOW SPINNING", "DANCE MUSIC", "LATE NIGHT", "WAREHOUSE CUTS"]} />
         <Suspense fallback={<SectionFallback bg="bg-cream" />}>
           <SectionReveal><Playlist /></SectionReveal>
         </Suspense>
+        <Marquee bg="bg-acid-yellow" items={["STREETWEAR", "LIMITED DROPS", "PET MERCH", "WEAR THE CULTURE"]} />
         <Suspense fallback={<SectionFallback bg="bg-cream" />}>
           <SectionReveal><Drops /></SectionReveal>
         </Suspense>
+        <Marquee bg="bg-electric-blue" reverse items={["@CATSCANDANCE", "LATEST", "BTS", "FOLLOW"]} />
         <Suspense fallback={<SectionFallback bg="bg-electric-blue" />}>
           <SectionReveal><Instagram /></SectionReveal>
         </Suspense>
-        <Marquee bg="bg-acid-yellow" />
+        <Marquee bg="bg-acid-yellow" items={["JOIN THE PACK", "EARLY ACCESS", "DON'T MISS A DROP"]} />
         <Suspense fallback={<SectionFallback bg="bg-magenta" />}>
           <SectionReveal><EarlyAccess /></SectionReveal>
         </Suspense>

@@ -48,10 +48,10 @@ const Events = () => {
   const past = events.filter((e) => e.status === "past");
 
   return (
-    <section id="events" className="relative bg-lime py-20 md:py-20 border-b-4 border-ink overflow-hidden">
+    <section id="events" className="relative bg-lime py-12 md:py-20 border-b-4 border-ink overflow-hidden">
       <div className="container relative z-10">
-        <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ EVENTS</p>
-        <h2 className="font-display text-ink text-6xl md:text-8xl mb-12 leading-[0.85]">
+        <p className="font-display text-magenta text-lg md:text-xl mb-3">/ EVENTS</p>
+        <h2 className="font-display text-ink text-4xl md:text-6xl mb-8 leading-[0.85]">
           CATCH<br/>US LIVE
         </h2>
 

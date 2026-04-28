@@ -85,7 +85,7 @@ const Playlist = () => {
     <section
       ref={ref}
       id="playlist"
-      className="relative bg-magenta py-20 md:py-20 border-t-4 border-b-4 border-ink overflow-hidden"
+      className="relative bg-magenta py-12 md:py-20 border-t-4 border-b-4 border-ink overflow-hidden"
     >
       <motion.img
         src={vinyl}
@@ -95,10 +95,12 @@ const Playlist = () => {
         className="absolute -top-20 -right-20 w-56 md:w-[28rem] max-w-[40vw] opacity-90 pointer-events-none transform-gpu z-0"
       />
       <div className="container relative z-10">
-        <p className="font-display text-acid-yellow text-2xl md:text-3xl mb-4">/ THE PLAYLIST</p>
-        <h2 className="font-display text-cream text-6xl md:text-8xl mb-12 drop-shadow-[6px_6px_0_hsl(var(--ink))] leading-[0.9]">
-          NOW<br/>SPINNING
-        </h2>
+        <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ THE PLAYLIST</p>
+        <a href="/playlists" className="inline-block hover:opacity-90 transition-opacity">
+          <h2 className="font-display text-cream text-4xl md:text-6xl mb-8 drop-shadow-[6px_6px_0_hsl(var(--ink))] leading-[0.9]">
+            NOW<br/>SPINNING
+          </h2>
+        </a>
 
         {playlists.length > 1 && (
           <div className="flex flex-wrap gap-2 mb-6">
@@ -150,17 +152,25 @@ const Playlist = () => {
           )}
         </div>
 
-        {active?.url && (
+        <div className="flex flex-wrap gap-4 mt-6 items-center">
+          {active?.url && (
+            <a
+              href={active.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="inline-block font-display text-cream text-lg underline decoration-4 decoration-acid-yellow underline-offset-4 hover:text-acid-yellow transition"
+            >
+              Open in {platformLabel(active.platform)} →
+            </a>
+          )}
           <a
-            href={active.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="inline-block mt-6 font-display text-cream text-lg underline decoration-4 decoration-acid-yellow underline-offset-4 hover:text-acid-yellow transition"
+            href="/playlists"
+            className="inline-block font-display text-cream text-lg underline decoration-4 decoration-cream underline-offset-4 hover:text-acid-yellow transition"
           >
-            Open in {platformLabel(active.platform)} →
+            See all playlists →
           </a>
-        )}
+        </div>
       </div>
     </section>
   );

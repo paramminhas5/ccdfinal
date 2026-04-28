@@ -72,7 +72,7 @@ const ShinyBall = () => {
       initial={{ y: -400, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 80, damping: 11 }}
-      className="absolute top-0 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
+      className="pointer-events-none"
       aria-hidden
     >
       <div className="w-1 h-20 bg-ink mx-auto" />

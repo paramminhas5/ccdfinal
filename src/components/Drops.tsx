@@ -76,13 +76,13 @@ const Drops = () => {
   }, []);
 
   return (
-    <section id="drops" className="relative bg-cream border-b-4 border-ink py-20 md:py-20 bg-grain overflow-hidden">
+    <section id="drops" className="relative bg-cream border-b-4 border-ink py-12 md:py-20 bg-grain overflow-hidden">
       <div className="container">
-        <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ DROPS · SHOP</p>
-        <h2 className="font-display text-ink text-6xl md:text-7xl mb-3 leading-[0.9]">
+        <p className="font-display text-magenta text-lg md:text-xl mb-3">/ DROPS · SHOP</p>
+        <h2 className="font-display text-ink text-4xl md:text-6xl mb-3 leading-[0.9]">
           WEAR THE<br />CULTURE.
         </h2>
-        <p className="font-display text-ink/70 text-lg md:text-xl mb-12">Streetwear + pet drops. Limited. No restocks.</p>
+        <p className="font-display text-ink/70 text-base md:text-lg mb-8">Streetwear + pet drops. Limited. No restocks.</p>
         <p className="sr-only">
           Limited streetwear drops, pet merch and collectibles from Cats Can Dance — a Bangalore streetwear brand and India's leading independent drop culture label.
         </p>

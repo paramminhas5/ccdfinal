@@ -82,7 +82,7 @@ const Hero = () => {
       <section ref={ref} id="home" className="relative h-screen overflow-hidden bg-electric-blue">
         {disco && <Lasers />}
         {disco && (
-          <div className="scale-75 md:scale-100 origin-top">
+          <div className="absolute top-[10vh] md:top-0 left-1/2 -translate-x-1/2 z-40 scale-75 md:scale-100 origin-top">
             <DiscoBall />
           </div>
         )}
@@ -105,7 +105,7 @@ const Hero = () => {
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4 text-center pointer-events-none">
           <motion.h1
             style={{ scale: titleScale, y: titleY, transformOrigin: "center center", willChange: "transform" }}
-            className="font-display text-[18vw] md:text-[14vw] leading-[0.85] text-cream drop-shadow-[6px_6px_0_hsl(var(--ink))] -mt-4 md:-mt-6"
+            className="font-display text-[15vw] md:text-[11vw] leading-[0.85] text-cream drop-shadow-[6px_6px_0_hsl(var(--ink))] -mt-4 md:-mt-6"
           >
             CATS<br/>CAN<br/>DANCE
           </motion.h1>

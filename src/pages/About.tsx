@@ -59,10 +59,11 @@ const About = () => (
     <div className="pt-24 md:pt-28">
       <SectionReveal><What /></SectionReveal>
     </div>
-    <Marquee bg="bg-acid-yellow" />
+    <Marquee bg="bg-acid-yellow" items={["WHY THIS", "WHY NOW", "THREE WORLDS", "ONE ECOSYSTEM"]} />
     <SectionReveal><Why /></SectionReveal>
-    <SectionReveal><Team /></SectionReveal>
     <WhyNow />
+    <Marquee bg="bg-lime" reverse items={["MEET THE PACK", "JOIN THE PACK", "WE'RE HIRING"]} />
+    <SectionReveal><Team /></SectionReveal>
     <Footer />
   </main>
 );

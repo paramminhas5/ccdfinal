@@ -69,14 +69,14 @@ const What = () => {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const titleX = useTransform(scrollYProgress, [0, 1], [0, 120]);
   return (
-    <section ref={ref} id="what" className="relative bg-cream border-b-4 border-ink py-24 md:py-32 bg-grain overflow-hidden">
+    <section ref={ref} id="what" className="relative bg-cream border-b-4 border-ink py-12 md:py-20 bg-grain overflow-hidden">
       <div className="container">
-        <p className="font-display text-magenta text-2xl md:text-3xl mb-4">/ WHAT</p>
-        <motion.h2 style={{ x: titleX }} className="font-display text-5xl md:text-8xl text-ink leading-[0.9] max-w-5xl">
+        <p className="font-display text-magenta text-lg md:text-xl mb-3">/ WHAT</p>
+        <motion.h2 style={{ x: titleX }} className="font-display text-4xl md:text-6xl text-ink leading-[0.9] max-w-5xl">
           A CULTURE BRAND<br/>WITH FOUR ENGINES.
         </motion.h2>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
           {engines.map((e, i) => (
             <motion.div
               key={e.label}
@@ -94,9 +94,9 @@ const What = () => {
           ))}
         </div>
 
-        <div className="mt-20 bg-ink text-cream border-4 border-ink rounded-3xl p-8 md:p-12 chunk-shadow-lg">
-          <p className="font-display text-acid-yellow text-xl md:text-2xl mb-2">/ REVENUE MODEL</p>
-          <h3 className="font-display text-4xl md:text-6xl mb-8">FOUR STREAMS. ONE FLYWHEEL.</h3>
+        <div className="mt-12 bg-ink text-cream border-4 border-ink rounded-3xl p-6 md:p-10 chunk-shadow-lg">
+          <p className="font-display text-acid-yellow text-lg md:text-xl mb-2">/ REVENUE MODEL</p>
+          <h3 className="font-display text-3xl md:text-5xl mb-6">FOUR STREAMS. ONE FLYWHEEL.</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {revenue.map((r, i) => (
               <div key={r} className="border-4 border-cream rounded-2xl p-5 text-center">
