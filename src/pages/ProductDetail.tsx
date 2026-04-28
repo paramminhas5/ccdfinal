@@ -63,6 +63,35 @@ const ProductDetail = () => {
       }
     : null;
 
+  const productFaqLd = product
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "Is this a limited drop?",
+            acceptedAnswer: { "@type": "Answer", text: "Yes — every Cats Can Dance piece is a limited drop with no restocks. Once it's gone, it's gone." },
+          },
+          {
+            "@type": "Question",
+            name: "Where does it ship from?",
+            acceptedAnswer: { "@type": "Answer", text: "All Cats Can Dance orders ship from Bangalore, India. Pan-India shipping is available on every order." },
+          },
+          {
+            "@type": "Question",
+            name: "What's the return and exchange policy?",
+            acceptedAnswer: { "@type": "Answer", text: "We offer size exchanges within 7 days of delivery on unworn pieces. Limited drops are not eligible for refund." },
+          },
+          {
+            "@type": "Question",
+            name: "How is it made?",
+            acceptedAnswer: { "@type": "Answer", text: "Screen-printed in Bangalore on heavyweight cotton. Cats Can Dance drops are produced in small runs tied to our underground music Episodes." },
+          },
+        ],
+      }
+    : null;
+
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const shareText = product ? `${product.title} — Cats Can Dance` : "";
 
