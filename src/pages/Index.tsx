@@ -72,19 +72,19 @@ const Index = () => {
         <Marquee bg="bg-acid-yellow" size="lg" />
         <SectionReveal><About /></SectionReveal>
         <Marquee bg="bg-lime" reverse />
+        <SectionReveal><Events /></SectionReveal>
+        <Marquee bg="bg-orange" />
+        <Suspense fallback={<SectionFallback bg="bg-lime" />}>
+          <SectionReveal><Videos /></SectionReveal>
+        </Suspense>
         <Suspense fallback={<SectionFallback bg="bg-cream" />}>
           <SectionReveal><Playlist /></SectionReveal>
         </Suspense>
-        <SectionReveal><Events /></SectionReveal>
-        <Marquee bg="bg-orange" />
         <Suspense fallback={<SectionFallback bg="bg-cream" />}>
           <SectionReveal><Drops /></SectionReveal>
         </Suspense>
         <Suspense fallback={<SectionFallback bg="bg-electric-blue" />}>
           <SectionReveal><Instagram /></SectionReveal>
-        </Suspense>
-        <Suspense fallback={<SectionFallback bg="bg-lime" />}>
-          <SectionReveal><Videos /></SectionReveal>
         </Suspense>
         <Marquee bg="bg-acid-yellow" />
         <Suspense fallback={<SectionFallback bg="bg-magenta" />}>

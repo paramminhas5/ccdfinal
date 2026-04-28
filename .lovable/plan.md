@@ -1,70 +1,66 @@
+# Fixes: About page, home order, nav dropdown, copy + disco ball
 
+## 1. /about — remove "Who We Are" red hero, route to current What
 
-# Fix: City overflow, weird shadow, duplicate poster, and Episode media gallery
+The About page currently opens with a magenta `PageHero` ("WHO WE ARE.") followed by `Why → What → Team → WhyNow`. The user wants clicking About to land directly on the current `What` content (the "four engines" section), with the red Who-We-Are intro page gone.
 
-## 1. Poster loading twice on Episode 1 detail page
+**Edit `src/pages/About.tsx`:**
+- Remove the `<PageHero …>` block entirely (and the `PageHero` import).
+- Reorder so `What` is the first section: `What → Why → Team → WhyNow` (Marquee between What and Why).
+- `What` already has its own eyebrow/title ("/ WHAT — A CULTURE BRAND WITH FOUR ENGINES.") so no extra heading needed. Add `pt-32 md:pt-40` wrapper (or pass extra top padding) so the fixed nav doesn't overlap the first line — simplest: wrap `<What />` in a `<div className="pt-24 md:pt-28">` for breathing room, OR bump `What`'s `py-24 md:py-32` to `pt-32 md:pt-40 pb-24 md:pb-32`. Use the wrapper approach to avoid changing `What.tsx`.
 
-**Cause:** In `src/pages/EventDetail.tsx`, `event.poster_url` is now `/episodes/episode-01.gif` (from the recent migration), AND `RECAP_MEDIA["episode-1"]` is also `/episodes/episode-01.gif`. So the page renders the same GIF twice — once as the hero poster (line 198–234), once as the recap (line 236–238).
+## 2. Home — move Events + Videos above Playlist
 
-**Fix:** Remove the standalone `RECAP_MEDIA` block entirely. The poster block already shows the GIF beautifully and silently falls back to the static PNG (we'll reuse the same fallback logic). Delete `RECAP_MEDIA`, `RECAP_FALLBACK`, and `RecapMedia` component. Inline the PNG fallback into the existing poster `<img>` `onError` so a GIF failure swaps to the imported `episode1Poster` first, then to the lime tile.
+In `src/pages/Index.tsx`, current order under About is: Playlist → Events → Drops → Instagram → Videos → EarlyAccess.
 
-## 2. City text overflowing in Event hero
+New order: **Events → Videos → Playlist → Drops → Instagram → EarlyAccess**.
 
-**Cause:** At 768px (md breakpoint), `grid sm:grid-cols-3 gap-4` gives each `Field` ~33% width. `font-display text-2xl` "Bengaluru" / long venue names overflow.
+Edit `src/pages/Index.tsx`:
+- Move `<SectionReveal><Events /></SectionReveal>` and the `Suspense`-wrapped `Videos` to come right after the About marquee.
+- Then Playlist, Drops, Instagram, EarlyAccess in that order.
+- Keep marquees but rearrange so background colors still alternate (e.g. After About marquee → Events → `bg-orange` marquee → Videos → Playlist → Drops → Instagram → `bg-acid-yellow` marquee → EarlyAccess).
 
-**Fix in `EventDetail.tsx`:** 
-- Add `min-w-0` to each Field wrapper and `break-words` to the value `<p>`.
-- Bump the value text to `text-xl md:text-2xl` so it shrinks on tablets.
-- Same treatment for the venue field.
+## 3. "More" dropdown — add Playlists
 
-## 3. Heading shadow looks weird on past episodes
+In `src/components/Nav.tsx`, `moreLinks` currently has Pets, Media, Blog, Press. The user expects Playlists too.
 
-**Cause:** `drop-shadow-[6px_6px_0_hsl(var(--ink))]` on line 163 always uses ink (black) shadow. On the past-episode header (cream bg, ink text) it produces a black shadow on black text — looks crammed/dirty. On upcoming (magenta bg, cream text) the black shadow reads correctly.
+There is no `/playlists` route. Easiest: add an entry that scrolls to the home `#playlist` section.
+- Add `{ to: "/#playlist", label: "Playlists" }` to `moreLinks`.
+- The `Dropdown` uses `RouterNavLink` which doesn't smooth-scroll to hashes after navigation. Add a small `onClick` handler in the dropdown item: if the `to` contains `#`, `e.preventDefault()`, navigate to `/`, then `setTimeout(() => document.getElementById("playlist")?.scrollIntoView({ behavior: "smooth" }), 80)`. Mirror the existing `goToEarlyAccess` pattern.
 
-**Fix:** Make the shadow conditional:
-- Upcoming: keep `drop-shadow-[6px_6px_0_hsl(var(--ink))]` (black shadow on cream text — pops).
-- Past: switch to `drop-shadow-[6px_6px_0_hsl(var(--magenta))]` (magenta shadow on ink text on cream bg — clean and on-brand).
+## 4. Copy fix on /for-artists
 
-## 4. Episode media gallery (upload photos/videos from past gigs, view on frontend)
+In `src/pages/ForArtists.tsx` line 39, replace:
+- `"a content drop, a community moment and a repeat booking."`
+- with: `"a content drop, a community moment and people want to experience again."`
 
-**Schema (migration):**
-Add a `media` column to `events`:
-```sql
-ALTER TABLE public.events ADD COLUMN IF NOT EXISTS media jsonb NOT NULL DEFAULT '[]'::jsonb;
-```
-Shape: `[{ "type": "image" | "video", "url": "...", "caption": "..." }]`. Stored in the existing `event-posters` bucket (rename concept-wise to "event-media"; keep the bucket name to avoid migration risk).
+(The user said "Replace 'and a repeat booking' with 'people want to experience again'".)
 
-**Edge function `admin-content`:**
-- Extend the `events.upsert` payload handler to persist `media` (array passthrough). One-line addition.
-- The existing `admin-upload-poster` already returns a `{ path, publicUrl }` for any image/video upload — reuse it for gallery items too. Increase the size cap to 50MB so short videos fit (still validated by file.type).
+## 5. Disco ball on disco mode (mobile + everywhere)
 
-**Admin UI in `EventEditor` (in `src/pages/Admin.tsx`, ~line 793+):**
-Add a new "GALLERY" section under the existing poster field:
-- "+ ADD PHOTO/VIDEO" button → file picker (accepts `image/*,video/mp4,video/webm`)
-- On select: POST to `admin-upload-poster`, get back `publicUrl`, append `{ type: file.type.startsWith("video") ? "video" : "image", url: publicUrl, caption: "" }` to `event.media`.
-- Render existing media as a small grid: thumbnail (img or `<video muted playsInline>` poster frame), caption input, ✕ remove button, drag handles for reorder (simple up/down arrows to keep it lightweight).
-- "Save event" already POSTs the row — `media` rides along.
+Currently in `src/components/Hero.tsx` line 84: `{disco && !isMobile && <DiscoBall />}` — disco ball is suppressed on mobile. The user explicitly asked to "Add the disco ball on disco mode."
 
-**Frontend in `EventDetail.tsx`:**
-Replace the deleted `RECAP_MEDIA` block with a new `EventGallery` block, shown only when `event.media?.length > 0` (and works for any event, not just episode-1):
-```text
-/ THE NIGHT, IN MOTION
-[ media grid: 1col mobile, 2col md, 3col lg ]
-   - image: <img loading="lazy"> with onError fallback
-   - video: <video controls preload="metadata" playsInline> with poster from item.poster (optional)
-caption underneath each (if present)
-```
-Click an image → opens lightbox modal (reuse the existing `Dialog` from `@/components/ui/dialog`).
+- Drop the `!isMobile` guard so the ball appears on mobile too: `{disco && <DiscoBall />}`.
+- Scale `DiscoBall` slightly smaller on mobile via a `className` prop or wrap it in a `scale-75 md:scale-100` container so it doesn't crowd the small viewport.
 
-**Backfill:** For `episode-1`, no auto-import — the user can upload the GIF + any new photos via the admin UI. The standalone GIF poster stays as the hero.
+## 6. Color collisions on links/logo
 
-## 5. Files touched
+The user reports cases where link text or logo are invisible because they match the background. Inspect and fix the two known offenders:
 
-- `src/pages/EventDetail.tsx` — drop `RECAP_MEDIA`/`RecapMedia`, inline PNG fallback in poster `onError`, `min-w-0`+`break-words`+responsive text on Fields, conditional shadow color, new `EventGallery` block reading `event.media`
-- `src/pages/Admin.tsx` — extend `EventEditor` with gallery picker + thumbnails + reorder/remove + caption inputs; extend the row type to include `media`
-- `supabase/functions/admin-content/index.ts` — pass `media` through on `events.upsert`
-- `supabase/functions/admin-upload-poster/index.ts` — bump size cap to 50MB, accept `video/*` content types
-- `supabase/migrations/*` — `ALTER TABLE events ADD COLUMN media jsonb NOT NULL DEFAULT '[]'`
+a) **Nav at top of `/about`** — when not scrolled, nav uses `text-cream` on `bg-transparent`. Old About had a magenta hero so cream text read fine. After removing the PageHero (step 1), the first section is `What` on `bg-cream` → cream nav text on cream bg = invisible until scroll.
+- Fix: make the nav default to scrolled-style coloring on the About page (and any page whose first section is cream). Simplest universal fix: set `setScrolled(true)` initial state on routes whose first section is light, OR detect first section background.
+- Cleaner: change Nav to read a `data-nav-theme` attribute on `<body>` or accept a prop. Minimal change: in `Nav.tsx`, if `location.pathname === "/about"`, treat as `scrolled = true` always (force ink/cream-bg styling). Apply same to any other page with a light first section if discovered.
 
-No new dependencies. No connector changes. No new bucket. After deploy: open Admin → EVENTS → Episode 1 → upload a photo/video → save → visit `/events/episode-1` to see the gallery render under the poster.
+b) **CCD logo** — in `Nav.tsx` line 143 the logo is inverted to white when `!scrolled`. On a cream first section it'd be invisible. Tying logo invert to the same `scrolled` flag fix above resolves it.
 
+c) **Audit pass** — quick visual check of `/about` (now What-first), `/blog`, `/media`, `/press`, `/pets` for the same nav-on-light-bg issue. Apply the same forced-scrolled treatment to any page that opens on a non-dark background.
+
+## Files touched
+
+- `src/pages/About.tsx` — remove PageHero, reorder sections, add top padding wrapper.
+- `src/pages/Index.tsx` — reorder home sections (Events + Videos above Playlist), rebalance marquees.
+- `src/components/Nav.tsx` — add Playlists to More dropdown with hash-scroll handler; force scrolled-style coloring on light-background routes so links + logo stay visible.
+- `src/pages/ForArtists.tsx` — copy change.
+- `src/components/Hero.tsx` — remove `!isMobile` guard so DiscoBall renders on mobile too; mobile scale wrapper.
+
+No DB or edge function changes. No new dependencies.
