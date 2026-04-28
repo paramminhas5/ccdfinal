@@ -892,14 +892,10 @@ const Admin = () => {
                   Pick a preset to re-skin the entire site. Saves apply live to every open visitor.
                 </p>
                 <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                  {(Object.keys(THEME_PRESETS) as Array<keyof typeof THEME_PRESETS>).map((id) => {
-                    const preset = THEME_PRESETS[id as string];
-                    const palette = resolvePalette({ preset: id as string });
-                    const t = {
-                      label: preset.label.toUpperCase(),
-                      desc: preset.description,
-                      swatches: [palette.magenta, palette.acidYellow, palette.electricBlue, palette.cream, palette.ink],
-                    };
+                  {Object.keys(THEME_PRESETS).map((id) => {
+                    const preset = THEME_PRESETS[id];
+                    const palette = resolvePalette({ preset: id });
+                    const swatches = [palette.magenta, palette.acidYellow, palette.electricBlue, palette.cream, palette.ink];
                     const active = (settings?.theme?.preset ?? "default") === id;
                     return (
                       <button
@@ -908,13 +904,12 @@ const Admin = () => {
                         className={`text-left bg-cream border-4 border-ink chunk-shadow p-4 transition-transform hover:-translate-y-1 ${active ? "ring-4 ring-magenta" : ""}`}
                       >
                         <div className="flex gap-1 mb-3">
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.brand})` }} />
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.accent})` }} />
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.surface})` }} />
-                          <span className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${t.surfaceAlt})` }} />
+                          {swatches.map((c, i) => (
+                            <span key={i} className="w-8 h-8 border-2 border-ink" style={{ background: `hsl(${c})` }} />
+                          ))}
                         </div>
-                        <p className="font-display text-xl text-ink">{t.label}</p>
-                        <p className="text-ink/70 text-sm">{t.desc}</p>
+                        <p className="font-display text-xl text-ink">{preset.label.toUpperCase()}</p>
+                        <p className="text-ink/70 text-sm">{preset.description}</p>
                         {active && <p className="font-display text-xs text-magenta mt-2">★ ACTIVE</p>}
                       </button>
                     );
