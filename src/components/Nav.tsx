@@ -180,7 +180,6 @@ const Nav = () => {
             </li>
           ))}
           <Dropdown label="Partners" links={partnersLinks} scrolled={effectiveScrolled} />
-          <Dropdown label="More" links={moreLinks} scrolled={effectiveScrolled} />
         </ul>
         <div className="hidden lg:flex items-center gap-3">
           <span className="hidden xl:block"><DiscoMute /></span>
