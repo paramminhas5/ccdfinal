@@ -47,6 +47,11 @@ type Settings = {
   featured_playlist_id: string | null;
   seo_verifications?: Verifications;
   marquees?: MarqueeConfig[];
+  theme?: { preset?: string; overrides?: Record<string, string> };
+  home_content?: {
+    about?: { kicker?: string; title?: string; body?: string; ctaLabel?: string; ctaHref?: string };
+    cta?: { title?: string; body?: string; label?: string; href?: string };
+  };
 };
 type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 type EventRow = {
@@ -236,6 +241,8 @@ const Admin = () => {
               playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
               seo_verifications: s.settings.seo_verifications ?? {},
               marquees: mergeMarquees(s.settings.marquees),
+              theme: s.settings.theme ?? { preset: "default" },
+              home_content: s.settings.home_content ?? {},
             }
           : null
       );
