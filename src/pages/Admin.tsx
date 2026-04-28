@@ -38,11 +38,15 @@ type PlaylistItem = {
   spotify_id?: string;
 };
 type Verifications = { google?: string; bing?: string; plausible_domain?: string };
+type MarqueeConfig = {
+  id: string; enabled: boolean; bg: string; reverse: boolean; size: "lg" | "sm"; items: string[];
+};
 type Settings = {
   id: string;
   playlists: PlaylistItem[];
   featured_playlist_id: string | null;
   seo_verifications?: Verifications;
+  marquees?: MarqueeConfig[];
 };
 type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 type EventRow = {
