@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
-import Marquee from "@/components/Marquee";
+import MarqueeBySlot from "@/components/MarqueeBySlot";
 import About from "@/components/About";
 import Events from "@/components/Events";
 import Contact from "@/components/Contact";
@@ -14,7 +14,6 @@ import SectionDots from "@/components/SectionDots";
 import SEO from "@/components/SEO";
 import MoonwalkCat from "@/components/MoonwalkCat";
 
-// Lazy-load below-the-fold sections to speed up first paint
 const Playlist = lazy(() => import("@/components/Playlist"));
 const Drops = lazy(() => import("@/components/Drops"));
 const Instagram = lazy(() => import("@/components/Instagram"));
@@ -69,28 +68,28 @@ const Index = () => {
         <Catbot />
         <MoonwalkCat />
         <Hero />
-        <Marquee bg="bg-acid-yellow" size="lg" items={["WHO WE ARE", "BANGALORE UNDERGROUND", "A CULTURE BRAND", "DANCE · PETS · STREETWEAR"]} />
+        <MarqueeBySlot id="above-about" />
         <SectionReveal><About /></SectionReveal>
-        <Marquee bg="bg-lime" reverse items={["EPISODE 01", "EPISODE 02", "CATCH US LIVE", "BANGALORE", "RSVP NOW"]} />
+        <MarqueeBySlot id="above-events" />
         <SectionReveal><Events /></SectionReveal>
-        <Marquee bg="bg-orange" items={["WATCH THE TAPES", "LIVE SETS", "RECAPS", "YOUTUBE"]} />
+        <MarqueeBySlot id="above-videos" />
         <Suspense fallback={<SectionFallback bg="bg-lime" />}>
           <SectionReveal><Videos /></SectionReveal>
         </Suspense>
-        <Marquee bg="bg-magenta" reverse items={["NOW SPINNING", "DANCE MUSIC", "LATE NIGHT", "WAREHOUSE CUTS"]} />
-        <Suspense fallback={<SectionFallback bg="bg-cream" />}>
+        <MarqueeBySlot id="above-playlist" />
+        <Suspense fallback={<SectionFallback bg="bg-magenta" />}>
           <SectionReveal><Playlist /></SectionReveal>
         </Suspense>
-        <Marquee bg="bg-acid-yellow" items={["STREETWEAR", "LIMITED DROPS", "PET MERCH", "WEAR THE CULTURE"]} />
+        <MarqueeBySlot id="above-drops" />
         <Suspense fallback={<SectionFallback bg="bg-cream" />}>
           <SectionReveal><Drops /></SectionReveal>
         </Suspense>
-        <Marquee bg="bg-electric-blue" reverse items={["@CATSCANDANCE", "LATEST", "BTS", "FOLLOW"]} />
-        <Suspense fallback={<SectionFallback bg="bg-electric-blue" />}>
+        <MarqueeBySlot id="above-instagram" />
+        <Suspense fallback={<SectionFallback bg="bg-magenta" />}>
           <SectionReveal><Instagram /></SectionReveal>
         </Suspense>
-        <Marquee bg="bg-acid-yellow" items={["JOIN THE PACK", "EARLY ACCESS", "DON'T MISS A DROP"]} />
-        <Suspense fallback={<SectionFallback bg="bg-magenta" />}>
+        <MarqueeBySlot id="above-early-access" />
+        <Suspense fallback={<SectionFallback bg="bg-electric-blue" />}>
           <SectionReveal><EarlyAccess /></SectionReveal>
         </Suspense>
         <Contact />

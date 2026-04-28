@@ -203,6 +203,7 @@ export type Database = {
           blog_posts: Json
           featured_playlist_id: string | null
           id: string
+          marquees: Json
           playlists: Json
           seo_verifications: Json
           updated_at: string
@@ -212,6 +213,7 @@ export type Database = {
           blog_posts?: Json
           featured_playlist_id?: string | null
           id: string
+          marquees?: Json
           playlists?: Json
           seo_verifications?: Json
           updated_at?: string
@@ -221,6 +223,7 @@ export type Database = {
           blog_posts?: Json
           featured_playlist_id?: string | null
           id?: string
+          marquees?: Json
           playlists?: Json
           seo_verifications?: Json
           updated_at?: string

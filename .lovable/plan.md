@@ -1,135 +1,77 @@
-# Compact, contextual, and clearer — site-wide pass
+## Plan: Cohesive colors, marquee CMS, working "all" pages, Cat Creator
 
-A coordinated pass to reduce visual weight, fix specific issues, and tighten the storytelling flow across pages.
+### 1. Homepage color cohesion (no adjacent repeats)
 
----
+Current order: Hero(blue) → Marquee(yellow) → About(cream) → Marquee(lime) → Events(lime) ❌ → Marquee(orange) → Videos(lime) → Marquee(magenta) → Playlist(magenta) ❌ → Marquee(yellow) → Drops(cream) → Marquee(blue) → Instagram(magenta) → Marquee(yellow) → EarlyAccess(blue).
 
-## 1. Contextual marquees (not one generic ticker)
+Two collisions today (marquee = next section). New rhythm in `src/pages/Index.tsx`, locking a 5-color rotation so no marquee shares a color with the section above OR below it:
 
-Today `Marquee.tsx` has a single shared word list (`DANCE MUSIC / PET CULTURE / STREETWEAR / EXPERIENCES / DROPS / COMMUNITY`) used between every section.
+```
+Hero blue → M:yellow → About cream → M:lime → Events lime  ⟶ change Events bg or marquee
+```
 
-Change: accept an `items?: string[]` prop and place a marquee tuned to the section that follows (or precedes) it.
+Fix by swapping the marquee colors only (don't change section bgs):
+- Above Events: `bg-orange` (was lime)
+- Above Videos (which is lime): `bg-magenta` (was orange)
+- Above Playlist (magenta): `bg-acid-yellow` (was magenta)
+- Above Drops (cream): `bg-electric-blue` (was acid-yellow)
+- Above Instagram (magenta): `bg-acid-yellow` (was electric-blue)
+- Above EarlyAccess (electric-blue): `bg-orange` (was acid-yellow)
 
-Examples:
-- Before **About**: `WHO WE ARE · BANGALORE · UNDERGROUND · A CULTURE BRAND ·`
-- Before **Events**: `EPISODE 01 · EPISODE 02 · CATCH US LIVE · BANGALORE · RSVP NOW ·`
-- Before **Videos**: `WATCH THE TAPES · LIVE SETS · RECAPS · YOUTUBE ·`
-- Before **Playlist**: `NOW SPINNING · DANCE MUSIC · LATE NIGHT · WAREHOUSE ·`
-- Before **Drops**: `STREETWEAR · LIMITED · MERCH · PET DROPS ·`
-- Before **Instagram**: `@CATSCANDANCE · LATEST · BTS ·`
-- Before **EarlyAccess**: `JOIN THE PACK · EARLY ACCESS · DON'T MISS A DROP ·`
+Result: every marquee differs from the section directly below, and `SectionFallback` defaults updated to match.
 
-Default (no prop) keeps the existing list so other pages don't break.
+### 2. Editable / toggleable marquees from Admin
 
-## 2. Compact everything — less scroll on every screen
+Treat marquees as data, not hardcoded.
 
-Reduce vertical rhythm and headline scale across home + page sections (mobile and desktop):
+**Schema (migration):** add `marquees jsonb NOT NULL DEFAULT '[]'` to `site_settings`. Each entry:
+```json
+{ "id": "above-events", "enabled": true, "bg": "bg-orange", "reverse": false, "size": "sm", "items": ["EPISODE 01","RSVP NOW"] }
+```
+Seed defaults for the 6 homepage slots (`above-about`, `above-events`, `above-videos`, `above-playlist`, `above-drops`, `above-instagram`, `above-early-access`).
 
-- Section padding: `py-24 md:py-32` → `py-12 md:py-20`. Apply in `Hero` button band, `What`, `Why`, `Team`, `Videos`, `Playlist`, `Drops`, `Instagram`, `EarlyAccess`, `Events`, `WhyNow`.
-- Hero headline: `text-[18vw] md:text-[14vw]` → `text-[15vw] md:text-[11vw]`; adjust DJ cat sizing so it doesn't swallow the screen.
-- Section H2s: `text-6xl md:text-8xl` → `text-4xl md:text-6xl`. Eyebrow `text-2xl md:text-3xl` → `text-lg md:text-xl`.
-- Marquee: `py-3 md:py-5` → `py-2 md:py-3`; large variant smaller too.
-- Card grids: tighten `gap-6 mt-16` → `gap-4 mt-8`.
-- Lazy `SectionFallback` height: `min-h-[400px]` → `min-h-[220px]`.
+**Backend:** `supabase/functions/admin-content/index.ts` settings upsert accepts `marquees`. Public read uses existing `site_settings` SELECT policy (already public).
 
-Net effect: significantly less scrolling, tighter pacing, same content.
+**Frontend:**
+- New `src/hooks/useMarquees.ts` fetches once and exposes a `getMarquee(id)` helper.
+- `src/pages/Index.tsx` replaces hardcoded `<Marquee>` JSX with `<MarqueeBySlot id="above-events" fallback={...} />`. If `enabled=false`, render nothing.
+- Admin tab "MARQUEES" (`src/pages/Admin.tsx`): list of slots with toggle (on/off), bg color picker (5 brand swatches), reverse switch, size, and tag-style items editor. Save calls existing settings upsert.
 
-## 3. Disco ball — center + drop lower on mobile
+### 3. Fix "ALL VIDEOS" and "ALL PLAYLISTS" buttons
 
-In `Hero.tsx`, the wrapper that scales `DiscoBall` with `scale-75 md:scale-100 origin-top` doesn't reposition. The ball's own container is `top-0 left-1/2 -translate-x-1/2`.
+The buttons already navigate to `/videos` and `/playlists` — but those pages just embed the same single-feature components, so it feels like nothing happens. Rebuild them as proper index pages:
 
-Change: pass a `mobileOffsetY` to `DiscoBall` (or wrap with `top-[12vh] md:top-0` and ensure `left: 50%` centering wins on mobile). Result: on phones the rod + ball start ~12vh down and stay center-aligned, not clipped under the fixed nav.
+**`src/pages/Videos.tsx`** — full grid of every YouTube video from the channel (use existing `youtube-videos` function, request `maxResults: 50`; add a `?max=` query param to the function). Sort by date, paginate client-side (12 per page), no embedded `Videos` section.
 
-## 4. Three Worlds — better visual story
+**`src/pages/Playlists.tsx`** — render every playlist from `site_settings.playlists` as a grid of cards (one card per playlist with platform badge + embed-on-click), not the single-active Playlist component.
 
-Currently `Why.tsx` shows two stacked headline lines and a left-side paragraph mentioning the three worlds inline — visually flat for the most important idea.
+Both pages keep `PageHero` + `Breadcrumbs`. Also fix the `Footer` ref warning by removing the stray prop in `VideosPage`.
 
-New layout (still in `Why.tsx`, electric-blue bg):
-- Eyebrow `/ WHY` + tighter headline `THREE WORLDS. ONE ECOSYSTEM.`
-- A 3-tile row (stack on mobile) — each tile is a chunky card with an emoji/SVG, color, and one line:
-  - **DANCE MUSIC** — magenta, vinyl glyph, "Nights people remember."
-  - **PET CULTURE** — acid-yellow, paw glyph, "The internet's favorite obsession."
-  - **STREETWEAR** — cream, shirt glyph, "Pieces you actually wear."
-- Below: a single ink "ecosystem" strip that visually fuses them — three colored dots merging into a magenta star with the line "ONE AUDIENCE · URBAN · GEN Z & MILLENNIAL".
-- The 4-bullet list (`bullets`) becomes a compact 2x2 chip grid below, not a tall column.
+### 4. Create Your Own Cat — `/cat-studio`
 
-This makes "three worlds → one ecosystem" the literal visual.
+New route + page `src/pages/CatStudio.tsx`. Two modes in tabs:
 
-## 5. Team / Co-founders
+**A) Layered Builder** (default, instant, free)
+- Layers: base body (cat-left/right/handstand/headphones/cap/hpDance — pick 1), accessory (star, sparkle, vinyl), background color (5 brand colors), name tag text, sticker (optional second cat).
+- Render with absolute-positioned `<img>` layers inside a `<div ref>` on a 1024×1024 stage.
+- Export PNG via `html-to-image` (already friendly to our SVG/PNG mix) or a small canvas compositor — use the existing dependency surface; if not present, write a minimal canvas drawer that loads each image and `ctx.drawImage`s it. No new deps required.
+- Buttons: "Download PNG", "Remix with AI →" (sends current composite to mode B).
 
-Replace the four-generic-roles grid in `Team.tsx` with two co-founder cards + a "join the pack" CTA grid:
+**B) AI Remix** (Lovable AI, on-demand)
+- New edge function `supabase/functions/cat-generate/index.ts` calling `google/gemini-3.1-flash-image-preview` with a locked style prompt: *"Bold flat-vector illustration in the Cats Can Dance style: thick black 4px outlines, bright flat fills (electric blue / magenta / acid-yellow / lime / cream), chunky drop shadow, playful dancing cat, no text, square 1:1, transparent or solid color background."* Plus user-chosen vibe chips (DJ, Skater, Headphones, Disco, Pet-mode), name, color.
+- Optional: pass the layered-builder PNG as the input image to "edit" so the result resembles their build.
+- Returns base64 → preview → download. Rate-limit 10/min in-memory.
 
-Co-founders (2-up, larger cards):
-- **Param Minhas** — Co-founder
-- **Satwik Harisenany** — Co-founder
+**Nav:** add `/cat-studio` link in the "More" dropdown. Also link from a new compact CTA card under the Hero or in the About → "Three Worlds" tile.
 
-(Roles/short bios left as TBD placeholders the user can fill in.)
+### 5. Misc fixes surfaced
+- Resolve the `Footer` forwardRef console warning in `VideosPage`.
+- Add `mem://design/color-rotation` rule so future sections respect the no-adjacent-color rule.
 
-Below — "WE'RE HIRING THE PACK" 4-up smaller cards, each a CTA mailto:
-- Music & Curation
-- Brand & Design
-- Community & Ops
-- Content & Video
+### Files
 
-Each card: role title, one-line description, "APPLY →" link to `mailto:hello@catscandance.com?subject=Join%20the%20Pack%20—%20{Role}`.
+**Edit:** `src/pages/Index.tsx`, `src/pages/Admin.tsx`, `src/pages/Videos.tsx`, `src/pages/Playlists.tsx`, `src/components/Marquee.tsx` (no change), `src/App.tsx` (route), `src/components/Nav.tsx` (link), `supabase/functions/admin-content/index.ts`, `supabase/functions/youtube-videos/index.ts` (accept `max`).
 
-## 6. Playlist + Videos get their own pages
+**Create:** `src/hooks/useMarquees.ts`, `src/components/MarqueeBySlot.tsx`, `src/pages/CatStudio.tsx`, `src/components/cat-studio/Builder.tsx`, `src/components/cat-studio/AIRemix.tsx`, `supabase/functions/cat-generate/index.ts`, `supabase/migrations/<ts>_marquees.sql`, `mem://design/color-rotation`, `mem://index.md`.
 
-Both currently live only as home sections. Add real routes:
-
-- **`/playlists`** (new page `src/pages/Playlists.tsx`) — `Nav` + `PageHero` ("THE PLAYLISTS — what we play, on rotation") + the existing `Playlist` component (already lists multiple playlists with platform tabs) + `Footer`.
-- **`/videos`** (new page `src/pages/Videos.tsx`) — `Nav` + `PageHero` ("THE TAPES — sets, recaps, and behind the scenes") + the existing `Videos` component + `Footer`.
-
-Wire up in `App.tsx` routes.
-
-Update the home sections so their headings link to the dedicated pages:
-- `Playlist` H2 wraps in `<Link to="/playlists">`; add a "See all playlists →" link.
-- `Videos` H2 wraps in `<Link to="/videos">`; "Visit the channel" stays, plus "All videos →" to `/videos`.
-
-Update `Nav.tsx` `moreLinks`: `/#playlist` → `/playlists`, and add `{ to: "/videos", label: "Videos" }` (or replace the implicit Watch link). This also fixes Playlists missing in mobile dropdown.
-
-## 7. Site-wide narrative & flow improvements
-
-A consistent storytelling spine, applied with small copy + ordering tweaks:
-
-**Home (`Index.tsx`) order — already partially done. Final spine:**
-1. Hero — identity + CTA
-2. About — one-line "what is this"
-3. Events — "catch us live" (proof of activity)
-4. Videos — "watch the tapes" (proof it's real)
-5. Playlist — "this is the sound"
-6. Drops — "wear the culture"
-7. Instagram — "the daily feed"
-8. Early Access — convert
-
-**About page (`About.tsx`) — clearer arc:**
-1. `What` (the brand, four engines)
-2. `Why` (three worlds → one ecosystem) — now visually upgraded
-3. `WhyNow` (the timing)
-4. `Team` (the people + join us)
-5. `Footer`
-
-(Move `WhyNow` before `Team` so the page ends on "people" — humans last is a stronger close.)
-
-**Partners pages (`/for-venues`, `/for-artists`, `/for-investors`):** add a small consistent footer-CTA row "Talk to us → hello@catscandance.com" so each partner page closes with one action, matching home's Early Access close.
-
-**Shop, Pets, Blog, Press, Media:** add a thin breadcrumb-style eyebrow under the page hero (`HOME / SHOP`) so users always know where they are — the `Breadcrumbs` component already exists; just include it on these pages.
-
-## 8. Files to touch
-
-- `src/components/Marquee.tsx` — accept `items` prop
-- `src/pages/Index.tsx` — pass per-section marquee items, smaller fallback heights
-- `src/pages/About.tsx` — reorder (`Team` last, `WhyNow` before it)
-- `src/components/Hero.tsx` — compact paddings/headline; disco ball wrapper offset
-- `src/components/DiscoBall.tsx` — accept `mobileOffsetY` (or use Tailwind responsive top)
-- `src/components/Why.tsx` — new 3-tile + ecosystem strip layout
-- `src/components/Team.tsx` — co-founders + hiring CTAs
-- `src/components/What.tsx`, `WhyNow.tsx`, `Events.tsx`, `Videos.tsx`, `Playlist.tsx`, `Drops.tsx`, `Instagram.tsx`, `EarlyAccess.tsx` — compact spacing/typography pass
-- `src/components/Playlist.tsx`, `src/components/Videos.tsx` — link headings to new pages
-- `src/components/Nav.tsx` — `/playlists` + `/videos` in More dropdown
-- `src/pages/Playlists.tsx` (new), `src/pages/Videos.tsx` (new)
-- `src/App.tsx` — register `/playlists` and `/videos` routes
-- `src/pages/ForVenues.tsx`, `ForArtists.tsx`, `ForInvestors.tsx` — closing CTA row
-- `src/pages/Shop.tsx`, `Pets.tsx`, `Blog.tsx`, `Press.tsx`, `Media.tsx` — add `Breadcrumbs`
-
-No new dependencies, no DB or edge function changes. After deploy: tighter pages, contextual marquees that match each section, a proper visual story for the three worlds, real co-founders and a hiring grid, dedicated `/playlists` and `/videos` pages linked from the home sections, and a consistent narrative arc on every page.
+**No new dependencies.** Uses existing Lovable AI key. No new buckets (downloads stay client-side).

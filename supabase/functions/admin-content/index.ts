@@ -57,12 +57,12 @@ Deno.serve(async (req) => {
     const { type, action, payload } = body ?? {};
 
     if (type === "settings" && action === "upsert") {
-      const { error } = await supabase.from("site_settings").upsert({
-        id: "main",
-        playlists: payload?.playlists ?? [],
-        featured_playlist_id: payload?.featured_playlist_id ?? null,
-        seo_verifications: payload?.seo_verifications ?? {},
-      });
+      const updates: Record<string, unknown> = { id: "main" };
+      if (payload?.playlists !== undefined) updates.playlists = payload.playlists ?? [];
+      if (payload?.featured_playlist_id !== undefined) updates.featured_playlist_id = payload.featured_playlist_id ?? null;
+      if (payload?.seo_verifications !== undefined) updates.seo_verifications = payload.seo_verifications ?? {};
+      if (payload?.marquees !== undefined) updates.marquees = Array.isArray(payload.marquees) ? payload.marquees : [];
+      const { error } = await supabase.from("site_settings").upsert(updates);
       if (error) return json({ error: error.message }, 500);
       return json({ ok: true });
     }

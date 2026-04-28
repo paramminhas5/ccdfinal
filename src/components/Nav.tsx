@@ -23,6 +23,7 @@ const partnersLinks = [
 const moreLinks = [
   { to: "/playlists", label: "Playlists" },
   { to: "/videos", label: "Videos" },
+  { to: "/cat-studio", label: "Cat Studio ✦" },
   { to: "/pets", label: "Pets" },
   { to: "/media", label: "Media" },
   { to: "/blog", label: "Blog" },
@@ -128,7 +129,7 @@ const Nav = () => {
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const hasCart = cartCount > 0;
 
-  const lightBgRoutes = ["/about", "/blog", "/media", "/press", "/playlists", "/videos"];
+  const lightBgRoutes = ["/about", "/blog", "/media", "/press", "/playlists", "/videos", "/cat-studio"];
   const forceScrolledStyle = lightBgRoutes.some((r) => location.pathname === r || location.pathname.startsWith(r + "/"));
 
   useEffect(() => {

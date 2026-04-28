@@ -38,11 +38,15 @@ type PlaylistItem = {
   spotify_id?: string;
 };
 type Verifications = { google?: string; bing?: string; plausible_domain?: string };
+type MarqueeConfig = {
+  id: string; enabled: boolean; bg: string; reverse: boolean; size: "lg" | "sm"; items: string[];
+};
 type Settings = {
   id: string;
   playlists: PlaylistItem[];
   featured_playlist_id: string | null;
   seo_verifications?: Verifications;
+  marquees?: MarqueeConfig[];
 };
 type MediaItem = { type: "image" | "video"; url: string; caption?: string };
 type EventRow = {
@@ -89,6 +93,44 @@ const normalizePlaylist = (p: any): PlaylistItem => ({
 
 const platformGlyph = (p: Platform) =>
   p === "spotify" ? "♫" : p === "youtube" ? "▶" : "☁";
+
+const MARQUEE_DEFAULTS: MarqueeConfig[] = [
+  { id: "above-about", enabled: true, bg: "bg-acid-yellow", reverse: false, size: "lg",
+    items: ["WHO WE ARE", "BANGALORE UNDERGROUND", "A CULTURE BRAND", "DANCE · PETS · STREETWEAR"] },
+  { id: "above-events", enabled: true, bg: "bg-orange", reverse: true, size: "sm",
+    items: ["EPISODE 01", "EPISODE 02", "CATCH US LIVE", "BANGALORE", "RSVP NOW"] },
+  { id: "above-videos", enabled: true, bg: "bg-magenta", reverse: false, size: "sm",
+    items: ["WATCH THE TAPES", "LIVE SETS", "RECAPS", "YOUTUBE"] },
+  { id: "above-playlist", enabled: true, bg: "bg-acid-yellow", reverse: true, size: "sm",
+    items: ["NOW SPINNING", "DANCE MUSIC", "LATE NIGHT", "WAREHOUSE CUTS"] },
+  { id: "above-drops", enabled: true, bg: "bg-electric-blue", reverse: false, size: "sm",
+    items: ["STREETWEAR", "LIMITED DROPS", "PET MERCH", "WEAR THE CULTURE"] },
+  { id: "above-instagram", enabled: true, bg: "bg-acid-yellow", reverse: true, size: "sm",
+    items: ["@CATSCANDANCE", "LATEST", "BTS", "FOLLOW"] },
+  { id: "above-early-access", enabled: true, bg: "bg-orange", reverse: false, size: "sm",
+    items: ["JOIN THE PACK", "EARLY ACCESS", "DON'T MISS A DROP"] },
+];
+
+const MARQUEE_BG_OPTIONS = [
+  { value: "bg-acid-yellow", label: "Acid Yellow", swatch: "bg-acid-yellow" },
+  { value: "bg-magenta", label: "Magenta", swatch: "bg-magenta" },
+  { value: "bg-lime", label: "Lime", swatch: "bg-lime" },
+  { value: "bg-electric-blue", label: "Electric Blue", swatch: "bg-electric-blue" },
+  { value: "bg-orange", label: "Orange", swatch: "bg-orange" },
+  { value: "bg-cream", label: "Cream", swatch: "bg-cream" },
+];
+
+const mergeMarquees = (raw?: MarqueeConfig[] | null): MarqueeConfig[] => {
+  const byId = new Map<string, MarqueeConfig>();
+  MARQUEE_DEFAULTS.forEach((m) => byId.set(m.id, { ...m }));
+  for (const r of raw ?? []) {
+    if (!r || typeof r.id !== "string") continue;
+    const base = byId.get(r.id);
+    if (!base) continue;
+    byId.set(r.id, { ...base, ...r, items: Array.isArray(r.items) && r.items.length ? r.items : base.items });
+  }
+  return MARQUEE_DEFAULTS.map((d) => byId.get(d.id)!);
+};
 
 const Admin = () => {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PASS_KEY) ?? "");
@@ -193,6 +235,7 @@ const Admin = () => {
               ...s.settings,
               playlists: (s.settings.playlists ?? []).map(normalizePlaylist),
               seo_verifications: s.settings.seo_verifications ?? {},
+              marquees: mergeMarquees(s.settings.marquees),
             }
           : null
       );
@@ -420,6 +463,7 @@ const Admin = () => {
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
                 <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
+                <TabsTrigger value="marquees" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MARQUEES</TabsTrigger>
                 <TabsTrigger
                   value="rsvps"
                   onClick={() => { if (!rsvpsLoaded) loadRsvps(); }}
@@ -717,6 +761,119 @@ const Admin = () => {
                       ]}
                     />
                   </div>
+                </div>
+              </TabsContent>
+
+              {/* MARQUEES */}
+              <TabsContent value="marquees">
+                <p className="text-ink/70 font-medium mb-4">
+                  Toggle, recolor, and edit the scrolling tickers between homepage sections. Items are comma-separated.
+                </p>
+                <div className="space-y-4">
+                  {(settings?.marquees ?? MARQUEE_DEFAULTS).map((m, idx) => (
+                    <div key={m.id} className="bg-cream border-4 border-ink chunk-shadow p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <h3 className="font-display text-xl text-ink uppercase">{m.id.replace("above-", "Above: ")}</h3>
+                        <label className="flex items-center gap-2 font-display text-ink cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={m.enabled}
+                            onChange={(e) => {
+                              if (!settings) return;
+                              const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                              next[idx] = { ...m, enabled: e.target.checked };
+                              setSettings({ ...settings, marquees: next });
+                            }}
+                            className="w-5 h-5 accent-magenta"
+                          />
+                          ENABLED
+                        </label>
+                      </div>
+                      <div className={`${m.bg} border-4 border-ink py-2 px-3 mb-3 overflow-hidden whitespace-nowrap`}>
+                        <span className="font-display text-ink">{m.items.join(" ★ ")}</span>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-display text-xs text-ink/70 mb-1">BACKGROUND</label>
+                          <select
+                            value={m.bg}
+                            onChange={(e) => {
+                              if (!settings) return;
+                              const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                              next[idx] = { ...m, bg: e.target.value };
+                              setSettings({ ...settings, marquees: next });
+                            }}
+                            className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-display"
+                          >
+                            {MARQUEE_BG_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-end gap-4">
+                          <label className="flex items-center gap-2 font-display text-ink cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={m.reverse}
+                              onChange={(e) => {
+                                if (!settings) return;
+                                const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                                next[idx] = { ...m, reverse: e.target.checked };
+                                setSettings({ ...settings, marquees: next });
+                              }}
+                              className="w-5 h-5 accent-magenta"
+                            />
+                            REVERSE
+                          </label>
+                          <label className="flex items-center gap-2 font-display text-ink cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={m.size === "lg"}
+                              onChange={(e) => {
+                                if (!settings) return;
+                                const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                                next[idx] = { ...m, size: e.target.checked ? "lg" : "sm" };
+                                setSettings({ ...settings, marquees: next });
+                              }}
+                              className="w-5 h-5 accent-magenta"
+                            />
+                            LARGE
+                          </label>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <label className="block font-display text-xs text-ink/70 mb-1">ITEMS (comma-separated)</label>
+                        <input
+                          value={m.items.join(", ")}
+                          onChange={(e) => {
+                            if (!settings) return;
+                            const items = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                            const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                            next[idx] = { ...m, items: items.length ? items : m.items };
+                            setSettings({ ...settings, marquees: next });
+                          }}
+                          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-display"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={async () => {
+                      if (!settings) return;
+                      try {
+                        await callContent({
+                          method: "POST",
+                          body: JSON.stringify({ type: "settings", action: "upsert", payload: settings }),
+                        });
+                        toast.success("Marquees saved");
+                      } catch {
+                        toast.error("Save failed");
+                      }
+                    }}
+                    className="bg-ink text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                  >
+                    💾 SAVE MARQUEES
+                  </button>
                 </div>
               </TabsContent>
 
