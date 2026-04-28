@@ -20,18 +20,8 @@ const partnersLinks = [
   { to: "/for-investors", label: "For Investors" },
 ];
 
-const moreLinks = [
-  { to: "/playlists", label: "Playlists" },
-  { to: "/videos", label: "Videos" },
-  { to: "/cat-studio", label: "Cat Studio ✦" },
-  { to: "/pets", label: "Pets" },
-  { to: "/media", label: "Media" },
-  { to: "/blog", label: "Blog" },
-  { to: "/press", label: "Press" },
-];
-
 // Flat list for mobile hamburger
-const mobileLinks = [...primaryLinks, ...moreLinks, ...partnersLinks];
+const mobileLinks = [...primaryLinks, ...partnersLinks];
 
 const scrollToEarlyAccess = () => {
   setTimeout(() => {
