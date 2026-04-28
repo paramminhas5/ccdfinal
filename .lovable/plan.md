@@ -1,104 +1,93 @@
-# SEO Sprint — final pass
+## Goal
 
-A note on the "GitHub pull": Lovable manages git state internally, so the codebase you see in the editor is already in sync with your repo — there is no separate manual pull step for me to run. I've audited the current tree (HEAD) and the plan below targets every gap I found.
+Three things in one sprint:
 
-## Status check (what's already done)
-- `EventDetail` already has `MusicEvent` + `FAQPage` JSON-LD ✓
-- `Index`, `Events`, `About`, `Pets`, `BengaluruSceneGuide` already have `FAQPage` ✓
-- `ProductDetail` has `Product` schema (no FAQ yet) ✗
-- `BlogPost` has `BlogPosting` schema (no FAQ, weak image, no `wordCount`/`articleSection`) ✗
-- `sitemap.xml` and `rss.xml` exist but blog list is hand-maintained and out of date relative to `src/content/posts.ts` ✗
-- Internal linking from blog posts → events / shop / related guides is sparse ✗
+1. **SEO 10×**: wire static prerendering + per-route OG images + Lighthouse fixes.
+2. **Events page**: move the "Host with us" strip to the bottom (under curated events).
+3. **Contact UX**: replace every `mailto:` CTA button on partner/artist/investor/press/venue pages with a typed-form dialog. Email addresses stay as a small "or email us directly" fallback link.
 
-## 1. FAQ structured data on blog + product pages
+---
 
-**`src/pages/BlogPost.tsx`** — add a generic `FAQPage` JSON-LD built from the post (3 evergreen Q&As tied to its category) plus a richer `BlogPosting`:
-- Use `BlogCover` colour as a hint for `articleSection` (= `post.category`).
-- Add `wordCount` (computed from `post.body.join(" ")`), `keywords` (from tag/category), `isPartOf` → `Blog` `@type`.
-- Use the post's actual cover (server-rendered OG fallback `og-image.jpg`) instead of hardcoded `og-image.png`.
-- Inject 3 FAQ entries derived from category:
-  - GUIDES → "Where are the best underground parties in Bangalore?", "How do I find dance music events in Bengaluru?", "What's the RSVP culture in Bangalore?"
-  - DROPS → "Where can I buy Cats Can Dance streetwear?", "Do drops restock?", "Is shipping available across India?"
-  - ARTISTS → "Who plays at Cats Can Dance?", "How do artists get booked?", "Where can I listen to CCD sets?"
-  - CULTURE / JOURNAL → "What is Cats Can Dance?", "Where do CCD events happen?", "How do I join the pack?"
-  - Default fallback set for any unrecognised category.
+## 1. Static prerendering (the big SEO win)
 
-**`src/pages/ProductDetail.tsx`** — add a small `FAQPage` block:
-- "Is this a limited drop?" → yes, no restocks
-- "Where does it ship from?" → Bangalore, India; pan-India shipping
-- "What's the return policy?" → exchanges within 7 days for sizing
-- "How is it made?" → screen-printed in Bangalore
-
-Pass both schemas via the existing `jsonLd={[productLd, faqLd]}` array.
-
-## 2. Internal linking sprint
-
-**Blog → site cross-links** (in `BlogPost.tsx`):
-- After the body, before "Read next", add a contextual **"Take it further"** strip with 2–3 inline links chosen by category:
-  - GUIDES / CULTURE → `/events`, `/bengaluru-underground-dance-music`, next upcoming event slug
-  - DROPS → `/shop`, `/pets`, top product handle
-  - ARTISTS → `/playlists`, `/videos`, `/events`
-  - JOURNAL → `/about`, `/events`, `/blog`
-- Make the existing "Read next" cards include the post excerpt (1 line) for richer anchor context.
-
-**Events → blog cross-links** (in `EventDetail.tsx`):
-- Below the lineup section add a "Read more from the journal" block linking to 2 related blog posts (filter by tag/category match, fallback to latest 2). Strengthens topical hub.
-
-**Product → related** (in `ProductDetail.tsx`):
-- Add a "More from the drop" strip that links to `/shop` and `/pets` with descriptive anchor text ("See all CCD streetwear", "Pet drops & treats").
-
-**Footer (`src/components/Footer.tsx`):**
-- Add a "DISCOVER" column with 4 high-value internal links: `/blog`, `/bengaluru-underground-dance-music`, latest event detail, latest blog post (computed at module level from `getAllPosts()`/static fallback).
-- Adds 4 site-wide links to every page → big internal-link boost.
-
-**Breadcrumbs:** verified all major pages already use `<Breadcrumbs>`. No change needed.
-
-## 3. Sitemap + RSS auto-sync
-
-`public/sitemap.xml` and `public/rss.xml` are static and have drifted from `src/content/posts.ts`. Two fixes:
-
-a) **Refresh both files now** so every post in `posts.ts` is listed, with correct `lastmod`, plus the missing `/bengaluru-underground-dance-music` lastmod bump.
-
-b) **Add a build-time generator** `scripts/generate-seo.mjs` that reads `src/content/posts.ts` (via tsx) and rewrites `public/sitemap.xml` and `public/rss.xml`. Wire it into `package.json` as `"prebuild": "node scripts/generate-seo.mjs"` so future post additions auto-propagate. (Falls back gracefully — never breaks the build.)
-
-## 4. Per-page SEO polish
-
-- **`src/pages/Blog.tsx`** — add `Blog` JSON-LD (`@type: Blog`) in addition to the existing `ItemList`, with `blogPost` array entries (headline + url + datePublished). Better than ItemList alone for Google Discover.
-- **`src/pages/Shop.tsx`** — add `CollectionPage` + `ItemList` of products if not already present.
-- **`src/pages/Events.tsx`** — already has `FAQPage`; add `ItemList` of upcoming/past events for richer SERP.
-- **`src/components/SEO.tsx`** — add support for `prevUrl` / `nextUrl` (rel=prev/next for paginated lists, future-proof) and an `article:published_time` / `article:modified_time` pair when `type="article"`.
-
-## 5. Hygiene checks
-
-- **`index.html`** — add `<link rel="dns-prefetch" href="//cdn.shopify.com">` (Shopify storefront images), and `<link rel="preload" as="image" href="/og-image.jpg" fetchpriority="low">` only if it ends up being the LCP — otherwise skip to avoid waste. Confirm `<meta name="google" content="notranslate">` is **not** added (we want translation).
-- **`public/robots.txt`** — verify `Sitemap:` line is present; add a second `Sitemap:` for any future sub-sitemap (none today, no-op).
-- **404 (`NotFound.tsx`)** — add `<SEO noindex title="Page not found — Cats Can Dance" .../>` so dead URLs don't pollute the index.
-- **Image alts audit** — quick pass on `Hero`, `Drops`, `Instagram`, `Videos`, `BlogCover` to ensure no `alt=""` on meaningful images.
-- **`<a target="_blank">` audit** — ensure every external link has `rel="noopener noreferrer"` (already true in Footer; verify Press, Media, Instagram).
-- **Canonical on `/embed/upcoming`** — already `noindex`; add explicit `canonical` to `/events` so any accidental backlink consolidates.
-
-## 6. Technical reference (collapsed)
+Add `vite-plugin-prerender` (puppeteer-based) to `vite.config.ts` and prerender every static route:
 
 ```text
-Files to edit:
-  src/pages/BlogPost.tsx        # FAQ + richer BlogPosting + internal links
-  src/pages/ProductDetail.tsx   # FAQ + related links
-  src/pages/EventDetail.tsx     # related blog posts strip
-  src/pages/Blog.tsx            # Blog JSON-LD
-  src/pages/Shop.tsx            # CollectionPage + ItemList
-  src/pages/Events.tsx          # ItemList of events
-  src/pages/NotFound.tsx        # noindex SEO tag
-  src/components/Footer.tsx     # DISCOVER column
-  src/components/SEO.tsx        # prev/next + article time meta
-  index.html                    # dns-prefetch shopify
-  public/sitemap.xml            # regenerated
-  public/rss.xml                # regenerated
-
-Files to create:
-  scripts/generate-seo.mjs      # prebuild sitemap+rss generator
-  package.json                  # add "prebuild" script
+/, /events, /shop, /pets, /videos, /playlists, /media, /press, /about,
+/blog, /scene-guide-bangalore, /for-venues, /for-artists, /for-investors,
+/submit-event, /privacy, /terms, /cookies, /cat-studio
 ```
 
-## Out of scope (call out)
-- Server-side rendering / prerendering — would 10× SEO further but is a much bigger refactor (Vite SSR or pre-render plugin). Happy to do this next sprint; meta/JSON-LD via react-helmet works for Google but not for some social scrapers without prerender. Flag if you want me to add `vite-plugin-prerender` for the static pages now.
-- GSC / Bing sitemap re-submission — must be done by you after deploy.
+Dynamic routes (`/events/:slug`, `/blog/:slug`, `/shop/:handle`) get a small build-time crawler step that reads the published list from Supabase + `src/content/posts.ts` and feeds those URLs into the prerender list. Output goes to `dist/<route>/index.html` so Netlify/Cloudflare serves real HTML to bots, ChatGPT, LinkedIn, Slack, WhatsApp on first request.
+
+Result: meta tags + JSON-LD + first paint exist in the raw HTML → fixes the social-scraper gap and speeds Google indexation.
+
+## 2. Per-route OG images
+
+Add a tiny build-time script `scripts/generate-og.mjs` that uses `@vercel/og` (or `satori` + `sharp`) to render a 1200×630 PNG per route from a template (title + eyebrow + brand colors + magenta/ink palette). Output to `public/og/<slug>.png`. `SEO.tsx` picks `og/<slug>.png` when present, falls back to current default.
+
+## 3. Lighthouse / Core Web Vitals pass
+
+- Add `<link rel="preload" as="image" ...>` for the homepage hero image.
+- Add `loading="lazy"` + `decoding="async"` to all non-hero `<img>` (audit `Posts`, `Drops`, `Videos`, `CuratedEvents`, `EventDetail`, `BlogPost`, `ProductDetail`).
+- Add `width`/`height` attributes where missing to kill CLS.
+- Add `fetchpriority="high"` to LCP image on `Index`.
+- Move the YouTube iframe in `Videos` behind a "click to play" thumbnail (saves ~500KB JS on first load).
+- Add `<link rel="preconnect">` for `cdn.shopify.com` and the Supabase project URL.
+
+## 4. Events page reorder
+
+In `src/pages/Events.tsx`: move the **HOST WITH US** `<section class="bg-ink ...">` from above `<CuratedEvents />` to **below** it, just before `<Footer />`. No other changes.
+
+## 5. Replace `mailto:` partner CTAs with a typed contact dialog
+
+Build a new shared component `src/components/PartnerContactDialog.tsx`:
+
+- Triggered by a button (`<PartnerContactButton kind="venues" label="PARTNER WITH US →" />`).
+- Opens a `Dialog` (shadcn) with the same brutalist styling as `Contact.tsx`.
+- Fields: Name, Email, Phone (optional), Reason (preselected based on `kind`), Message.
+- `kind` → preselected reason + email-fallback link:
+  - `venues` → "Venue partnership" → venues@catscandance.com
+  - `artists` → "Artist booking" → artists@catscandance.com
+  - `investors` → "Investor enquiry" → invest@catscandance.com
+  - `press` → "Press / interview" → hello@catscandance.com?subject=Press
+  - `team` → "Join the pack — {role}" → hello@catscandance.com
+  - `submit-event` → "Submit an event" → hello@catscandance.com
+- Reason options inside the dialog let users override (dropdown).
+- Submits to the existing `contact-submit` edge function, prefixing the message with `[kind][reason]` so admin can filter in `Admin.tsx`.
+- Below the submit button: small "Or email us directly: artists@catscandance.com" plain `mailto:` link as the user requested.
+
+Update `contact-submit` edge function: extend the Zod schema to accept optional `phone`, `kind`, `reason` fields, and store them in the message body (no schema change needed to `contact_messages` — concatenate into `message`).
+
+### Files updated to use the dialog
+
+- `src/pages/ForVenues.tsx` → "PARTNER WITH US"
+- `src/pages/ForArtists.tsx` → "PLAY WITH US" / equivalent CTA
+- `src/pages/ForInvestors.tsx` → "INVEST WITH US"
+- `src/pages/Press.tsx` → "PRESS ENQUIRY"
+- `src/pages/SubmitEvent.tsx` → the inline "Email us" text becomes the dialog
+- `src/components/Team.tsx` → each role's "apply" button + the bottom "say hi anyway" link
+- `src/components/Footer.tsx` → keep the simple `mailto:` link (it's a link, not a CTA — user said that's fine)
+- `src/pages/Admin.tsx` → leave the admin inbox `mailto:` links (internal tool)
+- `src/pages/Privacy.tsx`, `Terms.tsx`, `Cookies.tsx` → leave (legal-text inline links, user said that's fine)
+
+## 6. Sitemap regeneration
+
+Add `scripts/generate-sitemap.mjs` (runs in `prebuild`) that pulls events from Supabase + posts from `src/content/posts.ts` and rewrites `public/sitemap.xml` + `public/rss.xml` automatically. No more drift.
+
+---
+
+## Technical notes
+
+- Prerender plugin: `vite-plugin-prerender` requires `puppeteer`; we'll pin to a small Chromium and only run during `vite build`. Local `vite dev` is unchanged.
+- The dialog uses existing shadcn `Dialog` — no new deps.
+- `contact-submit` change is backwards-compatible (new fields all optional).
+- Per-route OG generation runs in `prebuild`; cached via file mtime so rebuilds are fast.
+
+## Files touched
+
+**New**: `src/components/PartnerContactDialog.tsx`, `src/components/PartnerContactButton.tsx`, `scripts/generate-og.mjs`, `scripts/generate-sitemap.mjs`, `scripts/prerender-routes.mjs`
+
+**Modified**: `vite.config.ts`, `package.json`, `index.html`, `src/components/SEO.tsx`, `src/pages/Events.tsx`, `src/pages/ForVenues.tsx`, `src/pages/ForArtists.tsx`, `src/pages/ForInvestors.tsx`, `src/pages/Press.tsx`, `src/pages/SubmitEvent.tsx`, `src/components/Team.tsx`, `src/components/Videos.tsx`, `src/components/Posts.tsx`, `src/components/Drops.tsx`, `src/components/CuratedEvents.tsx`, `supabase/functions/contact-submit/index.ts`, `public/sitemap.xml`, `public/rss.xml`
+
+Approve and I'll wire it all up in one go.
