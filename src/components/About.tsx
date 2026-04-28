@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import catDancer from "@/assets/cat-dancer.svg";
+import { useHomeContent } from "@/hooks/useHomeContent";
 
 const About = () => {
   const ref = useRef<HTMLDivElement>(null);
