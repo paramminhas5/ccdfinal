@@ -7,6 +7,7 @@ import What from "@/components/What";
 import Why from "@/components/Why";
 import WhyNow from "@/components/WhyNow";
 import SEO from "@/components/SEO";
+import PartnerContactDialog from "@/components/PartnerContactDialog";
 
 const bullets = [
   "Low initial capex vs traditional consumer brands",
@@ -47,12 +48,17 @@ const ForInvestors = () => (
           <p className="text-cream/80 text-lg md:text-xl font-medium mb-6">
             Tickets, drops, membership and brand partnerships — each engine feeds the next. Built for category-defining returns.
           </p>
-          <a
-            href="mailto:invest@catscandance.com"
-            className="inline-block bg-acid-yellow text-ink font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-          >
-            REQUEST DECK →
-          </a>
+          <PartnerContactDialog
+            kind="investors"
+            trigger={
+              <button
+                type="button"
+                className="inline-block bg-acid-yellow text-ink font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+              >
+                REQUEST DECK →
+              </button>
+            }
+          />
         </div>
         <ul className="space-y-3">
           {bullets.map((b, i) => (

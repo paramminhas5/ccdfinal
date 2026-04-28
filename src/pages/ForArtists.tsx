@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
 import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
+import PartnerContactDialog from "@/components/PartnerContactDialog";
 
 const bullets = [
   "Curated crowd that cares about music",
@@ -38,12 +39,17 @@ const ForArtists = () => (
           <p className="text-ink/80 text-lg md:text-xl font-medium mb-6">
             Most gigs are transactional. CCD turns each set into a content drop, a community moment and people want to experience again.
           </p>
-          <a
-            href="mailto:artists@catscandance.com"
-            className="inline-block bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
-          >
-            PLAY WITH US →
-          </a>
+          <PartnerContactDialog
+            kind="artists"
+            trigger={
+              <button
+                type="button"
+                className="inline-block bg-magenta text-cream font-display text-xl px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+              >
+                PLAY WITH US →
+              </button>
+            }
+          />
         </div>
         <ul className="space-y-3">
           {bullets.map((b, i) => (

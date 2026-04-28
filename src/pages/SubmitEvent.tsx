@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import PageHero from "@/components/PageHero";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import PartnerContactDialog from "@/components/PartnerContactDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -212,8 +213,14 @@ const SubmitEvent = () => {
 
               <p className="text-ink/50 text-sm text-center font-medium">
                 Already a verified promoter?{" "}
-                <a href="mailto:hello@catscandance.com" className="underline hover:text-ink">Email us</a>{" "}
-                to submit an event directly.
+                <PartnerContactDialog
+                  kind="submit-event"
+                  defaultReason="Verified promoter — submit event"
+                  trigger={
+                    <button type="button" className="underline hover:text-ink">Send us your event</button>
+                  }
+                />{" "}
+                directly.
               </p>
             </form>
           </>
