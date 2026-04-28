@@ -1,89 +1,77 @@
-## Why Google still shows the Lovable image
+# SEO Overhaul & Launch Hygiene
 
-Two real causes — both fixable:
+Goal: tight SEO hygiene, legal coverage, and a clean publish so the site is shareable today.
 
-1. **`public/og-image.png` is the wrong shape.** The live file is **734 × 1426 (portrait, ~370 KB)**. Facebook, Twitter, LinkedIn, and Google's rich-result image previews require **landscape ~1200 × 630**. When the image fails their ratio/size checks, scrapers fall back to whatever else they can find — for an old crawl that's often the cached Lovable preview thumbnail. Until this file is replaced **and re-scraped**, every share will look broken.
-2. **No image dimension hints.** `og:image:width`, `og:image:height`, `og:image:type`, `og:image:alt`, and `og:image:secure_url` are missing, so crawlers have to download and probe the file before deciding whether to use it. Many give up.
+## 1. Legal pages (new)
 
-A third, smaller cause: every internal page falls back to the same `/og-image.png` because per-page OG images aren't passed in.
+Create three pages with proper SEO + last-updated dates and link them in the footer + a small "Legal" strip.
 
-## Plan
+- `/privacy` — `src/pages/Privacy.tsx`: data collected (RSVPs, signups, cart, analytics), Lovable Cloud (Supabase) storage, Shopify checkout, cookies, third parties (YouTube, Spotify, Instagram, Plausible if enabled), user rights (access/delete via hello@catscandance.com), children, contact.
+- `/terms` — `src/pages/Terms.tsx`: site use, RSVP rules, ticket/door policy, shop terms (defer to Shopify for orders/refunds), IP, disclaimers, governing law (India / Karnataka), contact.
+- `/cookies` — `src/pages/Cookies.tsx`: essential vs analytics cookies, opt-out guidance.
 
-### 1. Generate a new, on-brand 1200×630 OG image
+Wire routes in `src/App.tsx`. Add a "LEGAL" column to `src/components/Footer.tsx` (Privacy, Terms, Cookies, Contact) and a thin bottom bar with © + legal links.
 
-Build `public/og-image.png` (and a `og-image.jpg` fallback) at exactly **1200 × 630**, under 300 KB, using the brand palette and the CCD logo:
+## 2. Sitemap + robots
 
-- Background: brand magenta (`#ff2bd6`) with the grain texture used elsewhere.
-- Big display lockup: **"CATS CAN DANCE"** in the site's display font.
-- Sub-line: **"Bangalore underground · parties · drops · culture"**.
-- CCD logo top-left, URL `catscandance.com` bottom-right.
-- Heavy black ink border + chunk-shadow to match the site's brutalist look.
+- Regenerate `public/sitemap.xml` with **all** current routes (currently missing: `/playlists`, `/videos`, `/cat-studio`, `/privacy`, `/terms`, `/cookies`; admin/embed stay excluded).
+- Update `<lastmod>` to today, fix priorities, keep image entries for shop/pets.
+- Build `public/sitemap.xml` dynamically at build time from a small script so it never goes stale (optional — included as a `scripts/build-sitemap.mjs` run in `prebuild`). If user prefers static, skip the script.
+- Add `Sitemap:` line is already there; also add `Disallow: /admin` and `Disallow: /embed/` to `robots.txt`.
 
-Also generate:
-- `public/og-image-square.png` (1080 × 1080) for WhatsApp/iMessage rich previews.
-- `public/apple-touch-icon.png` (180 × 180) from the CCD logo on a magenta tile.
-- `public/icon-192.png`, `public/icon-512.png` (PWA / Android home-screen).
-- `public/favicon.svg` (vector, dark-mode aware) + keep `favicon.ico` as legacy.
+## 3. Per-page SEO completeness
 
-### 2. Harden `index.html` head
+- Add `<SEO>` to `src/pages/Embed.tsx` with `noindex`.
+- Audit each page's title/description for length (≤60 / ≤155 chars), uniqueness, and a real `image`/`imageAlt`. Quick pass over: Index, About, Events, EventDetail, Shop, ProductDetail, Pets, Blog, BlogPost, Press, Media, Playlists, Videos, CatStudio, ForVenues/Artists/Investors.
+- Add JSON-LD where missing:
+  - `EventDetail` → `Event` schema (name, startDate, location, offers, performer, image).
+  - `ProductDetail` → `Product` + `Offer` schema (price, availability, brand).
+  - `BlogPost` → `Article` schema (headline, datePublished, author, image).
+  - `Blog` index → `Blog` + `BreadcrumbList`.
+  - `About`, `ForVenues/Artists/Investors` → `BreadcrumbList`.
+- Ensure every page renders `<Breadcrumbs>` (component exists) + matching `BreadcrumbList` JSON-LD.
+- Standardize H1: exactly one per page.
 
-- Replace title with a cleaner, shareable line: **"Cats Can Dance — Bangalore Underground · Parties, Drops, Culture"**.
-- Tighten the meta description to ~155 chars (drop the keyword-stuffing — Google ignores `meta keywords` and the long list looks spammy in SERP previews).
-- Add the full OG image set:
-  ```
-  og:image, og:image:secure_url, og:image:type=image/png,
-  og:image:width=1200, og:image:height=630,
-  og:image:alt="Cats Can Dance — Bangalore underground crew"
-  ```
-- Add `twitter:image:alt`.
-- Add `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`, `<link rel="mask-icon">`, `<link rel="manifest" href="/site.webmanifest">`.
-- Add a second `<meta name="theme-color">` with `media="(prefers-color-scheme: dark)"` for nicer mobile browser chrome.
-- Drop the noisy `<meta name="keywords">` block (zero SEO value, hurts perceived quality).
+## 4. Indexability + share previews
 
-### 3. Add `public/site.webmanifest`
+- Add `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` if available, keep `.ico` fallback.
+- Add `<meta name="format-detection" content="telephone=no">` to avoid auto phone-styling on iOS.
+- Confirm OG image is 1200×630 JPG <300KB (already done) and is reachable at the production domain.
+- Add `<meta property="article:publisher">` + `<meta property="og:see_also">` for socials.
+- Add a real `/favicon.ico` if it's still the placeholder.
 
-Minimal PWA manifest so iOS/Android show the brand icon when shared/added to home screen. Name, short_name, icons (192, 512), theme_color, background_color, display=standalone.
+## 5. Performance hygiene (affects SEO)
 
-### 4. Upgrade `src/components/SEO.tsx`
+- Add `<link rel="preload" as="image" href="<hero image>" fetchpriority="high">` for the LCP image on `/`.
+- Lazy-load below-the-fold images (`loading="lazy" decoding="async"`) — pass over Hero/Drops/Events/Posts/Media.
+- Add `width`/`height` (or aspect-ratio CSS) on remaining `<img>` to remove CLS.
+- Defer non-critical scripts (Spotify/YouTube embeds already lazy via routes — verify).
 
-- Emit the same expanded OG image meta tags (width/height/type/alt/secure_url) on every page.
-- Add `og:image:alt` and `twitter:image:alt` from a new optional `imageAlt` prop (falls back to the title).
-- Default `theme-color` switched to brand magenta to match `index.html`.
-- Add `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">` so Google is allowed to use the large preview image in SERPs.
+## 6. Accessibility hygiene (Google ranks it)
 
-### 5. Per-page OG images (where it matters most)
+- Confirm every interactive element has accessible text (icon-only buttons need `aria-label`).
+- `html lang="en"` already set; add `lang="en-IN"` consideration kept as-is.
+- Color contrast spot-check on `text-cream/70` over `bg-ink` (passes), `acid-yellow` on cream (verify large-text only).
 
-Pass page-specific `image` props (referencing existing posters/product shots) on the highest-traffic routes — the analytics show these are the ones being shared:
+## 7. Analytics + verification
 
-- `/` (homepage) — new master OG.
-- `/about` — magenta/cream variant with team line.
-- `/shop` — product hero composite.
-- `/events` and `/events/episode-1` — use the existing episode poster.
-- `/for-venues`, `/for-artists`, `/for-investors` — reuse master OG (acceptable).
-- Blog posts — already have cover images; ensure they are passed as OG.
+- Keep `SeoVerification.tsx` — confirm `site_settings.seo_verifications` row supports `google`, `bing`, `plausible_domain`. Document in README how to set them from Admin.
+- Add a one-line note in `README.md` for post-launch: submit sitemap in Google Search Console + Bing Webmaster.
 
-(Pages without a custom image still get the new master OG via the default — no regression.)
+## 8. Publish
 
-### 6. Re-trigger crawler caches after deploy
+- Set publish visibility to `public` (`update_visibility: public`) so the live URL is open.
+- Confirm custom domain `catscandance.com` is pointed and primary (already in project URLs).
+- Re-check OG via Facebook Debugger / LinkedIn Inspector / Twitter card validator after deploy (manual, user-side).
 
-Once shipped, the user needs to re-scrape the cache (otherwise the old Lovable thumbnail sticks for days/weeks). I will document the one-click links in chat after deploy:
-- Facebook/WhatsApp Sharing Debugger → "Scrape Again"
-- LinkedIn Post Inspector
-- Twitter/X Card Validator
-- Google Search Console → URL Inspection → "Request Indexing" for `/`
+## Files touched (summary)
 
-### Files to change
+- New: `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/Cookies.tsx`
+- Edited: `src/App.tsx`, `src/components/Footer.tsx`, `public/sitemap.xml`, `public/robots.txt`, `index.html`, `src/components/SEO.tsx` (minor), `src/pages/Embed.tsx`, `src/pages/EventDetail.tsx`, `src/pages/ProductDetail.tsx`, `src/pages/BlogPost.tsx`, `src/pages/Blog.tsx`, plus light per-page title/description tightening
+- Optional: `scripts/build-sitemap.mjs` + `package.json` `prebuild` hook
 
-- `index.html` — head overhaul
-- `src/components/SEO.tsx` — expanded meta tags + robots
-- `public/og-image.png` (regenerated, 1200×630)
-- `public/og-image-square.png` (new)
-- `public/apple-touch-icon.png`, `public/icon-192.png`, `public/icon-512.png`, `public/favicon.svg` (new)
-- `public/site.webmanifest` (new)
-- `src/pages/{Index,About,Shop,Events,EventDetail,Pets,Press,Media,ForVenues,ForArtists,ForInvestors}.tsx` — pass `image` / `imageAlt` props where useful
+## Out of scope (ask if you want them)
 
-### Out of scope
-
-- Custom OG images per blog post (existing covers are reused automatically).
-- Schema additions beyond what's already present (Organization, LocalBusiness, Brand, WebSite are solid).
-- DNS / domain-level changes.
+- Cookie consent banner (only needed if you target EU traffic).
+- Programmatic image sitemap for every blog post.
+- AMP / RSS feed expansion (RSS already exists).
