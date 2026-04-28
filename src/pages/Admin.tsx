@@ -764,6 +764,119 @@ const Admin = () => {
                 </div>
               </TabsContent>
 
+              {/* MARQUEES */}
+              <TabsContent value="marquees">
+                <p className="text-ink/70 font-medium mb-4">
+                  Toggle, recolor, and edit the scrolling tickers between homepage sections. Items are comma-separated.
+                </p>
+                <div className="space-y-4">
+                  {(settings?.marquees ?? MARQUEE_DEFAULTS).map((m, idx) => (
+                    <div key={m.id} className="bg-cream border-4 border-ink chunk-shadow p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <h3 className="font-display text-xl text-ink uppercase">{m.id.replace("above-", "Above: ")}</h3>
+                        <label className="flex items-center gap-2 font-display text-ink cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={m.enabled}
+                            onChange={(e) => {
+                              if (!settings) return;
+                              const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                              next[idx] = { ...m, enabled: e.target.checked };
+                              setSettings({ ...settings, marquees: next });
+                            }}
+                            className="w-5 h-5 accent-magenta"
+                          />
+                          ENABLED
+                        </label>
+                      </div>
+                      <div className={`${m.bg} border-4 border-ink py-2 px-3 mb-3 overflow-hidden whitespace-nowrap`}>
+                        <span className="font-display text-ink">{m.items.join(" ★ ")}</span>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block font-display text-xs text-ink/70 mb-1">BACKGROUND</label>
+                          <select
+                            value={m.bg}
+                            onChange={(e) => {
+                              if (!settings) return;
+                              const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                              next[idx] = { ...m, bg: e.target.value };
+                              setSettings({ ...settings, marquees: next });
+                            }}
+                            className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-display"
+                          >
+                            {MARQUEE_BG_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-end gap-4">
+                          <label className="flex items-center gap-2 font-display text-ink cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={m.reverse}
+                              onChange={(e) => {
+                                if (!settings) return;
+                                const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                                next[idx] = { ...m, reverse: e.target.checked };
+                                setSettings({ ...settings, marquees: next });
+                              }}
+                              className="w-5 h-5 accent-magenta"
+                            />
+                            REVERSE
+                          </label>
+                          <label className="flex items-center gap-2 font-display text-ink cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={m.size === "lg"}
+                              onChange={(e) => {
+                                if (!settings) return;
+                                const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                                next[idx] = { ...m, size: e.target.checked ? "lg" : "sm" };
+                                setSettings({ ...settings, marquees: next });
+                              }}
+                              className="w-5 h-5 accent-magenta"
+                            />
+                            LARGE
+                          </label>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <label className="block font-display text-xs text-ink/70 mb-1">ITEMS (comma-separated)</label>
+                        <input
+                          value={m.items.join(", ")}
+                          onChange={(e) => {
+                            if (!settings) return;
+                            const items = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                            const next = [...(settings.marquees ?? MARQUEE_DEFAULTS)];
+                            next[idx] = { ...m, items: items.length ? items : m.items };
+                            setSettings({ ...settings, marquees: next });
+                          }}
+                          className="w-full bg-cream text-ink border-4 border-ink px-3 py-2 font-display"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={async () => {
+                      if (!settings) return;
+                      try {
+                        await callContent({
+                          method: "POST",
+                          body: JSON.stringify({ type: "settings", action: "upsert", payload: settings }),
+                        });
+                        toast.success("Marquees saved");
+                      } catch {
+                        toast.error("Save failed");
+                      }
+                    }}
+                    className="bg-ink text-cream font-display text-lg px-6 py-3 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform"
+                  >
+                    💾 SAVE MARQUEES
+                  </button>
+                </div>
+              </TabsContent>
+
               {/* RSVPS */}
               <TabsContent value="rsvps">
                 <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
