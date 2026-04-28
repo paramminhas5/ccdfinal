@@ -143,6 +143,7 @@ const Admin = () => {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PASS_KEY) ?? "");
   const [authed, setAuthed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const themeCtx = useTheme();
 
   const [signups, setSignups] = useState<Signup[]>([]);
   const [signupSearch, setSignupSearch] = useState("");
@@ -961,7 +962,11 @@ const Admin = () => {
                             payload: { theme: settings.theme ?? { preset: "default" } },
                           }),
                         });
-                        toast.success("Theme saved — refresh to see changes");
+                        // Apply locally right away: drop any local override and
+                        // apply the freshly-saved preset so the admin sees it instantly.
+                        themeCtx.clearOverride();
+                        applyTheme(settings.theme ?? { preset: "default" });
+                        toast.success("Theme saved — applied live");
                       } catch {
                         toast.error("Save failed");
                       }
