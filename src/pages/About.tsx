@@ -31,11 +31,11 @@ const About = () => (
     <Nav />
     <PageHero
       eyebrow="ABOUT"
-      title={<>WE THROW PARTIES.<br/>WE BUILD CULTURE.</>}
-      bg="bg-cream"
-      textColor="text-ink"
-      eyebrowColor="text-magenta"
-      shadowColor="hsl(var(--magenta))"
+      title={<>AT THE INTERSECTION OF<br/>MUSIC, FASHION & PETS.</>}
+      bg="bg-magenta"
+      textColor="text-cream"
+      eyebrowColor="text-acid-yellow"
+      shadowColor="hsl(var(--ink))"
     />
 
     {/* Mission */}
@@ -60,10 +60,10 @@ const About = () => (
     </section>
 
     {/* What we do — short strip */}
-    <section className="bg-electric-blue border-b-4 border-ink py-12 md:py-20">
+    <section className="bg-ink border-b-4 border-ink py-12 md:py-20">
       <div className="container">
         <p className="font-display text-acid-yellow text-lg md:text-xl mb-3">/ WHAT WE DO</p>
-        <h2 className="font-display text-cream text-3xl md:text-5xl leading-[0.95] mb-8 drop-shadow-[5px_5px_0_hsl(var(--ink))]">
+        <h2 className="font-display text-cream text-3xl md:text-5xl leading-[0.95] mb-8 drop-shadow-[5px_5px_0_hsl(var(--magenta))]">
           THREE THINGS.<br/>DONE PROPERLY.
         </h2>
         <div className="grid sm:grid-cols-3 gap-4">
