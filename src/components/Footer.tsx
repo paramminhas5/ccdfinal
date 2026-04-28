@@ -98,7 +98,7 @@ const Footer = () => {
           GET IN TOUCH →
         </a>
 
-        <div className="mt-20 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10 max-w-6xl mx-auto">
+        <div className="mt-20 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-10 max-w-6xl mx-auto">
           {groups.map((g) => (
             <div key={g.title}>
               <p className="font-display text-acid-yellow text-lg mb-3">{g.title}</p>
