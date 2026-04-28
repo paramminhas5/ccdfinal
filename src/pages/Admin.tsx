@@ -5,6 +5,8 @@ import Nav from "@/components/Nav";
 import SEO from "@/components/SEO";
 import BlogCover from "@/components/BlogCover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { THEME_PRESETS, resolvePalette, applyTheme } from "@/lib/theme";
+import { useTheme } from "@/components/ThemeProvider";
 
 type Category = "GUIDES" | "CULTURE" | "ARTISTS" | "JOURNAL" | "DROPS" | "PETS";
 type DraftPost = {
