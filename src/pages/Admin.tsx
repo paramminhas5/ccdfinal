@@ -550,6 +550,7 @@ const Admin = () => {
               <TabsList className="bg-cream border-4 border-ink p-1 mb-6 flex-wrap h-auto">
                 <TabsTrigger value="signups" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SIGNUPS</TabsTrigger>
                 <TabsTrigger value="playlists" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PLAYLISTS</TabsTrigger>
+                <TabsTrigger value="videos" onClick={() => { if (!videosLoaded) loadVideos(); }} className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">VIDEOS</TabsTrigger>
                 <TabsTrigger value="events" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENTS</TabsTrigger>
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
