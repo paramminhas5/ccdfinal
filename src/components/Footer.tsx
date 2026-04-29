@@ -128,8 +128,8 @@ const Footer = () => {
           <div>
             <p className="font-display text-acid-yellow text-lg mb-3">FOLLOW</p>
             <ul className="space-y-2">
-              <li><a href="https://instagram.com/catscandance" target="_blank" rel="noopener noreferrer" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">Instagram</a></li>
-              <li><a href="https://www.youtube.com/@catscandance" target="_blank" rel="noopener noreferrer" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">YouTube</a></li>
+              <li><a href="https://instagram.com/catscan.dance" target="_blank" rel="noopener noreferrer" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">Instagram</a></li>
+              <li><a href="https://www.youtube.com/@thesecatscandance" target="_blank" rel="noopener noreferrer" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">YouTube</a></li>
               <li><a href="/rss.xml" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">RSS</a></li>
               <li><a href="mailto:hello@catscandance.com" className="font-medium text-cream/80 hover:text-acid-yellow transition-colors">Email</a></li>
             </ul>
