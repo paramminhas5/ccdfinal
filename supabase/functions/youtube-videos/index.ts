@@ -61,8 +61,13 @@ function decodeEntities(s: string): string {
 }
 
 async function fromRSS(): Promise<Video[]> {
-  const r = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`);
-  if (!r.ok) throw new Error(`RSS ${r.status}`);
+  const r = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`, {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; CCDBot/1.0)" },
+  });
+  if (!r.ok) {
+    console.warn(`RSS returned ${r.status} — channel may not have RSS enabled`);
+    return [];
+  }
   const xml = await r.text();
   const entries = xml.split("<entry>").slice(1);
   const videos: Video[] = [];
