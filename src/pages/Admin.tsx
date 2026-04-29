@@ -671,6 +671,83 @@ const Admin = () => {
                 </div>
               </TabsContent>
 
+              {/* VIDEOS */}
+              <TabsContent value="videos">
+                <div className="bg-cream border-4 border-ink chunk-shadow p-6 mb-6">
+                  <h3 className="font-display text-2xl text-ink mb-4">ADD YOUTUBE VIDEO</h3>
+                  <p className="text-ink/70 text-sm mb-3">
+                    Paste a YouTube URL — title and thumbnail are auto-fetched. Admin-curated videos override the YouTube API feed everywhere on the site.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                    <input
+                      placeholder="https://youtu.be/… or https://youtube.com/watch?v=…"
+                      value={newVideoUrl}
+                      onChange={(e) => setNewVideoUrl(e.target.value)}
+                      className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
+                    />
+                    <input
+                      placeholder="Custom title (optional — defaults to YouTube title)"
+                      value={newVideoTitle}
+                      onChange={(e) => setNewVideoTitle(e.target.value)}
+                      className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
+                    />
+                  </div>
+                  <button
+                    onClick={addVideo}
+                    disabled={videoBusy || !newVideoUrl.trim()}
+                    className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors disabled:opacity-50"
+                  >
+                    {videoBusy ? "ADDING…" : "ADD VIDEO"}
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {videos.map((v) => (
+                    <div key={v.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-4 justify-between">
+                      <div className="flex items-center gap-4 min-w-0">
+                        {v.thumbnail_url && (
+                          <img src={v.thumbnail_url} alt={v.title} className="w-32 h-20 object-cover border-2 border-ink shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-display text-lg text-ink line-clamp-2">{v.title}</p>
+                          <p className="text-ink/60 text-xs font-mono">
+                            {v.youtube_id} · sort {v.sort_order}
+                            {v.published_at ? ` · ${new Date(v.published_at).toLocaleDateString()}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => moveVideo(v, -1)} className="bg-cream text-ink font-display px-3 py-2 border-2 border-ink hover:bg-acid-yellow transition-colors">↑</button>
+                        <button onClick={() => moveVideo(v, 1)} className="bg-cream text-ink font-display px-3 py-2 border-2 border-ink hover:bg-acid-yellow transition-colors">↓</button>
+                        <button
+                          onClick={() => toggleVideoFeatured(v)}
+                          className={`font-display px-4 py-2 border-2 border-ink ${v.is_featured ? "bg-acid-yellow text-ink" : "bg-cream text-ink hover:bg-acid-yellow transition-colors"}`}
+                        >
+                          {v.is_featured ? "★ FEATURED" : "FEATURE"}
+                        </button>
+                        <a
+                          href={`https://www.youtube.com/watch?v=${v.youtube_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-cream text-ink font-display px-4 py-2 border-2 border-ink hover:bg-acid-yellow transition-colors"
+                        >
+                          OPEN
+                        </a>
+                        <button onClick={() => deleteVideo(v)} className="bg-destructive text-cream font-display px-4 py-2 border-2 border-ink">
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {videosLoaded && videos.length === 0 && (
+                    <p className="text-ink/60">No admin videos yet. The site will fall back to the YouTube channel feed (RSS) automatically.</p>
+                  )}
+                  {!videosLoaded && (
+                    <p className="text-ink/60">Loading videos…</p>
+                  )}
+                </div>
+              </TabsContent>
+
               {/* EVENTS */}
               <TabsContent value="events">
                 <div className="flex justify-between items-center mb-4">
