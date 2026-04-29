@@ -1,87 +1,63 @@
-# Curated Events — Sprint 1 + Sprint 2
+## What's actually wrong
 
-## The diagnosis
+I tested the YouTube edge function — it's returning:
 
-The DB only has **9 rows**, all from `skillboxes`, 4 of them with `city = NULL`, **0 with images**, **0 featured**. Causes:
+> "The request cannot be completed because you have exceeded your quota."
 
-1. **Cron is wrong**: only runs weekly Mondays 02:30, calls `curate-events` directly with default body `{source:"skillboxes", city:"bangalore"}` — that's why only Skillbox/Bangalore rows exist.
-2. **No image extraction**: AI tool schema in `curate-events/index.ts` doesn't request `image_url`, and Firecrawl is only asked for `markdown` (not metadata).
-3. **City NULLs**: pre-existing rows from before `city` was added to the upsert payload — never backfilled.
-4. **Nothing featured**: `is_featured` defaults to `false` and nothing ever flips it.
-5. **No dedupe across sources**: same event on Insider + Skillbox = two cards.
+So `youtube-videos` is failing for fresh `?max=` calls. The **only** reason `WATCH THE TAPES.` shows even one tile is because the `max=6` cache slot still has stale data from earlier; the `/videos` page (which calls `?max=50`) hits a separate cache slot that quota-failed and only got 1 video before the cap. That's why home shows some, all-videos page shows one.
 
+Two real problems to solve:
+1. **YouTube quota** keeps getting blown — and there's no admin override. We need a backend video table so admin can curate manually with YouTube links, and the API becomes a *fallback* not the source of truth.
+2. **Instagram handle is wrong** in Footer + brand.json (`catscandance` instead of `catscan.dance`). YouTube channel link in Footer is also wrong (`@catscandance` vs `@thesecatscandance`).
 
+---
 
-### 1. Fix the cron
+## Plan
 
-Replace `curate-events-weekly` with a daily 02:00 UTC (07:30 IST) job that hits `scheduled-curate` (the orchestrator that loops all sources × cities and prunes stale rows).
+### 1. Admin-managed videos (CMS)
 
-```sql
-SELECT cron.unschedule('curate-events-weekly');
-SELECT cron.schedule(
-  'scheduled-curate-daily', '0 2 * * *',
-  $$ SELECT net.http_post(
-       url := '<project>/functions/v1/scheduled-curate',
-       headers := jsonb_build_object('Authorization','Bearer <service_key>','Content-Type','application/json'),
-       body := '{}'::jsonb) $$);
-```
+- New table `site_videos` with: `id`, `youtube_id`, `title`, `thumbnail_url` (nullable — auto-derive from youtube_id if blank), `published_at`, `sort_order`, `is_featured`, `created_at`.
+- RLS: public SELECT, no public writes.
+- New edge function `admin-videos` (password-gated like other admin-* functions) for create/update/delete/reorder.
+- Admin will also accept a full YouTube URL (`youtu.be/…`, `watch?v=…`, `/shorts/…`) and parse out the `youtube_id`.
 
-### 2. Pull images + better metadata in `curate-events`
+### 2. Admin UI — new "VIDEOS" section in `src/pages/Admin.tsx`
 
-- Add `screenshot` + `metadata` to the Firecrawl scrape formats so we get `og:image`.
-- Add `image_url` (and explicit `city` echo) to the AI tool schema; instruct AI to prefer the og:image / first hero image URL it sees in the markdown.
-- Fall back to `firecrawl.metadata.ogImage` if AI returns empty.
-- Persist `image_url` on the upsert row.
+- Paste a YouTube URL → auto-fetches title + thumbnail (via existing `youtube-videos` pattern, or fall back to oEmbed `https://www.youtube.com/oembed?url=…&format=json` which has no quota).
+- Override title, toggle "featured", drag/reorder, delete.
 
-### 3. Backfill / clean existing rows
+### 3. Rewrite `youtube-videos` edge function as a hybrid
 
-- One-shot SQL: `UPDATE curated_events SET city='bangalore' WHERE city IS NULL AND source='skillboxes';`
-- Force-run `scheduled-curate` once via `curl_edge_functions` to seed Mumbai, Delhi + all sources with images.
+Order of resolution:
+1. Read from `site_videos` table (admin curated). If admin has rows, use them as the source of truth.
+2. If empty AND quota available, fall back to YouTube Data API.
+3. If quota exhausted, fall back to **YouTube RSS feed** `https://www.youtube.com/feeds/videos.xml?channel_id=UCmtg0d8E2PXfs3vlQIcGwdQ` — this is free, unlimited, returns latest ~15 videos with title/thumbnail/published date. Parse the XML server-side.
+4. Cache successful responses for 12h, errors for 30m (already in place).
 
-### 4. Auto-feature logic
+This means `WATCH THE TAPES` always shows at least the latest 3, and `/videos` always shows the full list — quota or no quota.
 
-After each `scheduled-curate` run, in the orchestrator:
+### 4. Frontend
 
-- Clear `is_featured` on all auto rows (keep manual/community untouched).
-- Pick top 2 per city by: has `image_url` + soonest future `event_date` + non-null venue → set `is_featured = true`.
+- `src/components/Videos.tsx` (homepage): show **last 3** (currently shows up to 3 already, but with the API broken it falls back to 1). Once edge function is fixed, this works.
+- `src/pages/Videos.tsx`: already paginated for 50 — the `max=50` request will work once the function falls back to RSS/admin table.
 
-### 5. URL dedupe across sources
+### 5. Fix wrong handles
 
-Add a uniqueness layer on `(lower(title), event_date, lower(coalesce(venue,'')))` — when collision, prefer the row with an image, then prefer Skillbox/Insider over aggregators. Implement as a post-upsert cleanup query in `scheduled-curate`.
+- `src/components/Footer.tsx`: change Instagram link from `instagram.com/catscandance` → `instagram.com/catscan.dance`, and YouTube link from `@catscandance` → `@thesecatscandance`.
+- `public/brand.json`: same two fixes (`instagram` and `youtube` URLs).
+- `src/components/SEO.tsx`: Twitter handles — leave `@catscandance` as-is unless you confirm Twitter is also `@catscan.dance` (Twitter doesn't allow dots in handles, so this is probably fine).
 
+---
 
+## Files to change
 
-### 6. Manual seed of "CCD Picks"
+- `supabase/migrations/...` — new `site_videos` table + RLS
+- `supabase/functions/admin-videos/index.ts` — new (admin CRUD)
+- `supabase/functions/youtube-videos/index.ts` — rewrite with table + RSS fallback
+- `src/pages/Admin.tsx` — new VIDEOS tab/section
+- `src/components/Footer.tsx` — fix Instagram + YouTube links
+- `public/brand.json` — fix Instagram + YouTube URLs
 
-Insert ~6 hand-picked rows with `source='manual'` so the magenta CCD-pick cards aren't empty on day one. (You give me the list, or I seed plausible BLR placeholders you can edit in Admin.)
+No changes needed to `Videos.tsx` (home) or `pages/Videos.tsx` — they'll start working once the edge function returns ≥3 videos.
 
-### 7. Admin: feature toggle + image override
-
-`Admin.tsx` already lists curated events — add:
-
-- ⭐ toggle button per row → calls `admin-curated-events` to flip `is_featured`.
-- Image URL text input per row (override broken/missing scrapes).
-- "Run scraper now" button → POSTs to `scheduled-curate` with admin password.
-
-### 8. Empty-state copy fix
-
-`CuratedEvents.tsx` says "refreshed weekly" — change to "refreshed daily" once cron is daily.
-
-### 9. Genre normalization
-
-AI returns inconsistent genres ("techno", "Techno", "tech-house"). Lowercase + map to the 8 filter buckets server-side before insert so the genre filter actually matches things.
-
-## Technical notes
-
-- `scheduled-curate` already prunes events older than 30 days and skips `is_featured` rows — keep that.
-- `curate-events` `extractWithAI` truncates page to 6000 chars — bump to 9000 so og:image lines aren't cut off.
-- pg_cron + pg_net are already enabled (existing `curate-events-weekly` proves it).
-- All edits are in `supabase/functions/curate-events/index.ts`, `supabase/functions/scheduled-curate/index.ts`, `supabase/functions/admin-curated-events/index.ts`, `src/pages/Admin.tsx`, `src/components/CuratedEvents.tsx`, plus 2 SQL ops (cron reschedule + city backfill) and one manual scraper invocation.
-
-## Out of scope (flag for later)
-
-- Per-city featured carousels.
-- Saving event to user's calendar.
-- Genre auto-tagging via AI re-classification of historical rows.
-
-Approve and I'll execute end-to-end in one pass.
+Approve and I'll execute.

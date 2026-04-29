@@ -160,6 +160,88 @@ const Admin = () => {
   const [rsvpEventFilter, setRsvpEventFilter] = useState<string>("");
   const [rsvpsLoaded, setRsvpsLoaded] = useState(false);
 
+  // Videos
+  type SiteVideo = { id: string; youtube_id: string; title: string; thumbnail_url: string | null; published_at: string | null; sort_order: number; is_featured: boolean };
+  const [videos, setVideos] = useState<SiteVideo[]>([]);
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [newVideoTitle, setNewVideoTitle] = useState("");
+  const [videosLoaded, setVideosLoaded] = useState(false);
+  const [videoBusy, setVideoBusy] = useState(false);
+
+  const callAdminVideos = async (init: { method: string; body?: any }) => {
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const res = await fetch(`${projectUrl}/functions/v1/admin-videos`, {
+      method: init.method,
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: init.body ? JSON.stringify(init.body) : undefined,
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || "Request failed");
+    return j;
+  };
+
+  const loadVideos = async () => {
+    try {
+      const j = await callAdminVideos({ method: "GET" });
+      setVideos(j.videos || []);
+      setVideosLoaded(true);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load videos");
+    }
+  };
+
+  const addVideo = async () => {
+    if (!newVideoUrl.trim()) return;
+    setVideoBusy(true);
+    try {
+      await callAdminVideos({ method: "POST", body: { url: newVideoUrl.trim(), title: newVideoTitle.trim() || undefined } });
+      setNewVideoUrl("");
+      setNewVideoTitle("");
+      await loadVideos();
+      toast.success("Video added");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add video");
+    } finally {
+      setVideoBusy(false);
+    }
+  };
+
+  const toggleVideoFeatured = async (v: SiteVideo) => {
+    try {
+      await callAdminVideos({ method: "PUT", body: { id: v.id, is_featured: !v.is_featured } });
+      await loadVideos();
+    } catch (e: any) {
+      toast.error(e.message || "Update failed");
+    }
+  };
+
+  const moveVideo = async (v: SiteVideo, dir: -1 | 1) => {
+    const next = (v.sort_order || 0) + dir;
+    try {
+      await callAdminVideos({ method: "PUT", body: { id: v.id, sort_order: next } });
+      await loadVideos();
+    } catch (e: any) {
+      toast.error(e.message || "Reorder failed");
+    }
+  };
+
+  const deleteVideo = async (v: SiteVideo) => {
+    if (!confirm(`Delete "${v.title}"?`)) return;
+    try {
+      await callAdminVideos({ method: "DELETE", body: { id: v.id } });
+      await loadVideos();
+      toast.success("Deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Delete failed");
+    }
+  };
+
   const callContent = async (init: RequestInit & { search?: string } = {}) => {
     const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
     const projectUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -468,6 +550,7 @@ const Admin = () => {
               <TabsList className="bg-cream border-4 border-ink p-1 mb-6 flex-wrap h-auto">
                 <TabsTrigger value="signups" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SIGNUPS</TabsTrigger>
                 <TabsTrigger value="playlists" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PLAYLISTS</TabsTrigger>
+                <TabsTrigger value="videos" onClick={() => { if (!videosLoaded) loadVideos(); }} className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">VIDEOS</TabsTrigger>
                 <TabsTrigger value="events" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENTS</TabsTrigger>
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
@@ -584,6 +667,83 @@ const Admin = () => {
                   ))}
                   {(!settings || settings.playlists.length === 0) && (
                     <p className="text-ink/60">No playlists yet.</p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* VIDEOS */}
+              <TabsContent value="videos">
+                <div className="bg-cream border-4 border-ink chunk-shadow p-6 mb-6">
+                  <h3 className="font-display text-2xl text-ink mb-4">ADD YOUTUBE VIDEO</h3>
+                  <p className="text-ink/70 text-sm mb-3">
+                    Paste a YouTube URL — title and thumbnail are auto-fetched. Admin-curated videos override the YouTube API feed everywhere on the site.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                    <input
+                      placeholder="https://youtu.be/… or https://youtube.com/watch?v=…"
+                      value={newVideoUrl}
+                      onChange={(e) => setNewVideoUrl(e.target.value)}
+                      className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
+                    />
+                    <input
+                      placeholder="Custom title (optional — defaults to YouTube title)"
+                      value={newVideoTitle}
+                      onChange={(e) => setNewVideoTitle(e.target.value)}
+                      className="bg-cream text-ink border-4 border-ink px-4 py-3 font-medium focus:outline-none focus:bg-acid-yellow"
+                    />
+                  </div>
+                  <button
+                    onClick={addVideo}
+                    disabled={videoBusy || !newVideoUrl.trim()}
+                    className="bg-ink text-cream font-display px-5 py-2 hover:bg-magenta transition-colors disabled:opacity-50"
+                  >
+                    {videoBusy ? "ADDING…" : "ADD VIDEO"}
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {videos.map((v) => (
+                    <div key={v.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-4 justify-between">
+                      <div className="flex items-center gap-4 min-w-0">
+                        {v.thumbnail_url && (
+                          <img src={v.thumbnail_url} alt={v.title} className="w-32 h-20 object-cover border-2 border-ink shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-display text-lg text-ink line-clamp-2">{v.title}</p>
+                          <p className="text-ink/60 text-xs font-mono">
+                            {v.youtube_id} · sort {v.sort_order}
+                            {v.published_at ? ` · ${new Date(v.published_at).toLocaleDateString()}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => moveVideo(v, -1)} className="bg-cream text-ink font-display px-3 py-2 border-2 border-ink hover:bg-acid-yellow transition-colors">↑</button>
+                        <button onClick={() => moveVideo(v, 1)} className="bg-cream text-ink font-display px-3 py-2 border-2 border-ink hover:bg-acid-yellow transition-colors">↓</button>
+                        <button
+                          onClick={() => toggleVideoFeatured(v)}
+                          className={`font-display px-4 py-2 border-2 border-ink ${v.is_featured ? "bg-acid-yellow text-ink" : "bg-cream text-ink hover:bg-acid-yellow transition-colors"}`}
+                        >
+                          {v.is_featured ? "★ FEATURED" : "FEATURE"}
+                        </button>
+                        <a
+                          href={`https://www.youtube.com/watch?v=${v.youtube_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-cream text-ink font-display px-4 py-2 border-2 border-ink hover:bg-acid-yellow transition-colors"
+                        >
+                          OPEN
+                        </a>
+                        <button onClick={() => deleteVideo(v)} className="bg-destructive text-cream font-display px-4 py-2 border-2 border-ink">
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {videosLoaded && videos.length === 0 && (
+                    <p className="text-ink/60">No admin videos yet. The site will fall back to the YouTube channel feed (RSS) automatically.</p>
+                  )}
+                  {!videosLoaded && (
+                    <p className="text-ink/60">Loading videos…</p>
                   )}
                 </div>
               </TabsContent>
