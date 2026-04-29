@@ -160,6 +160,88 @@ const Admin = () => {
   const [rsvpEventFilter, setRsvpEventFilter] = useState<string>("");
   const [rsvpsLoaded, setRsvpsLoaded] = useState(false);
 
+  // Videos
+  type SiteVideo = { id: string; youtube_id: string; title: string; thumbnail_url: string | null; published_at: string | null; sort_order: number; is_featured: boolean };
+  const [videos, setVideos] = useState<SiteVideo[]>([]);
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [newVideoTitle, setNewVideoTitle] = useState("");
+  const [videosLoaded, setVideosLoaded] = useState(false);
+  const [videoBusy, setVideoBusy] = useState(false);
+
+  const callAdminVideos = async (init: { method: string; body?: any }) => {
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const res = await fetch(`${projectUrl}/functions/v1/admin-videos`, {
+      method: init.method,
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: init.body ? JSON.stringify(init.body) : undefined,
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || "Request failed");
+    return j;
+  };
+
+  const loadVideos = async () => {
+    try {
+      const j = await callAdminVideos({ method: "GET" });
+      setVideos(j.videos || []);
+      setVideosLoaded(true);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to load videos");
+    }
+  };
+
+  const addVideo = async () => {
+    if (!newVideoUrl.trim()) return;
+    setVideoBusy(true);
+    try {
+      await callAdminVideos({ method: "POST", body: { url: newVideoUrl.trim(), title: newVideoTitle.trim() || undefined } });
+      setNewVideoUrl("");
+      setNewVideoTitle("");
+      await loadVideos();
+      toast.success("Video added");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add video");
+    } finally {
+      setVideoBusy(false);
+    }
+  };
+
+  const toggleVideoFeatured = async (v: SiteVideo) => {
+    try {
+      await callAdminVideos({ method: "PUT", body: { id: v.id, is_featured: !v.is_featured } });
+      await loadVideos();
+    } catch (e: any) {
+      toast.error(e.message || "Update failed");
+    }
+  };
+
+  const moveVideo = async (v: SiteVideo, dir: -1 | 1) => {
+    const next = (v.sort_order || 0) + dir;
+    try {
+      await callAdminVideos({ method: "PUT", body: { id: v.id, sort_order: next } });
+      await loadVideos();
+    } catch (e: any) {
+      toast.error(e.message || "Reorder failed");
+    }
+  };
+
+  const deleteVideo = async (v: SiteVideo) => {
+    if (!confirm(`Delete "${v.title}"?`)) return;
+    try {
+      await callAdminVideos({ method: "DELETE", body: { id: v.id } });
+      await loadVideos();
+      toast.success("Deleted");
+    } catch (e: any) {
+      toast.error(e.message || "Delete failed");
+    }
+  };
+
   const callContent = async (init: RequestInit & { search?: string } = {}) => {
     const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
     const projectUrl = import.meta.env.VITE_SUPABASE_URL;
