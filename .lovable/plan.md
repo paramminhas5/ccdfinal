@@ -1,125 +1,71 @@
-# SEO recovery plan
+# SEO 10X Plan
 
-## What I found
+Goal: ship every high-leverage change a code agent can do without waiting on Google. Grouped by impact.
 
-Your SEO work is mostly present in the codebase, but the **published site is still sending the wrong signals to crawlers**.
+## 1. Rich Results Schema (biggest visible win in SERPs)
 
-### Confirmed issues
-1. **The live site is still serving old favicon markup**
-   - Live HTML currently points to:
-     - `/favicon.ico`
-     - `/ccd-logo.png`
-   - That does **not** match the newer RealFaviconGenerator setup in the current codebase.
-   - This explains why Google can still show the old/Lovable-looking icon.
+- **Event schema** on every event/episode page (`/events`, `/events/:slug`): `MusicEvent` with `name`, `startDate`, `endDate`, `location` (Place + PostalAddress), `image`, `offers` (price, availability, url), `performer`, `eventStatus`, `eventAttendanceMode`. Wired through prerender so Google sees it on first paint.
+- **Product schema** on `/shop/:slug` and `/pets`: `Product` with `name`, `image`, `description`, `brand`, `sku`, `offers` (price, currency, availability, url). Add `AggregateRating` only if real ratings exist.
+- **VideoObject** on `/videos` items + embeds: `name`, `description`, `thumbnailUrl`, `uploadDate`, `contentUrl`/`embedUrl`, `duration`.
+- **BreadcrumbList** on every non-home page (already have visual breadcrumbs — just add JSON-LD).
+- **FAQPage** on `/about`, `/for-venues`, `/for-artists`, `/bengaluru-underground-dance-music` (3–6 real Q&As each).
+- **Organization + LocalBusiness** on `/` with `address` (Bengaluru), `sameAs` (IG, YT, Spotify), `logo`. Adds knowledge-panel eligibility.
+- **WebSite + SearchAction** sitelinks-search-box on `/`.
 
-2. **Deep pages are not crawler-first**
-   - When requesting a blog URL directly, the server initially serves the generic app shell HTML.
-   - That means bots do **not** reliably get route-specific `<title>`, canonical, description, OG tags, and JSON-LD in the first HTML response.
-   - For indexing, this is a major weakness even if React updates tags later in the browser.
+## 2. Prerender + Indexability hardening
 
-3. **Sitemap trust is likely being weakened**
-   - The sitemap is reachable and valid enough to fetch.
-   - But if Google sees sitemap URLs that depend on client-side rendering only, or sees inconsistent canonicals/head output, it may treat the sitemap as low-confidence.
+- Extend `scripts/prerender-plugin.mjs` to also prerender event detail and product detail routes (read from Supabase at build time via service role, or from a static JSON snapshot the build pulls).
+- Inject the new schema (Event/Product/Video/FAQ/Breadcrumb) into prerendered HTML, not just client-side `<Helmet>`, so crawlers see it without JS.
+- Add `<meta name="robots" content="noindex">` to `/admin`, `/embed/*`, `/cat-studio` (or keep cat-studio indexable but add canonical).
+- Add `og-image.jpg` (1200×630) per major route — currently one global image. Generate per-page OG images for blog posts at build time using `@vercel/og`-style canvas (or a static template per category).
 
-4. **The live deployment is stale vs current repo**
-   - The codebase you showed contains newer favicon/meta setup.
-   - The published site is still serving older head markup.
-   - So at least part of the problem is that the frontend version Google sees is not aligned with the current source.
+## 3. Performance (Core Web Vitals — direct ranking factor)
 
-## What I’ll implement
+- Convert all hero/cover PNG/JPG in `/public` to **WebP + AVIF** with `<picture>` fallbacks. Add `width`/`height` on every `<img>` to kill CLS.
+- Lazy-load below-the-fold images (`loading="lazy"` + `decoding="async"`).
+- Preload the LCP image on `/` and `/blog/:slug` via `<link rel="preload" as="image">` injected by prerenderer.
+- Audit Vite bundle: code-split heavy routes (CatStudio, Admin) with `React.lazy` if not already.
+- Add `<link rel="preconnect">` for Supabase, YouTube, Shopify CDN.
+- Self-host the display font (or `font-display: swap` + `preload`) to fix FOIT on the chunky display headings.
 
-### 1. Make important pages prerendered / crawler-readable on first load
-I’ll make the key SEO pages output **real static HTML at build time**, so crawlers get proper metadata and content without depending on JavaScript execution.
+## 4. Content depth & internal linking (long-term ranking)
 
-Pages to cover first:
-- `/`
-- `/about`
-- `/events`
-- `/blog`
-- every `/blog/:slug`
-- `/bengaluru-underground-dance-music`
-- any other high-priority static landing pages already in the sitemap
+- Add a **related posts** block (3 cards) at the end of each `BlogPost` based on shared category/tag. Internal links = crawl + topical authority.
+- Add a **"More episodes" / "Past episodes"** rail on event detail pages linking to other events.
+- Add contextual links from blog posts → `/events`, `/shop`, `/bengaluru-underground-dance-music`. Use real anchor text, not "click here".
+- Add a **city/scene hub page** structure: `/bengaluru-underground-dance-music` already exists — link to it from every blog post footer + nav. Add sibling guides as stubs (`/bengaluru-house-music`, `/bengaluru-techno-nights`) only if there's real content; otherwise skip (thin pages hurt).
+- Add author pages (`/authors/:slug`) with bio, photo, social — feeds E-E-A-T and unlocks `Person` schema on articles.
 
-This will ensure each page has:
-- correct `<title>`
-- correct meta description
-- correct canonical
-- route-specific Open Graph / Twitter tags
-- route-specific JSON-LD
-- meaningful body content in the initial HTML
+## 5. Feeds & discovery
 
-### 2. Fix favicon and site identity signals end-to-end
-I’ll align the live site to one favicon set only:
-- use the RealFaviconGenerator files consistently
-- remove stale/legacy icon references
-- ensure `favicon.ico`, `favicon.svg`, `apple-touch-icon`, manifest, app name, and theme colors all match
-- verify the homepage `<head>` on the published site reflects the new setup
+- Auto-generate `rss.xml` from posts at build time (currently static). Real RSS = picked up by aggregators + AI training crawlers.
+- Add `Sitemap:` line for an **image sitemap** (`sitemap-images.xml`) — useful for Image Search traffic on event flyers and product shots.
+- Add `news.xml` only if posting frequently enough (skip for now).
+- `llms.txt` / `llms-full.txt` already present — regenerate at build with current posts so AI search (ChatGPT, Perplexity) cites accurate content.
 
-This is the part most likely to fix the wrong Google favicon signal.
+## 6. On-page hygiene
 
-### 3. Make sitemap generation match the real indexable pages
-I’ll replace the hand-maintained sitemap approach with a source-of-truth-driven sitemap so it only lists pages that are actually meant to rank.
+- One `<h1>` per page, audit current pages (some have multiple display headings styled as h1).
+- Descriptive `alt` on every `<img>` (currently many are decorative-only).
+- Canonical tags: confirm all 4 custom domains (`catscan.dance`, `www.catscan.dance`, `www.catscandance.com`) 301-redirect to `catscandance.com`. If not server-side, add `<link rel="canonical">` pointing to apex on every page (already in prerender — verify).
+- `hreflang`: already `en-IN` + `x-default` — good.
+- Add `<meta name="geo.region" content="IN-KA">` and `<meta name="geo.placename" content="Bengaluru">` for local signals.
 
-That means:
-- include only real pages
-- generate blog URLs from the actual post source
-- remove stale or mismatched URLs
-- keep canonicals and sitemap URLs perfectly aligned
-- keep `lastmod` consistent with content updates where possible
+## 7. Crawl budget & monitoring
 
-### 4. Harden route-level SEO consistency
-I’ll audit and correct mismatches between:
-- `index.html`
-- `SEO.tsx`
-- sitemap URLs
-- blog slugs
-- canonical URLs
-- social preview tags
-- public brand metadata
+- Update `robots.txt`: keep AI bots allowed, add `Crawl-delay` only if server load is an issue (don't otherwise).
+- Add a build step that pings Google + Bing sitemap endpoints on deploy (`https://www.google.com/ping?sitemap=...`).
+- Add `SeoVerification` component already exists — confirm GSC + Bing Webmaster verification meta tags are populated from `brand.json`.
 
-The goal is that Google sees the same identity everywhere, instead of mixed old/new signals.
+## What I'll implement (ordered by ROI)
 
-### 5. Add explicit noindex handling for true non-content pages
-I’ll make sure pages that should not rank stay out of the index signal set, including:
-- admin pages
-- embed pages
-- fallback/not-found states where possible
+1. Event + Product + Breadcrumb + Organization/LocalBusiness JSON-LD (prerendered).
+2. Per-route OG images for blog posts + dynamic RSS regen.
+3. Image conversion to WebP + width/height + lazy-loading + LCP preload.
+4. Related posts block + author pages + internal-link audit.
+5. FAQ schema on key landing pages with real Q&As.
+6. Prerender event/product detail pages from Supabase data.
+7. Geo meta + canonical sweep + h1 audit.
+8. RSS regen + image sitemap + sitemap ping on deploy.
 
-This reduces crawl waste and improves trust in the pages that should rank.
-
-## Important note
-Even after the fix ships, **Google will not refresh instantly**.
-Two things will still be required after implementation:
-1. **Publish the frontend update** so the live site actually changes
-2. Re-submit the sitemap / request reindex in Google Search Console
-
-Backend changes go live immediately, but **frontend SEO fixes only affect Google after you click Update in the publish flow**.
-
-## Technical details
-
-### Likely implementation approach
-- Add a build-time prerender step for SEO-critical routes
-- Generate static HTML snapshots using the existing route data and SEO config
-- Generate sitemap from the same route/post source so both stay in sync
-- Keep React Router for the app, but give crawlers actual HTML for ranking pages
-
-### Files likely involved
-- `index.html`
-- `src/components/SEO.tsx`
-- `src/App.tsx`
-- `src/pages/Blog.tsx`
-- `src/pages/BlogPost.tsx`
-- `src/content/posts.ts`
-- `public/site.webmanifest`
-- `public/sitemap.xml` or a generated replacement
-- favicon files in `public/`
-- possibly `vite.config.ts` and a small build-time prerender/generation script
-
-## Expected result
-After this, your site should have:
-- a crawlable sitemap Google can trust
-- real metadata on first page fetch
-- correct favicon/brand identity in search
-- much stronger odds of actual indexing for blog and landing pages
-
-Approve and I’ll implement it.
+Approve and I'll start at #1 and work down. Anything to drop or reorder?
