@@ -81,6 +81,9 @@ const App = () => (
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/cookies" element={<Cookies />} />
                   <Route path="/bengaluru-underground-dance-music" element={<BengaluruSceneGuide />} />
+                  <Route path="/bengaluru-techno-events" element={<SceneHub />} />
+                  <Route path="/bengaluru-house-parties" element={<SceneHub />} />
+                  <Route path="/authors/:slug" element={<AuthorProfile />} />
                   <Route path="/submit-event" element={<SubmitEvent />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
