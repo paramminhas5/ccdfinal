@@ -1977,10 +1977,24 @@ function BlogTab() {
         },
       });
       const data = await res.json();
-      if (res.ok) setPublished((data.posts ?? []).slice(0, 10));
+      if (res.ok) setPublished(data.posts ?? []);
     } catch {
       /* ignore */
     }
+  };
+
+  const editPost = (p: DraftPost) => {
+    const next: DraftPost = {
+      ...emptyDraft(),
+      ...p,
+      tldr: Array.isArray(p.tldr) ? p.tldr : [],
+      body: Array.isArray(p.body) ? p.body : [],
+      quickPicks: p.quickPicks ?? { title: "", items: [] },
+    };
+    setDraft(next);
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.success(`Editing "${p.title}"`);
   };
 
   useEffect(() => {
@@ -2324,25 +2338,44 @@ function BlogTab() {
       )}
 
       <div className="bg-cream border-4 border-ink chunk-shadow p-6">
-        <h3 className="font-display text-2xl text-ink mb-4">PUBLISHED POSTS</h3>
+        <h3 className="font-display text-2xl text-ink mb-1">ALL PUBLISHED POSTS</h3>
+        <p className="text-ink/60 text-sm mb-4">
+          {published.length} CMS post{published.length === 1 ? "" : "s"}. Edit reloads the post into the wizard; publishing with the same slug overwrites it.
+        </p>
         {published.length === 0 ? (
           <p className="text-ink/60">No posts yet.</p>
         ) : (
           <ul className="divide-y-2 divide-ink/20">
             {published.map((p) => (
-              <li key={p.slug} className="py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
+              <li key={p.slug} className="py-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <p className="font-display text-lg text-ink truncate">{p.title}</p>
-                  <p className="text-ink/60 text-sm">
-                    /{p.slug} · {p.category}
+                  <p className="text-ink/60 text-sm truncate">
+                    /blog/{p.slug} · {p.category} · {p.dateISO || p.date || "—"}
                   </p>
                 </div>
-                <button
-                  onClick={() => deletePost(p.slug)}
-                  className="bg-destructive text-cream font-display px-4 py-1 shrink-0"
-                >
-                  DELETE
-                </button>
+                <div className="flex gap-2 shrink-0">
+                  <a
+                    href={`/blog/${p.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-cream text-ink font-display px-3 py-1 border-2 border-ink hover:bg-acid-yellow"
+                  >
+                    VIEW
+                  </a>
+                  <button
+                    onClick={() => editPost(p)}
+                    className="bg-acid-yellow text-ink font-display px-4 py-1 border-2 border-ink hover:bg-magenta hover:text-cream"
+                  >
+                    EDIT
+                  </button>
+                  <button
+                    onClick={() => deletePost(p.slug)}
+                    className="bg-destructive text-cream font-display px-4 py-1"
+                  >
+                    DELETE
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
