@@ -128,6 +128,43 @@ export const staticRoutes = [
     changefreq: "monthly",
   },
   {
+    path: "/bengaluru-techno-events",
+    title: "Techno Events in Bengaluru — Venues, Promoters & Guide | Cats Can Dance",
+    description:
+      "A working guide to techno events in Bengaluru — the venues, the promoters, and how to find the nights that matter.",
+    priority: "0.8",
+    changefreq: "monthly",
+  },
+  {
+    path: "/bengaluru-house-parties",
+    title: "House Music Parties in Bengaluru — Venues & Guide | Cats Can Dance",
+    description:
+      "House music parties in Bengaluru — where to find them, who's playing, and the venues that book deep, soulful, and disco-leaning house.",
+    priority: "0.8",
+    changefreq: "monthly",
+  },
+  {
+    path: "/authors/param-minhas",
+    title: "Param Minhas — Co-founder, Cats Can Dance",
+    description: "Param Minhas, co-founder of Cats Can Dance — Bengaluru underground dance music and streetwear.",
+    priority: "0.5",
+    changefreq: "monthly",
+  },
+  {
+    path: "/authors/satwik-harisenany",
+    title: "Satwik Harisenany — Co-founder, Cats Can Dance",
+    description: "Satwik Harisenany, co-founder of Cats Can Dance — Bengaluru underground dance music and streetwear.",
+    priority: "0.5",
+    changefreq: "monthly",
+  },
+  {
+    path: "/authors/the-pack",
+    title: "The Pack — Cats Can Dance Editorial",
+    description: "The Pack — the collective byline behind the Cats Can Dance journal in Bengaluru.",
+    priority: "0.4",
+    changefreq: "monthly",
+  },
+  {
     path: "/submit-event",
     title: "Submit an Event | Cats Can Dance",
     description:
