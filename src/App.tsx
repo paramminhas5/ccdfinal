@@ -30,6 +30,8 @@ import Cookies from "./pages/Cookies.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import BengaluruSceneGuide from "./pages/BengaluruSceneGuide.tsx";
 import SubmitEvent from "./pages/SubmitEvent.tsx";
+import AuthorProfile from "./pages/AuthorProfile.tsx";
+import SceneHub from "./pages/SceneHub.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
 import SeoVerification from "@/components/SeoVerification";
@@ -79,6 +81,9 @@ const App = () => (
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/cookies" element={<Cookies />} />
                   <Route path="/bengaluru-underground-dance-music" element={<BengaluruSceneGuide />} />
+                  <Route path="/bengaluru-techno-events" element={<SceneHub />} />
+                  <Route path="/bengaluru-house-parties" element={<SceneHub />} />
+                  <Route path="/authors/:slug" element={<AuthorProfile />} />
                   <Route path="/submit-event" element={<SubmitEvent />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

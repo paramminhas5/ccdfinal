@@ -147,9 +147,27 @@ const BlogPost = () => {
             />
             <span className="inline-block bg-ink text-cream text-xs font-bold px-3 py-1 mb-4">{post.category || post.tag}</span>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl text-ink mb-4 leading-[0.95] break-words">{post.title}</h1>
-            <p className="font-display text-ink/70 text-sm mb-1">
-              {post.date} · {post.author}
-            </p>
+            {(() => {
+              const authorSlugMap: Record<string, string> = {
+                "the pack": "the-pack",
+                "param minhas": "param-minhas",
+                "satwik harisenany": "satwik-harisenany",
+                "cats can dance": "the-pack",
+              };
+              const authorSlug = authorSlugMap[(post.author || "").toLowerCase().trim()];
+              return (
+                <p className="font-display text-ink/70 text-sm mb-1">
+                  {post.date} ·{" "}
+                  {authorSlug ? (
+                    <Link to={`/authors/${authorSlug}`} className="underline decoration-2 underline-offset-2 hover:text-magenta">
+                      {post.author}
+                    </Link>
+                  ) : (
+                    post.author
+                  )}
+                </p>
+              );
+            })()}
             <p className="font-display text-ink/50 text-xs mb-8 italic">Honest, by humans, from Bangalore.</p>
             <div className="aspect-video w-full border-4 border-ink chunk-shadow-lg mb-10 overflow-hidden">
               <BlogCover title={post.title} coverTitle={post.coverTitle} category={post.category} tag={post.tag} issue={post.issue} color={post.coverColor} size="lg" className="border-0" />

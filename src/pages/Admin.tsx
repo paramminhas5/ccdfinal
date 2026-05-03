@@ -1977,10 +1977,52 @@ function BlogTab() {
         },
       });
       const data = await res.json();
-      if (res.ok) setPublished((data.posts ?? []).slice(0, 10));
+      const cms: DraftPost[] = res.ok ? (data.posts ?? []) : [];
+
+      // Merge in code-based static posts so they're editable too.
+      // Editing a static post and re-publishing creates a CMS override (same slug).
+      const mod = await import("@/content/posts");
+      const staticPosts = mod.posts as any[];
+      const cmsSlugs = new Set(cms.map((p) => p.slug));
+      const staticAsDrafts: DraftPost[] = staticPosts
+        .filter((p) => !cmsSlugs.has(p.slug))
+        .map((p) => ({
+          ...emptyDraft(),
+          slug: p.slug,
+          title: p.title,
+          excerpt: p.excerpt ?? "",
+          category: (p.category as Category) ?? "JOURNAL",
+          coverTitle: p.coverTitle ?? "",
+          coverColor: p.coverColor ?? "magenta",
+          tag: p.tag ?? "",
+          tldr: p.tldr ?? [],
+          quickPicks: p.quickPicks ?? { title: "", items: [] },
+          pullQuote: p.pullQuote ?? "",
+          whatWedSkip: p.whatWedSkip ?? "",
+          body: p.body ?? [],
+          date: p.date,
+          author: p.author,
+          dateISO: p.date ?? new Date().toISOString().slice(0, 10),
+        }));
+
+      setPublished([...cms, ...staticAsDrafts]);
     } catch {
       /* ignore */
     }
+  };
+
+  const editPost = (p: DraftPost) => {
+    const next: DraftPost = {
+      ...emptyDraft(),
+      ...p,
+      tldr: Array.isArray(p.tldr) ? p.tldr : [],
+      body: Array.isArray(p.body) ? p.body : [],
+      quickPicks: p.quickPicks ?? { title: "", items: [] },
+    };
+    setDraft(next);
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.success(`Editing "${p.title}"`);
   };
 
   useEffect(() => {
@@ -2324,25 +2366,44 @@ function BlogTab() {
       )}
 
       <div className="bg-cream border-4 border-ink chunk-shadow p-6">
-        <h3 className="font-display text-2xl text-ink mb-4">PUBLISHED POSTS</h3>
+        <h3 className="font-display text-2xl text-ink mb-1">ALL PUBLISHED POSTS</h3>
+        <p className="text-ink/60 text-sm mb-4">
+          {published.length} total. Edit reloads any post (CMS or code-based) into the wizard; publishing creates/overwrites a CMS version which takes precedence on the live site.
+        </p>
         {published.length === 0 ? (
           <p className="text-ink/60">No posts yet.</p>
         ) : (
           <ul className="divide-y-2 divide-ink/20">
             {published.map((p) => (
-              <li key={p.slug} className="py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
+              <li key={p.slug} className="py-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <p className="font-display text-lg text-ink truncate">{p.title}</p>
-                  <p className="text-ink/60 text-sm">
-                    /{p.slug} · {p.category}
+                  <p className="text-ink/60 text-sm truncate">
+                    /blog/{p.slug} · {p.category} · {p.dateISO || p.date || "—"}
                   </p>
                 </div>
-                <button
-                  onClick={() => deletePost(p.slug)}
-                  className="bg-destructive text-cream font-display px-4 py-1 shrink-0"
-                >
-                  DELETE
-                </button>
+                <div className="flex gap-2 shrink-0">
+                  <a
+                    href={`/blog/${p.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-cream text-ink font-display px-3 py-1 border-2 border-ink hover:bg-acid-yellow"
+                  >
+                    VIEW
+                  </a>
+                  <button
+                    onClick={() => editPost(p)}
+                    className="bg-acid-yellow text-ink font-display px-4 py-1 border-2 border-ink hover:bg-magenta hover:text-cream"
+                  >
+                    EDIT
+                  </button>
+                  <button
+                    onClick={() => deletePost(p.slug)}
+                    className="bg-destructive text-cream font-display px-4 py-1"
+                  >
+                    DELETE
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
