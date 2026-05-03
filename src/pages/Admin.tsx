@@ -1977,7 +1977,35 @@ function BlogTab() {
         },
       });
       const data = await res.json();
-      if (res.ok) setPublished(data.posts ?? []);
+      const cms: DraftPost[] = res.ok ? (data.posts ?? []) : [];
+
+      // Merge in code-based static posts so they're editable too.
+      // Editing a static post and re-publishing creates a CMS override (same slug).
+      const mod = await import("@/content/posts");
+      const staticPosts = mod.posts as any[];
+      const cmsSlugs = new Set(cms.map((p) => p.slug));
+      const staticAsDrafts: DraftPost[] = staticPosts
+        .filter((p) => !cmsSlugs.has(p.slug))
+        .map((p) => ({
+          ...emptyDraft(),
+          slug: p.slug,
+          title: p.title,
+          excerpt: p.excerpt ?? "",
+          category: (p.category as Category) ?? "JOURNAL",
+          coverTitle: p.coverTitle ?? "",
+          coverColor: p.coverColor ?? "magenta",
+          tag: p.tag ?? "",
+          tldr: p.tldr ?? [],
+          quickPicks: p.quickPicks ?? { title: "", items: [] },
+          pullQuote: p.pullQuote ?? "",
+          whatWedSkip: p.whatWedSkip ?? "",
+          body: p.body ?? [],
+          date: p.date,
+          author: p.author,
+          dateISO: p.date ?? new Date().toISOString().slice(0, 10),
+        }));
+
+      setPublished([...cms, ...staticAsDrafts]);
     } catch {
       /* ignore */
     }
