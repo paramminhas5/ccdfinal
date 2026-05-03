@@ -13,12 +13,24 @@ const bullets = [
   "Repeat bookings and ecosystem value",
 ];
 
+const faqLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "How do DJs get booked at Cats Can Dance?", acceptedAnswer: { "@type": "Answer", text: "Send a 30-60 minute mix link, your Instagram, and one line on what you'd play in our room to hello@catscandance.com. We listen to everything; we book per Episode based on lineup balance." } },
+    { "@type": "Question", name: "What genres does CCD book in Bangalore?", acceptedAnswer: { "@type": "Answer", text: "House, disco, UK garage, breaks, drum & bass, jungle, and dub techno. We don't book commercial EDM or top-40 sets." } },
+    { "@type": "Question", name: "Do you book artists from outside Bangalore?", acceptedAnswer: { "@type": "Answer", text: "Yes. We book Indian and international artists for special editions. Travel and accommodation are negotiated per booking." } },
+    { "@type": "Question", name: "What do you provide besides the gig?", acceptedAnswer: { "@type": "Answer", text: "Full set recording, photo and video assets you can use, soundcheck time, and a curated room of 200-400 people who listen. Plus a feature on /playlists and our newsletter." } },
+  ],
+};
+
 const ForArtists = () => (
   <main className="bg-background text-foreground">
     <SEO
       title="For Artists — Cats Can Dance | Bangalore, India"
       description="Play Cats Can Dance in Bangalore. A platform, not just a set time — curated crowd, premium content, real audience growth for electronic artists in India."
       path="/for-artists"
+      jsonLd={[faqLd]}
     />
     <Nav />
     <PageHero

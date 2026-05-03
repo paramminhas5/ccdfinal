@@ -14,12 +14,24 @@ const bullets = [
   "Distinct identity in a crowded market",
 ];
 
+const faqLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "What kind of venues does Cats Can Dance partner with in Bangalore?", acceptedAnswer: { "@type": "Answer", text: "We partner with intimate 150–500 capacity venues in Bangalore that care about sound and room feel — listening bars, warehouse spaces, and independent rooftops in Indiranagar, CBD, Koramangala and Whitefield." } },
+    { "@type": "Question", name: "How are Cats Can Dance Episodes different from a regular night?", acceptedAnswer: { "@type": "Answer", text: "Episodes are RSVP-only, capped, curated lineups. The crowd is here for the music, which means longer dwell time, better F&B spend, and content the venue can use for months after." } },
+    { "@type": "Question", name: "Does the venue handle bar and entry, or does CCD?", acceptedAnswer: { "@type": "Answer", text: "Venues run their own bar and entry. CCD brings the crowd, the lineup, the production direction, and the post-event content. Revenue split and minimums are agreed per Episode." } },
+    { "@type": "Question", name: "How do I propose my venue?", acceptedAnswer: { "@type": "Answer", text: "Use the Partner With Us form on this page or email hello@catscandance.com with venue capacity, sound system details, and a few photos." } },
+  ],
+};
+
 const ForVenues = () => (
   <main className="bg-background text-foreground">
     <SEO
       title="Venue Partners — Cats Can Dance | Bangalore, India"
       description="Become a Venue Partner with Cats Can Dance in Bangalore. We bring the right crowd, stronger spend and recurring moments people come back for."
       path="/for-venues"
+      jsonLd={[faqLd]}
     />
     <Nav />
     <PageHero
