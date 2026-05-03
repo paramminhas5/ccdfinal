@@ -53,12 +53,42 @@ const VideosPage = () => {
   const totalPages = videos ? Math.max(1, Math.ceil(videos.length / PAGE_SIZE)) : 1;
   const slice = videos ? videos.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : [];
 
+  const videoLd = (videos ?? []).slice(0, 25).map((v) => ({
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: v.title,
+    description: `${v.title} — Cats Can Dance, Bangalore underground.`,
+    thumbnailUrl: [v.thumbnail],
+    uploadDate: v.publishedAt,
+    contentUrl: `https://www.youtube.com/watch?v=${v.id}`,
+    embedUrl: `https://www.youtube.com/embed/${v.id}`,
+    publisher: {
+      "@type": "Organization",
+      name: "Cats Can Dance",
+      logo: { "@type": "ImageObject", url: "https://catscandance.com/ccd-logo.png" },
+    },
+  }));
+  const itemListLd = videos && videos.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Cats Can Dance — videos",
+        itemListElement: videos.slice(0, 25).map((v, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          url: `https://www.youtube.com/watch?v=${v.id}`,
+          name: v.title,
+        })),
+      }
+    : null;
+
   return (
     <main className="bg-background text-foreground">
       <SEO
         title="Videos — Cats Can Dance | Sets, recaps & behind the scenes"
         description="Watch the tapes — every live set, recap and behind the scenes drop from the Cats Can Dance YouTube channel."
         path="/videos"
+        jsonLd={itemListLd ? [...videoLd, itemListLd] : videoLd}
       />
       <Nav />
       <PageHero
