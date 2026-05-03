@@ -514,7 +514,7 @@ const Admin = () => {
 
   return (
     <main className="bg-background text-foreground min-h-screen">
-      <SEO title="Admin — Cats Can Dance" description="Admin dashboard" path="/admin" />
+      <SEO title="Admin — Cats Can Dance" description="Admin dashboard" path="/admin" noindex />
       <Nav />
       <section className="pt-32 pb-16 container">
         {!authed ? (
