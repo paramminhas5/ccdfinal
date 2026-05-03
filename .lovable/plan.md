@@ -1,63 +1,125 @@
-## What's actually wrong
+# SEO recovery plan
 
-I tested the YouTube edge function — it's returning:
+## What I found
 
-> "The request cannot be completed because you have exceeded your quota."
+Your SEO work is mostly present in the codebase, but the **published site is still sending the wrong signals to crawlers**.
 
-So `youtube-videos` is failing for fresh `?max=` calls. The **only** reason `WATCH THE TAPES.` shows even one tile is because the `max=6` cache slot still has stale data from earlier; the `/videos` page (which calls `?max=50`) hits a separate cache slot that quota-failed and only got 1 video before the cap. That's why home shows some, all-videos page shows one.
+### Confirmed issues
+1. **The live site is still serving old favicon markup**
+   - Live HTML currently points to:
+     - `/favicon.ico`
+     - `/ccd-logo.png`
+   - That does **not** match the newer RealFaviconGenerator setup in the current codebase.
+   - This explains why Google can still show the old/Lovable-looking icon.
 
-Two real problems to solve:
-1. **YouTube quota** keeps getting blown — and there's no admin override. We need a backend video table so admin can curate manually with YouTube links, and the API becomes a *fallback* not the source of truth.
-2. **Instagram handle is wrong** in Footer + brand.json (`catscandance` instead of `catscan.dance`). YouTube channel link in Footer is also wrong (`@catscandance` vs `@thesecatscandance`).
+2. **Deep pages are not crawler-first**
+   - When requesting a blog URL directly, the server initially serves the generic app shell HTML.
+   - That means bots do **not** reliably get route-specific `<title>`, canonical, description, OG tags, and JSON-LD in the first HTML response.
+   - For indexing, this is a major weakness even if React updates tags later in the browser.
 
----
+3. **Sitemap trust is likely being weakened**
+   - The sitemap is reachable and valid enough to fetch.
+   - But if Google sees sitemap URLs that depend on client-side rendering only, or sees inconsistent canonicals/head output, it may treat the sitemap as low-confidence.
 
-## Plan
+4. **The live deployment is stale vs current repo**
+   - The codebase you showed contains newer favicon/meta setup.
+   - The published site is still serving older head markup.
+   - So at least part of the problem is that the frontend version Google sees is not aligned with the current source.
 
-### 1. Admin-managed videos (CMS)
+## What I’ll implement
 
-- New table `site_videos` with: `id`, `youtube_id`, `title`, `thumbnail_url` (nullable — auto-derive from youtube_id if blank), `published_at`, `sort_order`, `is_featured`, `created_at`.
-- RLS: public SELECT, no public writes.
-- New edge function `admin-videos` (password-gated like other admin-* functions) for create/update/delete/reorder.
-- Admin will also accept a full YouTube URL (`youtu.be/…`, `watch?v=…`, `/shorts/…`) and parse out the `youtube_id`.
+### 1. Make important pages prerendered / crawler-readable on first load
+I’ll make the key SEO pages output **real static HTML at build time**, so crawlers get proper metadata and content without depending on JavaScript execution.
 
-### 2. Admin UI — new "VIDEOS" section in `src/pages/Admin.tsx`
+Pages to cover first:
+- `/`
+- `/about`
+- `/events`
+- `/blog`
+- every `/blog/:slug`
+- `/bengaluru-underground-dance-music`
+- any other high-priority static landing pages already in the sitemap
 
-- Paste a YouTube URL → auto-fetches title + thumbnail (via existing `youtube-videos` pattern, or fall back to oEmbed `https://www.youtube.com/oembed?url=…&format=json` which has no quota).
-- Override title, toggle "featured", drag/reorder, delete.
+This will ensure each page has:
+- correct `<title>`
+- correct meta description
+- correct canonical
+- route-specific Open Graph / Twitter tags
+- route-specific JSON-LD
+- meaningful body content in the initial HTML
 
-### 3. Rewrite `youtube-videos` edge function as a hybrid
+### 2. Fix favicon and site identity signals end-to-end
+I’ll align the live site to one favicon set only:
+- use the RealFaviconGenerator files consistently
+- remove stale/legacy icon references
+- ensure `favicon.ico`, `favicon.svg`, `apple-touch-icon`, manifest, app name, and theme colors all match
+- verify the homepage `<head>` on the published site reflects the new setup
 
-Order of resolution:
-1. Read from `site_videos` table (admin curated). If admin has rows, use them as the source of truth.
-2. If empty AND quota available, fall back to YouTube Data API.
-3. If quota exhausted, fall back to **YouTube RSS feed** `https://www.youtube.com/feeds/videos.xml?channel_id=UCmtg0d8E2PXfs3vlQIcGwdQ` — this is free, unlimited, returns latest ~15 videos with title/thumbnail/published date. Parse the XML server-side.
-4. Cache successful responses for 12h, errors for 30m (already in place).
+This is the part most likely to fix the wrong Google favicon signal.
 
-This means `WATCH THE TAPES` always shows at least the latest 3, and `/videos` always shows the full list — quota or no quota.
+### 3. Make sitemap generation match the real indexable pages
+I’ll replace the hand-maintained sitemap approach with a source-of-truth-driven sitemap so it only lists pages that are actually meant to rank.
 
-### 4. Frontend
+That means:
+- include only real pages
+- generate blog URLs from the actual post source
+- remove stale or mismatched URLs
+- keep canonicals and sitemap URLs perfectly aligned
+- keep `lastmod` consistent with content updates where possible
 
-- `src/components/Videos.tsx` (homepage): show **last 3** (currently shows up to 3 already, but with the API broken it falls back to 1). Once edge function is fixed, this works.
-- `src/pages/Videos.tsx`: already paginated for 50 — the `max=50` request will work once the function falls back to RSS/admin table.
+### 4. Harden route-level SEO consistency
+I’ll audit and correct mismatches between:
+- `index.html`
+- `SEO.tsx`
+- sitemap URLs
+- blog slugs
+- canonical URLs
+- social preview tags
+- public brand metadata
 
-### 5. Fix wrong handles
+The goal is that Google sees the same identity everywhere, instead of mixed old/new signals.
 
-- `src/components/Footer.tsx`: change Instagram link from `instagram.com/catscandance` → `instagram.com/catscan.dance`, and YouTube link from `@catscandance` → `@thesecatscandance`.
-- `public/brand.json`: same two fixes (`instagram` and `youtube` URLs).
-- `src/components/SEO.tsx`: Twitter handles — leave `@catscandance` as-is unless you confirm Twitter is also `@catscan.dance` (Twitter doesn't allow dots in handles, so this is probably fine).
+### 5. Add explicit noindex handling for true non-content pages
+I’ll make sure pages that should not rank stay out of the index signal set, including:
+- admin pages
+- embed pages
+- fallback/not-found states where possible
 
----
+This reduces crawl waste and improves trust in the pages that should rank.
 
-## Files to change
+## Important note
+Even after the fix ships, **Google will not refresh instantly**.
+Two things will still be required after implementation:
+1. **Publish the frontend update** so the live site actually changes
+2. Re-submit the sitemap / request reindex in Google Search Console
 
-- `supabase/migrations/...` — new `site_videos` table + RLS
-- `supabase/functions/admin-videos/index.ts` — new (admin CRUD)
-- `supabase/functions/youtube-videos/index.ts` — rewrite with table + RSS fallback
-- `src/pages/Admin.tsx` — new VIDEOS tab/section
-- `src/components/Footer.tsx` — fix Instagram + YouTube links
-- `public/brand.json` — fix Instagram + YouTube URLs
+Backend changes go live immediately, but **frontend SEO fixes only affect Google after you click Update in the publish flow**.
 
-No changes needed to `Videos.tsx` (home) or `pages/Videos.tsx` — they'll start working once the edge function returns ≥3 videos.
+## Technical details
 
-Approve and I'll execute.
+### Likely implementation approach
+- Add a build-time prerender step for SEO-critical routes
+- Generate static HTML snapshots using the existing route data and SEO config
+- Generate sitemap from the same route/post source so both stay in sync
+- Keep React Router for the app, but give crawlers actual HTML for ranking pages
+
+### Files likely involved
+- `index.html`
+- `src/components/SEO.tsx`
+- `src/App.tsx`
+- `src/pages/Blog.tsx`
+- `src/pages/BlogPost.tsx`
+- `src/content/posts.ts`
+- `public/site.webmanifest`
+- `public/sitemap.xml` or a generated replacement
+- favicon files in `public/`
+- possibly `vite.config.ts` and a small build-time prerender/generation script
+
+## Expected result
+After this, your site should have:
+- a crawlable sitemap Google can trust
+- real metadata on first page fetch
+- correct favicon/brand identity in search
+- much stronger odds of actual indexing for blog and landing pages
+
+Approve and I’ll implement it.
