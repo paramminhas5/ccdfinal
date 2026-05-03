@@ -2368,7 +2368,7 @@ function BlogTab() {
       <div className="bg-cream border-4 border-ink chunk-shadow p-6">
         <h3 className="font-display text-2xl text-ink mb-1">ALL PUBLISHED POSTS</h3>
         <p className="text-ink/60 text-sm mb-4">
-          {published.length} CMS post{published.length === 1 ? "" : "s"}. Edit reloads the post into the wizard; publishing with the same slug overwrites it.
+          {published.length} total. Edit reloads any post (CMS or code-based) into the wizard; publishing creates/overwrites a CMS version which takes precedence on the live site.
         </p>
         {published.length === 0 ? (
           <p className="text-ink/60">No posts yet.</p>
