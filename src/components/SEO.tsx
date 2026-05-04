@@ -13,7 +13,7 @@ type Props = {
 };
 
 const SITE = "https://catscandance.com";
-const DEFAULT_OG = `${SITE}/og-image.jpg`;
+const DEFAULT_OG = `${SITE}/og-image.jpg?v=2`;
 
 const absolute = (img: string) => (img.startsWith("http") ? img : `${SITE}${img.startsWith("/") ? "" : "/"}${img}`);
 
