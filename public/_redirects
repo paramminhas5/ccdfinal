@@ -1,0 +1,5 @@
+# SPA fallback — serves index.html for any route not matched by a static file.
+# Prerendered routes (e.g. /about/index.html, /blog/slug/index.html) are served
+# directly by the CDN before this rule is evaluated, so they still get proper HTML.
+# This catches anything not prerendered (future event slugs, direct deep links, etc.)
+/*    /index.html    200
