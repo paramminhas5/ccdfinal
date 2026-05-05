@@ -92,6 +92,12 @@ const CcdxSocial = () => {
           name="description"
           content="CatsCaNDance × Social: India's first curated pet lifestyle festival. Partnership one-pager and operations document."
         />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </Helmet>
       <div className={`ccd ${pdfMode ? "is-pdf" : ""}`}>
         <nav className="ccd-nav">
