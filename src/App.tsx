@@ -32,6 +32,7 @@ import BengaluruSceneGuide from "./pages/BengaluruSceneGuide.tsx";
 import SubmitEvent from "./pages/SubmitEvent.tsx";
 import AuthorProfile from "./pages/AuthorProfile.tsx";
 import SceneHub from "./pages/SceneHub.tsx";
+import CcdxSocial from "./pages/CcdxSocial.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
 import SeoVerification from "@/components/SeoVerification";
