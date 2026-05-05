@@ -1,71 +1,58 @@
-# SEO 10X Plan
+# Host CCD × Social proposal at `/ccdxsocial` + PDF downloads
 
-Goal: ship every high-leverage change a code agent can do without waiting on Google. Grouped by impact.
+## What we're building
 
-## 1. Rich Results Schema (biggest visible win in SERPs)
+1. A new public page at `https://catscandance.com/ccdxsocial` that serves the uploaded `ccd-social-updated.html` exactly as designed.
+2. The page is **excluded from SEO** (no indexing, no link equity passed): `<meta name="robots" content="noindex, nofollow">` + `Disallow` in `robots.txt` + omitted from sitemap/SEO route list.
+3. Two **download buttons** added inside the page header (next to the tabs):
+   - `Download One-Pager (PDF)` → `/ccdxsocial/ccd-social-one-pager.pdf`
+   - `Download Operations Doc (PDF)` → `/ccdxsocial/ccd-social-operations.pdf`
+4. The two PDFs are generated **once, at build time**, from the One-Pager (`#doc-op`) and Operations Doc (`#doc-ops`) sections of the HTML, then committed to `public/ccdxsocial/` so they're served as static assets.
 
-- **Event schema** on every event/episode page (`/events`, `/events/:slug`): `MusicEvent` with `name`, `startDate`, `endDate`, `location` (Place + PostalAddress), `image`, `offers` (price, availability, url), `performer`, `eventStatus`, `eventAttendanceMode`. Wired through prerender so Google sees it on first paint.
-- **Product schema** on `/shop/:slug` and `/pets`: `Product` with `name`, `image`, `description`, `brand`, `sku`, `offers` (price, currency, availability, url). Add `AggregateRating` only if real ratings exist.
-- **VideoObject** on `/videos` items + embeds: `name`, `description`, `thumbnailUrl`, `uploadDate`, `contentUrl`/`embedUrl`, `duration`.
-- **BreadcrumbList** on every non-home page (already have visual breadcrumbs — just add JSON-LD).
-- **FAQPage** on `/about`, `/for-venues`, `/for-artists`, `/bengaluru-underground-dance-music` (3–6 real Q&As each).
-- **Organization + LocalBusiness** on `/` with `address` (Bengaluru), `sameAs` (IG, YT, Spotify), `logo`. Adds knowledge-panel eligibility.
-- **WebSite + SearchAction** sitelinks-search-box on `/`.
+## How it'll work (technical)
 
-## 2. Prerender + Indexability hardening
+**Static hosting (not a React route):**
+The uploaded file is a self-contained HTML doc with its own fonts, CSS, and tab JS — wrapping it in React would break the design. Instead:
+- Copy `ccd-social-updated.html` → `public/ccdxsocial/index.html`
+- Inject `<meta name="robots" content="noindex, nofollow">` and a canonical-less `<head>` so it's invisible to search.
+- Add two download buttons in the nav bar (styled to match existing `.tab` look) linking to the two PDFs.
+- Vite serves `public/` as-is, so `/ccdxsocial` resolves to this static HTML before the SPA fallback in `_redirects` kicks in.
 
-- Extend `scripts/prerender-plugin.mjs` to also prerender event detail and product detail routes (read from Supabase at build time via service role, or from a static JSON snapshot the build pulls).
-- Inject the new schema (Event/Product/Video/FAQ/Breadcrumb) into prerendered HTML, not just client-side `<Helmet>`, so crawlers see it without JS.
-- Add `<meta name="robots" content="noindex">` to `/admin`, `/embed/*`, `/cat-studio` (or keep cat-studio indexable but add canonical).
-- Add `og-image.jpg` (1200×630) per major route — currently one global image. Generate per-page OG images for blog posts at build time using `@vercel/og`-style canvas (or a static template per category).
+**SEO exclusion (belt + suspenders):**
+- `public/robots.txt` → add `Disallow: /ccdxsocial`
+- Page `<head>` → `noindex, nofollow`
+- `scripts/seo-routes.mjs` → do NOT add this route (so it stays out of `sitemap.xml`, `sitemap-index.xml`, `rss.xml`, and the prerender list).
+- Internal links from the rest of the site → none (so no PageRank flows to it).
 
-## 3. Performance (Core Web Vitals — direct ranking factor)
+**PDF generation:**
+- Use a one-off Node script (`scripts/build-ccdxsocial-pdfs.mjs`) with **Puppeteer** (Chromium headless) to:
+  1. Load the source HTML from disk via `file://`.
+  2. For each tab, run JS in the page to show only that doc (`document.querySelectorAll('.doc').forEach(...)`), hide the nav bar and download buttons, then call `page.pdf({ format: 'A4', printBackground: true, margin: ... })`.
+  3. Write the two PDFs to `public/ccdxsocial/`.
+- Run this script once now (during this build) to produce the two PDF files. Commit the resulting PDFs so subsequent builds don't need Puppeteer.
+- QA: convert each PDF to images and visually inspect every page for clipped text, broken layouts, missing fonts (Bowlby One / DM Sans must load via Google Fonts), and color fidelity. Iterate until clean.
 
-- Convert all hero/cover PNG/JPG in `/public` to **WebP + AVIF** with `<picture>` fallbacks. Add `width`/`height` on every `<img>` to kill CLS.
-- Lazy-load below-the-fold images (`loading="lazy"` + `decoding="async"`).
-- Preload the LCP image on `/` and `/blog/:slug` via `<link rel="preload" as="image">` injected by prerenderer.
-- Audit Vite bundle: code-split heavy routes (CatStudio, Admin) with `React.lazy` if not already.
-- Add `<link rel="preconnect">` for Supabase, YouTube, Shopify CDN.
-- Self-host the display font (or `font-display: swap` + `preload`) to fix FOIT on the chunky display headings.
+**Files touched:**
 
-## 4. Content depth & internal linking (long-term ranking)
+```text
+public/ccdxsocial/index.html              (new — copied + edited HTML)
+public/ccdxsocial/ccd-social-one-pager.pdf  (new — generated)
+public/ccdxsocial/ccd-social-operations.pdf (new — generated)
+public/robots.txt                         (add Disallow: /ccdxsocial)
+scripts/build-ccdxsocial-pdfs.mjs         (new — one-off generator, kept for re-runs)
+```
 
-- Add a **related posts** block (3 cards) at the end of each `BlogPost` based on shared category/tag. Internal links = crawl + topical authority.
-- Add a **"More episodes" / "Past episodes"** rail on event detail pages linking to other events.
-- Add contextual links from blog posts → `/events`, `/shop`, `/bengaluru-underground-dance-music`. Use real anchor text, not "click here".
-- Add a **city/scene hub page** structure: `/bengaluru-underground-dance-music` already exists — link to it from every blog post footer + nav. Add sibling guides as stubs (`/bengaluru-house-music`, `/bengaluru-techno-nights`) only if there's real content; otherwise skip (thin pages hurt).
-- Add author pages (`/authors/:slug`) with bio, photo, social — feeds E-E-A-T and unlocks `Person` schema on articles.
+No changes to `src/App.tsx`, `seo-routes.mjs`, sitemap, or RSS — keeping the page fully off the SEO graph.
 
-## 5. Feeds & discovery
+## QA checklist before delivering
 
-- Auto-generate `rss.xml` from posts at build time (currently static). Real RSS = picked up by aggregators + AI training crawlers.
-- Add `Sitemap:` line for an **image sitemap** (`sitemap-images.xml`) — useful for Image Search traffic on event flyers and product shots.
-- Add `news.xml` only if posting frequently enough (skip for now).
-- `llms.txt` / `llms-full.txt` already present — regenerate at build with current posts so AI search (ChatGPT, Perplexity) cites accurate content.
+- `https://catscandance.com/ccdxsocial` loads with full design intact (fonts, colors, shadows).
+- Both tabs work; both download buttons trigger PDF download.
+- Each PDF opens cleanly, all pages render with correct fonts/colors, no clipped boxes.
+- `view-source:` shows `noindex, nofollow`.
+- `robots.txt` shows `Disallow: /ccdxsocial`.
+- Page does not appear in `sitemap.xml`.
 
-## 6. On-page hygiene
+## Open question
 
-- One `<h1>` per page, audit current pages (some have multiple display headings styled as h1).
-- Descriptive `alt` on every `<img>` (currently many are decorative-only).
-- Canonical tags: confirm all 4 custom domains (`catscan.dance`, `www.catscan.dance`, `www.catscandance.com`) 301-redirect to `catscandance.com`. If not server-side, add `<link rel="canonical">` pointing to apex on every page (already in prerender — verify).
-- `hreflang`: already `en-IN` + `x-default` — good.
-- Add `<meta name="geo.region" content="IN-KA">` and `<meta name="geo.placename" content="Bengaluru">` for local signals.
-
-## 7. Crawl budget & monitoring
-
-- Update `robots.txt`: keep AI bots allowed, add `Crawl-delay` only if server load is an issue (don't otherwise).
-- Add a build step that pings Google + Bing sitemap endpoints on deploy (`https://www.google.com/ping?sitemap=...`).
-- Add `SeoVerification` component already exists — confirm GSC + Bing Webmaster verification meta tags are populated from `brand.json`.
-
-## What I'll implement (ordered by ROI)
-
-1. Event + Product + Breadcrumb + Organization/LocalBusiness JSON-LD (prerendered).
-2. Per-route OG images for blog posts + dynamic RSS regen.
-3. Image conversion to WebP + width/height + lazy-loading + LCP preload.
-4. Related posts block + author pages + internal-link audit.
-5. FAQ schema on key landing pages with real Q&As.
-6. Prerender event/product detail pages from Supabase data.
-7. Geo meta + canonical sweep + h1 audit.
-8. RSS regen + image sitemap + sitemap ping on deploy.
-
-Approve and I'll start at #1 and work down. Anything to drop or reorder?
+The PDF will be a print-rendering of the on-screen design (same colors, neo-brutalist shadows, etc.). If you'd rather have a **cleaner print-optimized version** (white background, no chunk shadows, smaller margins for less paper), say so and I'll add print CSS overrides before generating. Default is "looks like the website."
