@@ -86,6 +86,7 @@ const App = () => (
                   <Route path="/bengaluru-house-parties" element={<SceneHub />} />
                   <Route path="/authors/:slug" element={<AuthorProfile />} />
                   <Route path="/submit-event" element={<SubmitEvent />} />
+                  <Route path="/ccdxsocial" element={<CcdxSocial />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <ThemeSwitcher />
