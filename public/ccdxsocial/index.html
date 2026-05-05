@@ -18,10 +18,16 @@
 html,body{font-family:var(--f-b);background:var(--cream);color:var(--ink);}
 
 /* NAV */
-nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;border-bottom:var(--b);}
-.tab{font-family:var(--f-d);font-size:11px;letter-spacing:0.06em;padding:12px 22px;cursor:pointer;color:rgba(232,228,220,0.4);background:none;border:none;border-right:2px solid rgba(255,255,255,0.06);transition:all 0.15s;}
-.tab:hover{color:var(--cream);}
+nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;align-items:stretch;border-bottom:var(--b);flex-wrap:wrap;}
+.tab{font-family:var(--f-d);font-size:11px;letter-spacing:0.06em;padding:12px 22px;cursor:pointer;color:rgba(232,228,220,0.82);background:none;border:none;border-right:2px solid rgba(255,255,255,0.1);transition:all 0.15s;}
+.tab:hover{color:var(--cream);background:rgba(255,255,255,0.06);}
 .tab.on{background:var(--acid);color:var(--ink);}
+.nav-spacer{flex:1;}
+.nav-dl{font-family:var(--f-d);font-size:10px;letter-spacing:0.06em;padding:0 16px;cursor:pointer;background:none;border:none;border-left:2px solid rgba(255,255,255,0.1);transition:all 0.15s;text-decoration:none;display:flex;align-items:center;gap:7px;color:rgba(232,228,220,0.75);}
+.nav-dl:hover{color:var(--cream);background:rgba(255,255,255,0.06);}
+.nav-dl.primary{color:var(--acid);border-left-color:rgba(163,230,53,0.25);}
+.nav-dl.primary:hover{background:rgba(163,230,53,0.1);}
+.nav-dl .arr{font-size:14px;}
 .doc{display:none;}.doc.on{display:block;}
 
 /* SHARED */
@@ -282,29 +288,18 @@ nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;border-
 <body>
 
 <nav data-noprint="true">
-  <button class="tab on" onclick="tab('op',this)">ONE-PAGER</button>
-  <button class="tab" onclick="tab('ops',this)">OPERATIONS DOC</button>
+  <button class="tab on" id="tab-op" onclick="tab('op',this)">ONE-PAGER</button>
+  <button class="tab" id="tab-ops" onclick="tab('ops',this)">OPERATIONS DOC</button>
+  <div class="nav-spacer"></div>
+  <a class="nav-dl primary" id="nav-dl-primary" href="/ccdxsocial/ccd-social-one-pager.pdf" download><span class="arr">↓</span> ONE-PAGER PDF</a>
+  <a class="nav-dl" id="nav-dl-secondary" href="/ccdxsocial/ccd-social-operations.pdf" download><span class="arr">↓</span> OPS DOC PDF</a>
 </nav>
-
-<style>
-.dl-row{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px;}
-.dl-btn{font-family:var(--f-d);font-size:12px;letter-spacing:0.06em;padding:14px 20px;border:var(--b);box-shadow:var(--sh);text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:10px;transition:transform 0.1s,box-shadow 0.1s;}
-.dl-btn:hover{transform:translate(2px,2px);box-shadow:none;}
-.dl-btn.primary{background:var(--acid);}
-.dl-btn.secondary{background:var(--cream);}
-.dl-arrow{font-size:18px;}
-</style>
 
 <!-- ═══════════════════════════════
      ONE-PAGER
 ═══════════════════════════════ -->
 <div class="doc on" id="doc-op">
 <div class="page">
-
-  <div class="dl-row" data-noprint="true">
-    <a class="dl-btn primary" href="/ccdxsocial/ccd-social-one-pager.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD ONE-PAGER (PDF)</a>
-    <a class="dl-btn secondary" href="/ccdxsocial/ccd-social-operations.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD OPERATIONS DOC (PDF)</a>
-  </div>
 
   <!-- COMPACT HERO -->
   <div class="hero">
@@ -495,11 +490,6 @@ nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;border-
 ═══════════════════════════════ -->
 <div class="doc" id="doc-ops">
 <div class="page">
-
-  <div class="dl-row" data-noprint="true">
-    <a class="dl-btn primary" href="/ccdxsocial/ccd-social-operations.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD OPERATIONS DOC (PDF)</a>
-    <a class="dl-btn secondary" href="/ccdxsocial/ccd-social-one-pager.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD ONE-PAGER (PDF)</a>
-  </div>
 
   <div class="ops-cover">
     <div class="ops-cover-grain"></div>
@@ -753,11 +743,21 @@ nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;border-
 </div>
 
 <script>
+const dlLinks = {
+  op:  { primary: ['/ccdxsocial/ccd-social-one-pager.pdf',   'ONE-PAGER PDF'],
+          secondary:['/ccdxsocial/ccd-social-operations.pdf', 'OPS DOC PDF'] },
+  ops: { primary: ['/ccdxsocial/ccd-social-operations.pdf',  'OPS DOC PDF'],
+          secondary:['/ccdxsocial/ccd-social-one-pager.pdf',  'ONE-PAGER PDF'] }
+};
 function tab(id,el){
   document.querySelectorAll('.doc').forEach(d=>d.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('doc-'+id).classList.add('on');
   el.classList.add('on');
+  const p = document.getElementById('nav-dl-primary');
+  const s = document.getElementById('nav-dl-secondary');
+  p.href = dlLinks[id].primary[0];   p.childNodes[1].textContent = ' '+dlLinks[id].primary[1];
+  s.href = dlLinks[id].secondary[0]; s.childNodes[1].textContent = ' '+dlLinks[id].secondary[1];
   window.scrollTo(0,0);
 }
 </script>
