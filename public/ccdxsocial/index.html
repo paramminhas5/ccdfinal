@@ -284,15 +284,27 @@ nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;border-
 <nav data-noprint="true">
   <button class="tab on" onclick="tab('op',this)">ONE-PAGER</button>
   <button class="tab" onclick="tab('ops',this)">OPERATIONS DOC</button>
-  <a class="tab" style="margin-left:auto;text-decoration:none;display:inline-flex;align-items:center;" href="/ccdxsocial/ccd-social-one-pager.pdf" download>↓ ONE-PAGER PDF</a>
-  <a class="tab" style="text-decoration:none;display:inline-flex;align-items:center;" href="/ccdxsocial/ccd-social-operations.pdf" download>↓ OPERATIONS PDF</a>
 </nav>
+
+<style>
+.dl-row{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px;}
+.dl-btn{font-family:var(--f-d);font-size:12px;letter-spacing:0.06em;padding:14px 20px;border:var(--b);box-shadow:var(--sh);text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:10px;transition:transform 0.1s,box-shadow 0.1s;}
+.dl-btn:hover{transform:translate(2px,2px);box-shadow:none;}
+.dl-btn.primary{background:var(--acid);}
+.dl-btn.secondary{background:var(--cream);}
+.dl-arrow{font-size:18px;}
+</style>
 
 <!-- ═══════════════════════════════
      ONE-PAGER
 ═══════════════════════════════ -->
 <div class="doc on" id="doc-op">
 <div class="page">
+
+  <div class="dl-row" data-noprint="true">
+    <a class="dl-btn primary" href="/ccdxsocial/ccd-social-one-pager.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD ONE-PAGER (PDF)</a>
+    <a class="dl-btn secondary" href="/ccdxsocial/ccd-social-operations.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD OPERATIONS DOC (PDF)</a>
+  </div>
 
   <!-- COMPACT HERO -->
   <div class="hero">
@@ -483,6 +495,11 @@ nav{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;border-
 ═══════════════════════════════ -->
 <div class="doc" id="doc-ops">
 <div class="page">
+
+  <div class="dl-row" data-noprint="true">
+    <a class="dl-btn primary" href="/ccdxsocial/ccd-social-operations.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD OPERATIONS DOC (PDF)</a>
+    <a class="dl-btn secondary" href="/ccdxsocial/ccd-social-one-pager.pdf" download><span class="dl-arrow">↓</span> DOWNLOAD ONE-PAGER (PDF)</a>
+  </div>
 
   <div class="ops-cover">
     <div class="ops-cover-grain"></div>

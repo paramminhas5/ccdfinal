@@ -24,9 +24,9 @@ for (const t of targets) {
   await page.goto("file://" + htmlPath, { waitUntil: "networkidle0" });
   // Wait for Google Fonts
   await page.evaluate(() => document.fonts.ready);
-  // Show only target doc, hide nav/buttons
+  // Show only target doc, hide nav + any [data-noprint] (e.g. in-body download buttons)
   await page.evaluate((id) => {
-    document.querySelectorAll("nav[data-noprint]").forEach((n) => (n.style.display = "none"));
+    document.querySelectorAll("[data-noprint]").forEach((n) => (n.style.display = "none"));
     document.querySelectorAll(".doc").forEach((d) => {
       d.classList.remove("on");
       d.style.display = d.id === id ? "block" : "none";
