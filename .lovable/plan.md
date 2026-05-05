@@ -1,58 +1,73 @@
-# Host CCD × Social proposal at `/ccdxsocial` + PDF downloads
+# Fix `/ccdxsocial` — make it load + move PDF buttons into the page
 
-## What we're building
+## What's wrong
 
-1. A new public page at `https://catscandance.com/ccdxsocial` that serves the uploaded `ccd-social-updated.html` exactly as designed.
-2. The page is **excluded from SEO** (no indexing, no link equity passed): `<meta name="robots" content="noindex, nofollow">` + `Disallow` in `robots.txt` + omitted from sitemap/SEO route list.
-3. Two **download buttons** added inside the page header (next to the tabs):
-   - `Download One-Pager (PDF)` → `/ccdxsocial/ccd-social-one-pager.pdf`
-   - `Download Operations Doc (PDF)` → `/ccdxsocial/ccd-social-operations.pdf`
-4. The two PDFs are generated **once, at build time**, from the One-Pager (`#doc-op`) and Operations Doc (`#doc-ops`) sections of the HTML, then committed to `public/ccdxsocial/` so they're served as static assets.
+**1. Page doesn't load in preview or after publish.**
+The static HTML lives at `public/ccdxsocial/index.html` and is copied to `dist/ccdxsocial/index.html` at build time, but neither the Vite dev server (preview) nor Lovable's published hosting reliably serves it for the bare URL `/ccdxsocial`:
+- **Vite dev**: `/ccdxsocial` (no trailing slash, no `.html`) is intercepted by the SPA fallback and renders the React `NotFound` page. Only `/ccdxsocial/index.html` works.
+- **Published**: Lovable's CDN hosting does not honor Netlify-style `public/_redirects` rules, so `/ccdxsocial` falls through to the SPA shell — same NotFound result.
 
-## How it'll work (technical)
+**2. Download buttons are in the wrong place.**
+Currently they sit inside the partnership doc's own sticky black `<nav>` strip at the very top (next to the ONE-PAGER / OPERATIONS DOC tabs). You want them inside the document body — as a clear CTA block within each tab's content.
 
-**Static hosting (not a React route):**
-The uploaded file is a self-contained HTML doc with its own fonts, CSS, and tab JS — wrapping it in React would break the design. Instead:
-- Copy `ccd-social-updated.html` → `public/ccdxsocial/index.html`
-- Inject `<meta name="robots" content="noindex, nofollow">` and a canonical-less `<head>` so it's invisible to search.
-- Add two download buttons in the nav bar (styled to match existing `.tab` look) linking to the two PDFs.
-- Vite serves `public/` as-is, so `/ccdxsocial` resolves to this static HTML before the SPA fallback in `_redirects` kicks in.
+## Fix
 
-**SEO exclusion (belt + suspenders):**
-- `public/robots.txt` → add `Disallow: /ccdxsocial`
-- Page `<head>` → `noindex, nofollow`
-- `scripts/seo-routes.mjs` → do NOT add this route (so it stays out of `sitemap.xml`, `sitemap-index.xml`, `rss.xml`, and the prerender list).
-- Internal links from the rest of the site → none (so no PageRank flows to it).
+### A. Make the route resolve everywhere
 
-**PDF generation:**
-- Use a one-off Node script (`scripts/build-ccdxsocial-pdfs.mjs`) with **Puppeteer** (Chromium headless) to:
-  1. Load the source HTML from disk via `file://`.
-  2. For each tab, run JS in the page to show only that doc (`document.querySelectorAll('.doc').forEach(...)`), hide the nav bar and download buttons, then call `page.pdf({ format: 'A4', printBackground: true, margin: ... })`.
-  3. Write the two PDFs to `public/ccdxsocial/`.
-- Run this script once now (during this build) to produce the two PDF files. Commit the resulting PDFs so subsequent builds don't need Puppeteer.
-- QA: convert each PDF to images and visually inspect every page for clipped text, broken layouts, missing fonts (Bowlby One / DM Sans must load via Google Fonts), and color fidelity. Iterate until clean.
+Add a real React route `/ccdxsocial` that renders the static HTML inline. This works in dev preview, in production, and survives Lovable's SPA fallback because it's now a first-class app route — no hosting/redirect tricks needed.
 
-**Files touched:**
+Implementation:
+1. **New file** `src/pages/CcdxSocial.tsx`:
+   - Reads the static HTML once at module load via Vite's `?raw` import: `import html from "/ccdxsocial/index.html?raw"`.
+   - Strips the `<!DOCTYPE>`, `<html>`, `<head>` so we don't end up with nested document structure; keeps the `<style>`, `<link>` (Google Fonts), `<body>` content, and the inline `<script>` for tab switching.
+   - Renders the body markup via `dangerouslySetInnerHTML` inside a full-viewport wrapper that hides the site's React `<Nav>` and `<Footer>` (this page is standalone, not part of the main site chrome).
+   - Adds `<Helmet>` with `<meta name="robots" content="noindex, nofollow">` and the original page title.
+   - After mount, runs the inline tab-switcher JS (re-initializes since `dangerouslySetInnerHTML` doesn't execute scripts).
+2. **Register the route** in `src/App.tsx`: `<Route path="/ccdxsocial" element={<CcdxSocial />} />` (placed before the `*` NotFound catch).
+3. **Keep** `public/ccdxsocial/index.html` on disk (the React page imports it as raw text, and the PDFs and Puppeteer build script still need it).
+4. **Keep** `public/ccdxsocial/ccd-social-one-pager.pdf` and `ccd-social-operations.pdf` — they're served as static assets at the `/ccdxsocial/*.pdf` URLs (these DO work, because they're real files with extensions, not directory paths).
+5. **Remove** the now-unnecessary `_redirects` rules for `/ccdxsocial` (the static HTML file itself stays, just no longer publicly served as a page).
+6. **Confirm** the page is still excluded from SEO:
+   - `noindex, nofollow` meta tag stays.
+   - `robots.txt` `Disallow: /ccdxsocial` stays.
+   - Route is NOT added to `scripts/seo-routes.mjs`, sitemap, sitemap-index, RSS, or any internal links.
+
+### B. Move download buttons into the page body
+
+In `public/ccdxsocial/index.html`:
+1. **Remove** the two `<a class="tab" ... download>` elements from inside the `<nav data-noprint>` strip.
+2. **Add** a single download CTA block inside each doc's content (`#doc-op` and `#doc-ops`), placed near the top of each tab's content (just under the hero/intro). Each block contains both PDF buttons styled as neo-brutalist chunks matching the existing `.cta`/`.gc` design language — bold border, chunk shadow, acid-yellow primary + cream secondary, "↓ DOWNLOAD ONE-PAGER (PDF)" / "↓ DOWNLOAD OPERATIONS DOC (PDF)" labels.
+3. Buttons keep `download` attribute and link to `/ccdxsocial/ccd-social-one-pager.pdf` and `/ccdxsocial/ccd-social-operations.pdf`.
+4. Add `data-noprint="true"` on the new CTA blocks so the Puppeteer build script can hide them when re-generating PDFs (so the PDF doesn't contain "download this PDF" buttons recursively).
+
+### C. Regenerate PDFs
+
+Run `node scripts/build-ccdxsocial-pdfs.mjs` once to regenerate both PDFs from the updated HTML (with the new in-body buttons hidden via `data-noprint`). Update the script's hide selector to also catch `[data-noprint]` (currently only hides `nav[data-noprint]`).
+
+Then QA: render each PDF page to PNG with `pdftoppm`, visually inspect every page for layout breaks, missing fonts, clipped text. Iterate until clean.
+
+## Files touched
 
 ```text
-public/ccdxsocial/index.html              (new — copied + edited HTML)
-public/ccdxsocial/ccd-social-one-pager.pdf  (new — generated)
-public/ccdxsocial/ccd-social-operations.pdf (new — generated)
-public/robots.txt                         (add Disallow: /ccdxsocial)
-scripts/build-ccdxsocial-pdfs.mjs         (new — one-off generator, kept for re-runs)
+src/pages/CcdxSocial.tsx                  (new)
+src/App.tsx                               (add route)
+public/ccdxsocial/index.html              (move buttons from nav into body)
+public/_redirects                         (remove /ccdxsocial rules)
+scripts/build-ccdxsocial-pdfs.mjs         (broaden noprint selector)
+public/ccdxsocial/ccd-social-one-pager.pdf  (regenerated)
+public/ccdxsocial/ccd-social-operations.pdf (regenerated)
 ```
 
-No changes to `src/App.tsx`, `seo-routes.mjs`, sitemap, or RSS — keeping the page fully off the SEO graph.
+No changes to nav, sitemap, RSS, or seo-routes — page stays fully off the SEO graph.
 
-## QA checklist before delivering
+## Verification after build
 
-- `https://catscandance.com/ccdxsocial` loads with full design intact (fonts, colors, shadows).
-- Both tabs work; both download buttons trigger PDF download.
-- Each PDF opens cleanly, all pages render with correct fonts/colors, no clipped boxes.
-- `view-source:` shows `noindex, nofollow`.
-- `robots.txt` shows `Disallow: /ccdxsocial`.
+- `/ccdxsocial` loads in dev preview with full neo-brutalist design intact.
+- `/ccdxsocial` loads on `catscandance.com` after publish (no NotFound).
+- Site's React `<Nav>` and `<Footer>` are NOT visible on the page (standalone doc).
+- Tab switching between ONE-PAGER and OPERATIONS DOC works.
+- Download buttons appear as a visible CTA block inside each doc, not in the top nav.
+- Both PDFs download and open cleanly.
+- View-source shows `noindex, nofollow`.
+- `robots.txt` still has `Disallow: /ccdxsocial`.
 - Page does not appear in `sitemap.xml`.
-
-## Open question
-
-The PDF will be a print-rendering of the on-screen design (same colors, neo-brutalist shadows, etc.). If you'd rather have a **cleaner print-optimized version** (white background, no chunk shadows, smaller margins for less paper), say so and I'll add print CSS overrides before generating. Default is "looks like the website."
