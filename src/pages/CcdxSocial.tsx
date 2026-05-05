@@ -1,44 +1,59 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
-// Import the static HTML as raw text. Vite resolves "/ccdxsocial/index.html"
-// from the public/ folder via the leading-slash + ?raw query.
-// eslint-disable-next-line import/no-unresolved
-import rawHtml from "../../public/ccdxsocial/index.html?raw";
 
 /**
- * Standalone partnership proposal page.
- * - noindex/nofollow (also disallowed in robots.txt)
- * - Renders the self-contained HTML doc inline so the route resolves under
- *   the SPA on both Vite dev and Lovable hosting.
+ * Standalone partnership proposal page (rendered at /ccdxsocial).
+ * - noindex/nofollow (also disallowed in robots.txt, omitted from sitemap).
+ * - Loads the self-contained HTML doc from /ccdxsocial/index.html (in /public)
+ *   and inlines its <style> + <body> so the route resolves under the SPA.
  * - Hides the site's React Nav/Footer (this page is intentionally chrome-less).
  */
 const CcdxSocial = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Pull the <body> contents and the <style>/<link> tags from the raw HTML.
-  // We skip <!doctype>, <html>, <head>, <body> wrappers to avoid nested docs.
-  const { headExtras, bodyHtml } = (() => {
-    const headMatch = rawHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
-    const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-    const head = headMatch ? headMatch[1] : "";
-    // Keep only style and font/google-fonts link tags from <head>
-    const styleAndLinks = (head.match(/<style[\s\S]*?<\/style>|<link[^>]*rel=["']stylesheet["'][^>]*>/gi) || []).join("\n");
-    return {
-      headExtras: styleAndLinks,
-      bodyHtml: bodyMatch ? bodyMatch[1] : rawHtml,
-    };
-  })();
+  const [bodyHtml, setBodyHtml] = useState<string>("");
+  const [headExtras, setHeadExtras] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    fetch("/ccdxsocial/index.html")
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then((raw) => {
+        if (cancelled) return;
+        const headMatch = raw.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+        const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        const head = headMatch ? headMatch[1] : "";
+        const styleAndLinks = (
+          head.match(
+            /<style[\s\S]*?<\/style>|<link[^>]*rel=["']stylesheet["'][^>]*>/gi,
+          ) || []
+        ).join("\n");
+        setHeadExtras(styleAndLinks);
+        setBodyHtml(bodyMatch ? bodyMatch[1] : raw);
+      })
+      .catch((e) => !cancelled && setError(String(e)));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!bodyHtml) return;
+
     // Hide the global site nav/footer/floating widgets while this page is mounted.
     document.documentElement.classList.add("ccdxsocial-active");
-    const style = document.createElement("style");
-    style.id = "ccdxsocial-hide-chrome";
-    style.textContent = `
-      .ccdxsocial-active body > div#root > * > header,
-      .ccdxsocial-active body > div#root > * > footer { display: none !important; }
+    const hideStyle = document.createElement("style");
+    hideStyle.id = "ccdxsocial-hide-chrome";
+    hideStyle.textContent = `
+      html.ccdxsocial-active body > div#root > header,
+      html.ccdxsocial-active body > div#root > footer,
+      html.ccdxsocial-active body > header,
+      html.ccdxsocial-active body > footer { display: none !important; }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(hideStyle);
 
     // Inject style/link tags from the raw HTML (Google Fonts + page CSS).
     const injectedNodes: Element[] = [];
@@ -65,10 +80,10 @@ const CcdxSocial = () => {
 
     return () => {
       document.documentElement.classList.remove("ccdxsocial-active");
-      style.remove();
+      hideStyle.remove();
       injectedNodes.forEach((n) => n.remove());
     };
-  }, [headExtras]);
+  }, [bodyHtml, headExtras]);
 
   return (
     <>
@@ -76,6 +91,11 @@ const CcdxSocial = () => {
         <title>CatsCaNDance × Social — Partnership Proposal</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
+      {error && (
+        <div style={{ padding: 40, fontFamily: "sans-serif" }}>
+          Failed to load page: {error}
+        </div>
+      )}
       <div ref={containerRef} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
     </>
   );
