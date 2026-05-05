@@ -51,7 +51,10 @@ const CcdxSocial = () => {
       html.ccdxsocial-active body > div#root > header,
       html.ccdxsocial-active body > div#root > footer,
       html.ccdxsocial-active body > header,
-      html.ccdxsocial-active body > footer { display: none !important; }
+      html.ccdxsocial-active body > footer,
+      html.ccdxsocial-active [data-theme-switcher],
+      html.ccdxsocial-active [data-disco-button] { display: none !important; }
+      html.ccdxsocial-active body { background: #e8e4dc; }
     `;
     document.head.appendChild(hideStyle);
 
