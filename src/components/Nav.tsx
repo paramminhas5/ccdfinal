@@ -31,7 +31,7 @@ const moreLinks: { to: string; label: string; external?: boolean }[] = [
 ];
 
 // Flat list for mobile hamburger
-const mobileLinks = [...primaryLinks, ...partnersLinks, ...moreLinks];
+const mobileLinks: { to: string; label: string; external?: boolean }[] = [...primaryLinks, ...partnersLinks, ...moreLinks];
 
 const scrollToEarlyAccess = () => {
   setTimeout(() => {
