@@ -305,9 +305,11 @@ Deno.serve(async (req) => {
 
   let body: any = {};
   try { body = await req.json(); } catch {}
-  const requestedSource = (body?.source as SourceKey) || "skillboxes";
+  const requestedSource = body?.source as SourceKey | undefined;
   const requestedCity = (body?.city as CityKey | "all") || "bangalore";
-  const mode = body?.mode === "all" ? "all" : "single";
+  // Default mode is "all" when no explicit source is given, so a no-arg call
+  // hits every source instead of only Skillboxes.
+  const mode = body?.mode === "single" || requestedSource ? (body?.mode === "all" ? "all" : "single") : "all";
   const limit = Math.min(Math.max(Number(body?.limit) || 5, 1), 8);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
