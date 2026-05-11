@@ -44,10 +44,6 @@ const Dropdown = ({
   label,
   links,
   scrolled,
-const Dropdown = ({
-  label,
-  links,
-  scrolled,
 }: {
   label: string;
   links: { to: string; label: string; external?: boolean }[];
