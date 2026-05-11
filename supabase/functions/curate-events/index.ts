@@ -46,8 +46,8 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
   insider: {
     key: "insider",
     listingUrl: (c) => `https://insider.in/${c.slugs.insider ?? c.key}/nightlife`,
-    linkMatch: /insider\.in\/[a-z0-9-]+\/event/i,
-    linkReject: [/\/online-events/i],
+    linkMatch: /insider\.in\/(?:[a-z0-9-]+\/)?(?:event|e)[\/-][^?#]+/i,
+    linkReject: [/\/online-events/i, /\/all-events$/i, /\/nightlife$/i],
   },
   skillboxes: {
     key: "skillboxes",
@@ -59,18 +59,18 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
     key: "district",
     listingUrl: (c) => `https://www.district.in/events/music-in-${c.slugs.district ?? c.key}-book-tickets`,
     linkMatch: /district\.in\/events\/[^/?#]+/i,
-    linkReject: [/\/categories\//i, /\/events\/music-in-[a-z-]+-book-tickets$/i],
+    linkReject: [/\/categories\//i, /\/events\/music-in-[a-z-]+-book-tickets$/i, /\/events\/[a-z-]+-in-[a-z-]+-book-tickets$/i],
   },
   highape: {
     key: "highape",
     listingUrl: (c) => `https://highape.com/${c.slugs.highape ?? c.key}/events`,
     linkMatch: /highape\.com\/[a-z]+\/[^/?#]+/i,
-    linkReject: [/\/events$/i, /\/category\//i],
+    linkReject: [/\/events$/i, /\/category\//i, /\/[a-z]+\/(?:events|nightlife|music|concerts)$/i],
   },
   bookmyshow: {
     key: "bookmyshow",
     listingUrl: (c) => `https://in.bookmyshow.com/explore/events-${c.slugs.bookmyshow ?? c.key}`,
-    linkMatch: /bookmyshow\.com\/events\//i,
+    linkMatch: /bookmyshow\.com\/events\/[^/?#]+/i,
     linkReject: [/\/explore\//i],
   },
 };
@@ -205,19 +205,35 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
   const listing = await firecrawlScrape(listingUrl, fcKey, ["links", "markdown"], 5000);
   if (!listing) { stats.errors.push("listing scrape failed"); return stats; }
   const rawLinks: string[] = listing?.data?.links ?? listing?.links ?? [];
+  const listingMd: string = listing?.data?.markdown ?? listing?.markdown ?? "";
 
   const seen = new Set<string>();
   const candidates: string[] = [];
-  for (const link of rawLinks) {
-    if (typeof link !== "string") continue;
+  const tryAdd = (link: string) => {
+    if (typeof link !== "string") return;
     const url = link.split("#")[0].replace(/\/$/, "");
-    if (seen.has(url)) continue;
-    if (!cfg.linkMatch.test(url)) continue;
-    if (cfg.linkReject.some((r) => r.test(url))) continue;
+    if (seen.has(url)) return;
+    if (!cfg.linkMatch.test(url)) return;
+    if (cfg.linkReject.some((r) => r.test(url))) return;
     seen.add(url);
     candidates.push(url);
+  };
+
+  for (const link of rawLinks) {
+    tryAdd(link);
     if (candidates.length >= 12) break;
   }
+
+  // Fallback: parse links out of markdown if no candidates found
+  if (candidates.length === 0 && listingMd) {
+    const urlRe = /(https?:\/\/[^\s)<>"']+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = urlRe.exec(listingMd))) {
+      tryAdd(m[1]);
+      if (candidates.length >= 12) break;
+    }
+  }
+
   stats.candidateLinks = candidates.length;
   stats.samples = candidates.slice(0, 5);
 
@@ -227,7 +243,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     if (stats.upserted >= limit) break;
     if (stats.scrapedPages >= 8) break;
     try {
-      const page = await firecrawlScrape(url, fcKey, ["markdown"]);
+      const page = await firecrawlScrape(url, fcKey, ["markdown"], 3000);
       stats.scrapedPages += 1;
       const md: string = page?.data?.markdown ?? page?.markdown ?? "";
       const meta = page?.data?.metadata ?? page?.metadata ?? {};
@@ -289,16 +305,18 @@ Deno.serve(async (req) => {
 
   let body: any = {};
   try { body = await req.json(); } catch {}
-  const requestedSource = (body?.source as SourceKey) || "skillboxes";
+  const requestedSource = body?.source as SourceKey | undefined;
   const requestedCity = (body?.city as CityKey | "all") || "bangalore";
-  const mode = body?.mode === "all" ? "all" : "single";
+  // Default mode is "all" when no explicit source is given, so a no-arg call
+  // hits every source instead of only Skillboxes.
+  const mode = body?.mode === "single" || requestedSource ? (body?.mode === "all" ? "all" : "single") : "all";
   const limit = Math.min(Math.max(Number(body?.limit) || 5, 1), 8);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   const sourceTargets: SourceConfig[] = mode === "all"
     ? Object.values(SOURCES)
-    : SOURCES[requestedSource] ? [SOURCES[requestedSource]] : [SOURCES.skillboxes];
+    : requestedSource && SOURCES[requestedSource] ? [SOURCES[requestedSource]] : [SOURCES.skillboxes];
 
   const cityTargets: CityConfig[] = requestedCity === "all"
     ? Object.values(CITIES)

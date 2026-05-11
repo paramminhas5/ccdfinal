@@ -1,53 +1,68 @@
-## Replace `/ccdxsocial` with the uploaded React project
+# Plan: Learn link, Cats Can Care, Artists, Multi-source curation
 
-The uploaded zip is a real React/Vite version of the same partnership doc — proper component, scoped CSS, logo assets, fresh PDFs. We'll swap it in to replace the current "fetch static HTML and inline it" hack.
+## 1. Nav: Add "Learn" external link
 
-### What gets added
+- In `src/components/Nav.tsx`, add `Learn` to the **More** dropdown (and mobile flat list) as an external `<a href="https://ablelive.lovable.com">`.
+- Style matches other dropdown items.
 
-From `lovable-connect-main/` into this project:
+## 2. Cats Can Care (Welfare) page — `/care`
 
-```text
-src/pages/CcdxSocial.tsx                     ← rewritten from uploaded src/pages/Index.tsx
-src/pages/ccd.css                            ← copied as-is (scoped to .ccd-* classes)
-src/assets/ccd-logo.png                      ← copied
-src/assets/social-logo.png                   ← copied
-public/ccdxsocial/CCD-One-Pager.pdf          ← replaces ccd-social-one-pager.pdf
-public/ccdxsocial/CCD-Operations-Doc.pdf     ← replaces ccd-social-operations.pdf
-```
+New route + nav entry under **More** → "Cats Can Care".
 
-### Adaptations to fit this project
+**Data source:** Ship the 100 NGOs as a static TS dataset at `src/content/ngos.ts` (parsed from the uploaded CSV). Each row: `{ rank, name, founded, founded_by, location, focus[], donation_method, impact, website?, city, category }`. I'll derive:
 
-The uploaded project is standalone — this project has site chrome (Nav, Footer, ThemeSwitcher, DiscoButton). The new page must hide all of it.
+- `city` from Location column (Bangalore/Mumbai/Delhi/Chennai/National/etc.)
+- `category` from Focus keywords (Rescue, Wildlife, Adoption, Sterilisation/ABC, Sanctuary, Advocacy, Funding)
+- `website` extracted from the Donation_Method text where present.
 
-`src/pages/CcdxSocial.tsx` (new, replaces current file):
-- Port the entire uploaded `Index.tsx` body (tabs, sub-nav, sections, download dialog, PDF mode via `?pdf=op|ops`).
-- Import `ccd.css`, `ccd-logo.png`, `social-logo.png` from new locations.
-- Wrap in a `<Helmet>` that sets the title and `noindex,nofollow`.
-- On mount, add `ccdxsocial-active` class to `<html>` and inject a `<style>` that hides the global Nav/Footer/ThemeSwitcher/DiscoButton (same hiding mechanism currently in `CcdxSocial.tsx`). Remove on unmount.
-- Update PDF paths to `/ccdxsocial/CCD-One-Pager.pdf` and `/ccdxsocial/CCD-Operations-Doc.pdf` (already what the uploaded file uses).
+**Page (`src/pages/CatsCanCare.tsx`):**
 
-### Files removed
+- Hero strip with intro copy.
+- **Search bar** (full-text over name/focus/location/impact).
+- **Filter chips**: city, category (multi-select), "Has online donation".
+- **Grid of cards**: name, location, founded, focus tags, impact blurb, "Donate" button (links to website / falls back to a search), "Adopt" tag if category includes Adoption.
+- **Adopt section** (anchor `#adopt`): pre-filtered list of NGOs whose focus mentions "adoption / shelter / rehoming", plus a short "How to adopt responsibly" copy block.
+- Uses existing semantic tokens (`bg-cream`, `text-ink`, `chunk-shadow`, etc.) — neo-brutalist consistency.
 
-```text
-public/ccdxsocial/index.html                  ← no longer needed (was the inlined static doc)
-public/ccdxsocial/ccd-social-one-pager.pdf    ← replaced by CCD-One-Pager.pdf
-public/ccdxsocial/ccd-social-operations.pdf   ← replaced by CCD-Operations-Doc.pdf
-scripts/build-ccdxsocial-pdfs.mjs             ← obsolete (PDFs now ship from upload)
-```
+## 3. Artists page — `/artists`
 
-### Files unchanged
+New top-level nav link (primary nav, after Events).
 
-- `src/App.tsx` — route `/ccdxsocial → <CcdxSocial />` already registered, stays.
-- `public/robots.txt` — `Disallow: /ccdxsocial` stays.
-- Sitemap / RSS / `seo-routes.mjs` — page remains off the SEO graph.
-- `public/_redirects` — no change.
+**Data source:** Static dataset at `src/content/artists.ts` parsed from `India_Top_100_Electronic_DJs_Festival_Credentialed_May_2026.txt`. Each artist: `{ rank, name, members?, from, based, genres[], tier, festivals[], boilerRoom?, label?, why, instagram?, website?, bookingEmail?, priceRange? }`.
 
-### Verification
+**Page (`src/pages/Artists.tsx`):**
 
-- `/ccdxsocial` loads in dev preview with the new design (logo lockup, tabs, sticky sub-nav).
-- Site Nav/Footer/ThemeSwitcher/Disco button are hidden on this page only.
-- Tab switching between One-Pager and Operations Doc works.
-- Download dialog opens; both PDFs download from `/ccdxsocial/CCD-*.pdf`.
-- `?pdf=op` and `?pdf=ops` query params still trigger print-mode styles.
-- View-source shows `noindex, nofollow`.
-- Other routes still show the global Nav/Footer normally.
+- Hero: "India's Electronic Artists — Directory.
+- **Search** (name, genre, label, city).
+- **Filters**: Tier (1/2/3…), Genre chips (House, Techno, DnB, Bass, Ambient…), City
+- **Sort**: Rank | A–Z | .
+- **Cards** (clickable): name, tier badge, based-in, genres, top 3 festivals, "Why" excerpt, IG/website/booking links.
+- **Detail drawer/modal** on card click with full bio fields (no separate per-artist route to keep scope tight).
+
+## 4. Multi-source event curation fix
+
+The `curate-events` edge function already supports `sortmyscene | insider | skillboxes | district | highape | bookmyshow`, but in practice only Skillboxes is producing rows. Two fixes:
+
+1. **Admin trigger always defaults to Skillboxes.** Add a "Run all sources" call path that hits `curate-events` with `{ mode: "all", city: "all" }` (or delegate to `scheduled-curate`). Surface this as a button group in Admin → Curated Events: per-source × per-city dropdown + "Run All".
+2. **Source robustness pass** in `supabase/functions/curate-events/index.ts`:
+  - Add `waitFor: 5000` to the per-event scrape too (currently only listing waits) — Insider/District are JS-heavy.
+  - Loosen `linkMatch` for Insider (`/insider\.in\/(?:[a-z0-9-]+\/)?(?:event|e)\//i`) and District (allow `/events/<slug>` and `/events/<slug>/buy-tickets`).
+  - Add a fallback: if Firecrawl returns 0 candidate links, retry the listing with `formats:["markdown","links"]` and parse `(https?:\/\/...)` from the markdown using each source's `linkMatch`.
+  - Log per-source failure reasons into the `runs[]` response so we can see why a source is empty.
+3. Trigger `scheduled-curate` once after deploy from the Admin button to backfill all sources × cities.
+
+## 5. Wiring
+
+- Register routes in `src/App.tsx`: `/care` → `CatsCanCare`, `/artists` → `Artists`.
+- Update `src/components/Nav.tsx`:
+  - Primary links: add `{ to: "/artists", label: "Artists" }`.
+  - More dropdown: add `Cats Can Care` → `/care`, and `Learn` → external Lovable URL.
+  - Mobile flat list mirrors the same.
+- SEO: add `<SEO>` block on each new page (title, description, canonical, JSON-LD `ItemList` for Artists and `Organization` list for Care).
+
+## Technical details
+
+- No DB migrations needed — both new pages use static TS datasets.
+- Edge function changes deploy automatically.
+- Files to create: `src/pages/CatsCanCare.tsx`, `src/pages/Artists.tsx`, `src/content/ngos.ts`, `src/content/artists.ts`.
+- Files to edit: `src/App.tsx`, `src/components/Nav.tsx`, `supabase/functions/curate-events/index.ts`, `src/pages/Admin.tsx` (curated-events panel — confirm location once I open it during build).

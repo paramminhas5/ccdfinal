@@ -11,6 +11,7 @@ import ccdLogo from "@/assets/ccd-logo.png";
 const primaryLinks = [
   { to: "/about", label: "About" },
   { to: "/events", label: "Events" },
+  { to: "/artists", label: "Artists" },
   { to: "/shop", label: "Shop" },
 ];
 
@@ -20,15 +21,17 @@ const partnersLinks = [
   { to: "/for-investors", label: "For Investors" },
 ];
 
-const moreLinks = [
+const moreLinks: { to: string; label: string; external?: boolean }[] = [
+  { to: "/care", label: "Cats Can Care" },
   { to: "/videos", label: "Videos" },
   { to: "/playlists", label: "Playlists" },
   { to: "/pets", label: "Pets" },
   { to: "/blog", label: "Blog" },
+  { to: "https://lovable.dev/projects/74e0d8d1-d0d1-44e3-a353-45e10e319248", label: "Learn", external: true },
 ];
 
 // Flat list for mobile hamburger
-const mobileLinks = [...primaryLinks, ...partnersLinks, ...moreLinks];
+const mobileLinks: { to: string; label: string; external?: boolean }[] = [...primaryLinks, ...partnersLinks, ...moreLinks];
 
 const scrollToEarlyAccess = () => {
   setTimeout(() => {
@@ -43,7 +46,7 @@ const Dropdown = ({
   scrolled,
 }: {
   label: string;
-  links: { to: string; label: string }[];
+  links: { to: string; label: string; external?: boolean }[];
   scrolled: boolean;
 }) => {
   const [open, setOpen] = useState(false);
@@ -80,34 +83,46 @@ const Dropdown = ({
               const isHash = l.to.includes("#");
               return (
                 <li key={l.to}>
-                  <RouterNavLink
-                    to={l.to}
-                    onClick={(e) => {
-                      setOpen(false);
-                      if (isHash) {
-                        e.preventDefault();
-                        const [path, hash] = l.to.split("#");
-                        const scroll = () => {
-                          const el = document.getElementById(hash);
-                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        };
-                        if (location.pathname === (path || "/")) {
-                          scroll();
-                        } else {
-                          window.history.pushState({}, "", l.to);
-                          window.dispatchEvent(new PopStateEvent("popstate"));
-                          setTimeout(scroll, 120);
+                  {l.external ? (
+                    <a
+                      href={l.to}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setOpen(false)}
+                      className="block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow"
+                    >
+                      {l.label} ↗
+                    </a>
+                  ) : (
+                    <RouterNavLink
+                      to={l.to}
+                      onClick={(e) => {
+                        setOpen(false);
+                        if (isHash) {
+                          e.preventDefault();
+                          const [path, hash] = l.to.split("#");
+                          const scroll = () => {
+                            const el = document.getElementById(hash);
+                            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                          };
+                          if (location.pathname === (path || "/")) {
+                            scroll();
+                          } else {
+                            window.history.pushState({}, "", l.to);
+                            window.dispatchEvent(new PopStateEvent("popstate"));
+                            setTimeout(scroll, 120);
+                          }
                         }
+                      }}
+                      className={({ isActive }) =>
+                        `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
+                          isActive && !isHash ? "bg-acid-yellow" : ""
+                        }`
                       }
-                    }}
-                    className={({ isActive }) =>
-                      `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
-                        isActive && !isHash ? "bg-acid-yellow" : ""
-                      }`
-                    }
-                  >
-                    {l.label}
-                  </RouterNavLink>
+                    >
+                      {l.label}
+                    </RouterNavLink>
+                  )}
                 </li>
               );
             })}
@@ -221,12 +236,20 @@ const Nav = () => {
           <ul className="container py-4 flex flex-col gap-1">
             {mobileLinks.map((l) => (
               <li key={l.to}>
-                <RouterNavLink
-                  to={l.to}
-                  className="block font-display text-2xl text-ink py-2"
-                >
-                  {l.label}
-                </RouterNavLink>
+                {l.external ? (
+                  <a
+                    href={l.to}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block font-display text-2xl text-ink py-2"
+                  >
+                    {l.label} ↗
+                  </a>
+                ) : (
+                  <RouterNavLink to={l.to} className="block font-display text-2xl text-ink py-2">
+                    {l.label}
+                  </RouterNavLink>
+                )}
               </li>
             ))}
             <li>
