@@ -236,12 +236,20 @@ const Nav = () => {
           <ul className="container py-4 flex flex-col gap-1">
             {mobileLinks.map((l) => (
               <li key={l.to}>
-                <RouterNavLink
-                  to={l.to}
-                  className="block font-display text-2xl text-ink py-2"
-                >
-                  {l.label}
-                </RouterNavLink>
+                {l.external ? (
+                  <a
+                    href={l.to}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block font-display text-2xl text-ink py-2"
+                  >
+                    {l.label} ↗
+                  </a>
+                ) : (
+                  <RouterNavLink to={l.to} className="block font-display text-2xl text-ink py-2">
+                    {l.label}
+                  </RouterNavLink>
+                )}
               </li>
             ))}
             <li>
