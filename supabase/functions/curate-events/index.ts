@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
 
   const sourceTargets: SourceConfig[] = mode === "all"
     ? Object.values(SOURCES)
-    : SOURCES[requestedSource] ? [SOURCES[requestedSource]] : [SOURCES.skillboxes];
+    : requestedSource && SOURCES[requestedSource] ? [SOURCES[requestedSource]] : [SOURCES.skillboxes];
 
   const cityTargets: CityConfig[] = requestedCity === "all"
     ? Object.values(CITIES)
