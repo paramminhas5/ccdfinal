@@ -44,9 +44,13 @@ const Dropdown = ({
   label,
   links,
   scrolled,
+const Dropdown = ({
+  label,
+  links,
+  scrolled,
 }: {
   label: string;
-  links: { to: string; label: string }[];
+  links: { to: string; label: string; external?: boolean }[];
   scrolled: boolean;
 }) => {
   const [open, setOpen] = useState(false);
@@ -83,34 +87,46 @@ const Dropdown = ({
               const isHash = l.to.includes("#");
               return (
                 <li key={l.to}>
-                  <RouterNavLink
-                    to={l.to}
-                    onClick={(e) => {
-                      setOpen(false);
-                      if (isHash) {
-                        e.preventDefault();
-                        const [path, hash] = l.to.split("#");
-                        const scroll = () => {
-                          const el = document.getElementById(hash);
-                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        };
-                        if (location.pathname === (path || "/")) {
-                          scroll();
-                        } else {
-                          window.history.pushState({}, "", l.to);
-                          window.dispatchEvent(new PopStateEvent("popstate"));
-                          setTimeout(scroll, 120);
+                  {l.external ? (
+                    <a
+                      href={l.to}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setOpen(false)}
+                      className="block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow"
+                    >
+                      {l.label} ↗
+                    </a>
+                  ) : (
+                    <RouterNavLink
+                      to={l.to}
+                      onClick={(e) => {
+                        setOpen(false);
+                        if (isHash) {
+                          e.preventDefault();
+                          const [path, hash] = l.to.split("#");
+                          const scroll = () => {
+                            const el = document.getElementById(hash);
+                            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                          };
+                          if (location.pathname === (path || "/")) {
+                            scroll();
+                          } else {
+                            window.history.pushState({}, "", l.to);
+                            window.dispatchEvent(new PopStateEvent("popstate"));
+                            setTimeout(scroll, 120);
+                          }
                         }
+                      }}
+                      className={({ isActive }) =>
+                        `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
+                          isActive && !isHash ? "bg-acid-yellow" : ""
+                        }`
                       }
-                    }}
-                    className={({ isActive }) =>
-                      `block px-4 py-2 font-display text-base text-ink hover:bg-acid-yellow ${
-                        isActive && !isHash ? "bg-acid-yellow" : ""
-                      }`
-                    }
-                  >
-                    {l.label}
-                  </RouterNavLink>
+                    >
+                      {l.label}
+                    </RouterNavLink>
+                  )}
                 </li>
               );
             })}
