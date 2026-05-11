@@ -205,19 +205,35 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
   const listing = await firecrawlScrape(listingUrl, fcKey, ["links", "markdown"], 5000);
   if (!listing) { stats.errors.push("listing scrape failed"); return stats; }
   const rawLinks: string[] = listing?.data?.links ?? listing?.links ?? [];
+  const listingMd: string = listing?.data?.markdown ?? listing?.markdown ?? "";
 
   const seen = new Set<string>();
   const candidates: string[] = [];
-  for (const link of rawLinks) {
-    if (typeof link !== "string") continue;
+  const tryAdd = (link: string) => {
+    if (typeof link !== "string") return;
     const url = link.split("#")[0].replace(/\/$/, "");
-    if (seen.has(url)) continue;
-    if (!cfg.linkMatch.test(url)) continue;
-    if (cfg.linkReject.some((r) => r.test(url))) continue;
+    if (seen.has(url)) return;
+    if (!cfg.linkMatch.test(url)) return;
+    if (cfg.linkReject.some((r) => r.test(url))) return;
     seen.add(url);
     candidates.push(url);
+  };
+
+  for (const link of rawLinks) {
+    tryAdd(link);
     if (candidates.length >= 12) break;
   }
+
+  // Fallback: parse links out of markdown if no candidates found
+  if (candidates.length === 0 && listingMd) {
+    const urlRe = /(https?:\/\/[^\s)<>"']+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = urlRe.exec(listingMd))) {
+      tryAdd(m[1]);
+      if (candidates.length >= 12) break;
+    }
+  }
+
   stats.candidateLinks = candidates.length;
   stats.samples = candidates.slice(0, 5);
 
@@ -227,7 +243,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     if (stats.upserted >= limit) break;
     if (stats.scrapedPages >= 8) break;
     try {
-      const page = await firecrawlScrape(url, fcKey, ["markdown"]);
+      const page = await firecrawlScrape(url, fcKey, ["markdown"], 3000);
       stats.scrapedPages += 1;
       const md: string = page?.data?.markdown ?? page?.markdown ?? "";
       const meta = page?.data?.metadata ?? page?.metadata ?? {};
