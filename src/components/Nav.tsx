@@ -11,6 +11,7 @@ import ccdLogo from "@/assets/ccd-logo.png";
 const primaryLinks = [
   { to: "/about", label: "About" },
   { to: "/events", label: "Events" },
+  { to: "/artists", label: "Artists" },
   { to: "/shop", label: "Shop" },
 ];
 
@@ -20,11 +21,13 @@ const partnersLinks = [
   { to: "/for-investors", label: "For Investors" },
 ];
 
-const moreLinks = [
+const moreLinks: { to: string; label: string; external?: boolean }[] = [
+  { to: "/care", label: "Cats Can Care" },
   { to: "/videos", label: "Videos" },
   { to: "/playlists", label: "Playlists" },
   { to: "/pets", label: "Pets" },
   { to: "/blog", label: "Blog" },
+  { to: "https://lovable.dev/projects/74e0d8d1-d0d1-44e3-a353-45e10e319248", label: "Learn", external: true },
 ];
 
 // Flat list for mobile hamburger
