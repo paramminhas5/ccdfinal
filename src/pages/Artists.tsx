@@ -102,11 +102,12 @@ const ArtistsPage = () => {
         jsonLd={itemListLd}
       />
       <Nav />
-      <PageHero
-        eyebrow="Artists"
-        title="India's Electronic Artists"
-        subtitle="100 festival-credentialed DJs and producers — pure electronic, no Bollywood, no legacy. Filter by tier, city, genre, and platform."
-      />
+      <PageHero eyebrow="Artists" title="India's Electronic Artists">
+        <p className="text-cream/90 max-w-2xl">
+          100 festival-credentialed DJs and producers — pure electronic, no Bollywood, no legacy.
+          Filter by tier, city, genre, and platform.
+        </p>
+      </PageHero>
 
       <section className="container py-8">
         <div className="flex flex-col lg:flex-row lg:items-end gap-4 mb-6">

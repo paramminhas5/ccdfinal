@@ -110,11 +110,12 @@ const CatsCanCare = () => {
         jsonLd={itemListLd}
       />
       <Nav />
-      <PageHero
-        eyebrow="Cats Can Care"
-        title="Care, Donate, Adopt"
-        subtitle="A directory of India's top 100 animal welfare organisations — searchable by city, focus, and what they need most."
-      />
+      <PageHero eyebrow="Cats Can Care" title="Care, Donate, Adopt">
+        <p className="text-cream/90 max-w-2xl">
+          A directory of India's top 100 animal welfare organisations — searchable by city, focus,
+          and what they need most.
+        </p>
+      </PageHero>
 
       <section className="container py-8">
         <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
