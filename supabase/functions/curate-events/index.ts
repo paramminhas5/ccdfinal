@@ -142,6 +142,195 @@ function isAcceptableMusicEvent(opts: {
   return HARD_MUSIC_KEYWORDS.some((k) => hay.includes(k));
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// District.in — sitemap-based discovery + direct SSR page parsing
+// district.in renders a full SPA so Firecrawl can't reliably get event links
+// from the listing page. Instead we:
+//   1) Pull their public sitemap (4 500+ URLs, updated daily)
+//   2) Filter by city alias + music URL keywords
+//   3) Fetch each event page directly — the SSR HTML contains full JSON-LD
+//      inside a __next_s.push() call, no JS execution required.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DISTRICT_MUSIC_KW = [
+  "music","dj","techno","house","rave","electronic","club","disco","festival",
+  "concert","nightlife","party","gig","live-music","edm","dance","underground",
+  "psych","trance","ambient","funk","soul","bass","jungle","garage","warehouse",
+];
+const DISTRICT_SKIP_KW = [
+  "comedy","standup","stand-up","cricket","ipl","cpl","anime","trekking","trek",
+  "workshop","cooking","art-","yoga","meditation","kids-","kid-","tour-",
+  "sports","film","movie","theatre","theater","gaming","quiz","networking",
+  "startup","bhajan","religious","mahal","temple","mandir","devotional",
+  "satsang","kirtana","ayurveda","fitness","gym","marathon","run-",
+];
+
+async function districtGetCandidates(city: CityConfig): Promise<string[]> {
+  const sitemapUrl = "https://www.district.in/events/search-sitemap/event-detail-pages.xml";
+  let xml: string;
+  try {
+    const res = await fetch(sitemapUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; CCDBot/1.0)" },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    xml = await res.text();
+  } catch {
+    return [];
+  }
+
+  const urls: string[] = [];
+  const locRe = /<loc>(https?:\/\/[^<]+)<\/loc>/g;
+  let m: RegExpExecArray | null;
+  while ((m = locRe.exec(xml)) !== null) urls.push(m[1]);
+
+  // City: check URL slug for any of the city aliases
+  const cityTerms = [...city.aliases, city.key];
+
+  return urls.filter((url) => {
+    const ul = url.toLowerCase();
+    const hasCity = cityTerms.some((a) => ul.includes(a));
+    if (!hasCity) return false;
+    const hasMusic = DISTRICT_MUSIC_KW.some((k) => ul.includes(k));
+    if (!hasMusic) return false;
+    const isSkip = DISTRICT_SKIP_KW.some((k) => ul.includes(k));
+    return !isSkip;
+  });
+}
+
+/** Extract the JSON-LD that district.in injects via __next_s.push() in SSR HTML */
+function districtExtractJsonLd(html: string): Record<string, unknown> | null {
+  // Pattern: self.__next_s=...push([0,{"type":"application/ld+json","children":"{...}","id":...}])
+  const m = html.match(/__next_s[^[]*\[0\s*,\s*\{[^}]*"children"\s*:\s*"(\{[\s\S]+?\})"\s*,\s*"id"\s*:/);
+  if (!m) return null;
+  try {
+    // The children value is a JSON string that has been escaped for embedding in another JSON string
+    const unescaped = m[1]
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, "\\")
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "\t");
+    return JSON.parse(unescaped) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+async function districtScrapePage(
+  url: string,
+  city: CityConfig,
+): Promise<{ title: string; venue: string | null; event_date: string | null; event_time: string | null; blurb: string | null; genre: string[]; image_url: string | null } | null> {
+  let html: string;
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return null;
+    html = await res.text();
+  } catch {
+    return null;
+  }
+
+  const ld = districtExtractJsonLd(html);
+  if (!ld || !ld.name) return null;
+
+  // City guard: address or location must mention the city
+  const locName = String((ld.location as any)?.name ?? "");
+  const locAddr = String((ld.location as any)?.address ?? "");
+  const haystack = `${locName} ${locAddr} ${url}`.toLowerCase();
+  const inCity = city.aliases.some((a) => haystack.includes(a));
+  if (!inCity) return null;
+
+  // Parse startDate → YYYY-MM-DD + HH:MM
+  let event_date: string | null = null;
+  let event_time: string | null = null;
+  const sd = String(ld.startDate ?? "");
+  if (sd) {
+    const d = new Date(sd);
+    if (!isNaN(d.getTime())) {
+      event_date = d.toISOString().slice(0, 10);
+      event_time = d.toISOString().slice(11, 16) + " UTC";
+    }
+  }
+
+  // Keywords → genre buckets
+  const kwRaw = String((ld.keywords as any)?.content ?? ld.keywords ?? "");
+  const rawGenres = kwRaw.split(/[,|;]+/).map((s) => s.trim()).filter(Boolean);
+
+  // image: prefer ld.image, fallback to og:image meta
+  let image_url: string | null = typeof ld.image === "string" ? ld.image : null;
+  if (!image_url) {
+    const ogM = html.match(/property="og:image"\s+content="([^"]+)"/);
+    if (ogM) image_url = ogM[1];
+  }
+  if (image_url && /\b(logo|icon|favicon)\b/i.test(image_url)) image_url = null;
+
+  // blurb from description (truncate)
+  const blurb = typeof ld.description === "string" ? ld.description.slice(0, 200) : null;
+
+  return {
+    title: String(ld.name).slice(0, 200),
+    venue: locName || null,
+    event_date,
+    event_time,
+    blurb,
+    genre: rawGenres,
+    image_url,
+  };
+}
+
+async function runDistrictSource(
+  city: CityConfig,
+  limit: number,
+  supabase: any,
+): Promise<{ source: string; city: string; candidateLinks: number; scrapedPages: number; upserted: number; errors: string[]; samples: string[] }> {
+  const stats = {
+    source: "district", city: city.key,
+    candidateLinks: 0, scrapedPages: 0, upserted: 0,
+    errors: [] as string[], samples: [] as string[],
+  };
+
+  const candidates = await districtGetCandidates(city);
+  stats.candidateLinks = candidates.length;
+  stats.samples = candidates.slice(0, 5);
+
+  if (candidates.length === 0) {
+    stats.errors.push("no candidate links found in sitemap");
+    return stats;
+  }
+
+  for (const url of candidates) {
+    if (stats.upserted >= limit) break;
+    if (stats.scrapedPages >= 10) break;
+    try {
+      stats.scrapedPages += 1;
+      const ev = await districtScrapePage(url, city);
+      if (!ev || !ev.title) continue;
+
+      const row = {
+        title: ev.title,
+        venue: ev.venue ?? null,
+        event_date: ev.event_date ?? null,
+        event_time: ev.event_time ?? null,
+        url,
+        source: "district",
+        city: city.key,
+        blurb: ev.blurb,
+        genre: normalizeGenres(ev.genre),
+        image_url: ev.image_url,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("curated_events").upsert(row, { onConflict: "url" });
+      if (error) stats.errors.push(`upsert: ${error.message}`);
+      else stats.upserted += 1;
+    } catch (e: any) {
+      stats.errors.push(String(e?.message ?? e));
+    }
+  }
+  return stats;
+}
+
 const GENRE_BUCKETS = ["House", "Techno", "Disco", "Jungle", "Drum & Bass", "Garage", "Electronic", "Live"];
 function normalizeGenres(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
@@ -642,7 +831,12 @@ Deno.serve(async (req) => {
   let totalUpserted = 0;
   for (const cfg of sourceTargets) {
     for (const city of cityTargets) {
-      const s = await runSource(cfg, city, limit, fcKey, lovableKey, supabase);
+      // district.in uses a sitemap + direct SSR parsing path —
+      // its listing page is a fully client-rendered SPA and Firecrawl
+      // cannot reliably extract event links from it.
+      const s = cfg.key === "district"
+        ? await runDistrictSource(city, limit, supabase)
+        : await runSource(cfg, city, limit, fcKey, lovableKey, supabase);
       runs.push(s);
       totalUpserted += s.upserted;
     }
