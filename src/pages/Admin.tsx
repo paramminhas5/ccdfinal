@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import SEO from "@/components/SEO";
 import BlogCover from "@/components/BlogCover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ArtistsAdminTab from "@/components/admin/ArtistsAdminTab";
 import { THEME_PRESETS, resolvePalette, applyTheme } from "@/lib/theme";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -555,7 +556,8 @@ const Admin = () => {
                 <TabsTrigger value="messages" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MESSAGES</TabsTrigger>
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
                 <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
-                <TabsTrigger value="promoters" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PROMOTERS</TabsTrigger>
+                <TabsTrigger value="promoters" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">EVENT SUBMISSIONS</TabsTrigger>
+                <TabsTrigger value="artists-admin" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">ARTISTS</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
                 <TabsTrigger value="marquees" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MARQUEES</TabsTrigger>
                 <TabsTrigger value="theme" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">THEME</TabsTrigger>

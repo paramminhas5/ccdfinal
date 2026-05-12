@@ -1,68 +1,89 @@
-# Plan: Learn link, Cats Can Care, Artists, Multi-source curation
+# Artists Overhaul + Booking + Submissions
 
-## 1. Nav: Add "Learn" external link
+## 1. Artists → Database (no ranks, no tiers)
 
-- In `src/components/Nav.tsx`, add `Learn` to the **More** dropdown (and mobile flat list) as an external `<a href="https://ablelive.lovable.com">`.
-- Style matches other dropdown items.
+New tables:
+- `artists` — public-readable when `status = 'approved'`
+  - `id`, `slug`, `name`, `members`, `from_city`, `based_city`, `genres text[]`, `bio text`, `photo_url text`, `instagram`, `soundcloud`, `bandcamp`, `spotify`, `website`, `booking_email`, `manager_email`, `festivals text[]` (free list of fests/big parties), `labels text`, `status text` (`pending|approved|rejected`), `source text` (`seed|submission|scrape`), `created_at`, `updated_at`
+- `artist_submissions` — public can INSERT, only admin reads. Same shape + `submitter_email`, `submitter_role` (self/manager/fan), `notes`.
+- `booking_requests` — logs every Book-button request: `artist_id`, `requester_email`, `requester_phone?`, `purpose`, `verified_at`, `revealed_at`, `forward_requested boolean` (CCD contacts on their behalf), `created_at`. Public can insert via edge function only.
+- `booking_otp_codes` — `email`, `code_hash`, `expires_at`, `consumed_at`, `attempts`. Service-role only.
 
-## 2. Cats Can Care (Welfare) page — `/care`
+RLS:
+- `artists`: `SELECT` where `status='approved'` for anon; writes via service role only.
+- `artist_submissions`: anon `INSERT` allowed; no `SELECT` for anon.
+- Booking tables: no anon access; everything goes through edge functions.
 
-New route + nav entry under **More** → "Cats Can Care".
+Drop `src/content/artists.ts` from `Artists.tsx` and read from Supabase. Remove tier/rank/Boiler-Room UI. Filters become: search, city, genre chips, festival chip. Sort: A–Z or recently-added.
 
-**Data source:** Ship the 100 NGOs as a static TS dataset at `src/content/ngos.ts` (parsed from the uploaded CSV). Each row: `{ rank, name, founded, founded_by, location, focus[], donation_method, impact, website?, city, category }`. I'll derive:
+## 2. Seed + scrape pipeline (Firecrawl)
 
-- `city` from Location column (Bangalore/Mumbai/Delhi/Chennai/National/etc.)
-- `category` from Focus keywords (Rescue, Wildlife, Adoption, Sterilisation/ABC, Sanctuary, Advocacy, Funding)
-- `website` extracted from the Donation_Method text where present.
+New edge function `artist-enrich` (admin-only, password-gated like other admin fns):
+- Input: `artist_id` or `name`.
+- Steps: Firecrawl `search` for `<name> dj india site:ra.co OR site:soundcloud.com OR site:instagram.com`, then `scrape` the top 1–3 results with `formats: ['markdown','links','json']`. Parse out: bio paragraph, photo (first og:image), soundcloud/bandcamp/instagram/website URLs, festivals mentioned.
+- Returns a draft patch; never auto-publishes. Admin reviews + approves.
 
-**Page (`src/pages/CatsCanCare.tsx`):**
+New Admin tab **ARTISTS**:
+- Sub-tabs: `Approved`, `Submissions`, `Drafts`.
+- Per row actions: `Enrich with Firecrawl`, `Edit`, `Approve`, `Reject`, `Delete`.
+- Bulk "Enrich all empty" button (sequential, with rate-limit pause).
+- Photo: upload to a new public `artist-photos` storage bucket OR paste URL.
 
-- Hero strip with intro copy.
-- **Search bar** (full-text over name/focus/location/impact).
-- **Filter chips**: city, category (multi-select), "Has online donation".
-- **Grid of cards**: name, location, founded, focus tags, impact blurb, "Donate" button (links to website / falls back to a search), "Adopt" tag if category includes Adoption.
-- **Adopt section** (anchor `#adopt`): pre-filtered list of NGOs whose focus mentions "adoption / shelter / rehoming", plus a short "How to adopt responsibly" copy block.
-- Uses existing semantic tokens (`bg-cream`, `text-ink`, `chunk-shadow`, etc.) — neo-brutalist consistency.
+Seeding: import existing 100 names from `src/content/artists.ts` once via a one-off insert (status `pending`, source `seed`, NO bio/socials/photo). Then enrich + approve in admin. This avoids shipping hallucinated data.
 
-## 3. Artists page — `/artists`
+### How to find more relevant artists (non-code answer surfaced in admin)
+A small "Sources" panel on the Artists tab linking to: RA India artist directory, Boiler Room India tag, Wild City roster pages, Magnetic Fields / Sunburn / Echoes of Earth past lineups, Krunk / Qilla / Consolidate / Knocturnal label rosters, Sofar Sounds India, NH7 archives. Admin can paste any URL into "Discover from URL" → Firecrawl `map` + `scrape` extracts artist names → batch-creates `pending` rows.
 
-New top-level nav link (primary nav, after Events).
+## 3. "Add yourself as artist" button
 
-**Data source:** Static dataset at `src/content/artists.ts` parsed from `India_Top_100_Electronic_DJs_Festival_Credentialed_May_2026.txt`. Each artist: `{ rank, name, members?, from, based, genres[], tier, festivals[], boilerRoom?, label?, why, instagram?, website?, bookingEmail?, priceRange? }`.
+Public form on `/artists` (modal):
+- Fields: name, members, from/based city, genres (chips), bio, photo (upload to `artist-photos` bucket via signed URL or paste URL), instagram/soundcloud/bandcamp/spotify/website, booking_email, manager_email, festivals (comma list), submitter_email, submitter_role.
+- Submits to `artist_submissions` (anon insert allowed).
+- Also enqueues a transactional notification email to `hello@catscandance.com` via the email queue.
+- Admin sees them under ARTISTS → Submissions; Approve copies the row into `artists` with status `approved`.
 
-**Page (`src/pages/Artists.tsx`):**
+## 4. Book button with email-OTP reveal + forward-to-CCD
 
-- Hero: "India's Electronic Artists — Directory.
-- **Search** (name, genre, label, city).
-- **Filters**: Tier (1/2/3…), Genre chips (House, Techno, DnB, Bass, Ambient…), City
-- **Sort**: Rank | A–Z | .
-- **Cards** (clickable): name, tier badge, based-in, genres, top 3 festivals, "Why" excerpt, IG/website/booking links.
-- **Detail drawer/modal** on card click with full bio fields (no separate per-artist route to keep scope tight).
+Flow on artist card/detail:
+1. Click **Book** → modal asks requester email + optional phone + purpose.
+2. Edge fn `booking-otp-start`: generates 6-digit code, stores hash in `booking_otp_codes`, sends OTP via the transactional email queue (template `booking-otp`). Also writes a `booking_requests` row with `verified_at = null`. **Always also sends a copy of the request to `hello@catscandance.com`** (template `booking-request-internal`).
+3. Modal switches to "enter code" step.
+4. Edge fn `booking-otp-verify`: checks code, marks `verified_at`, returns the artist's `booking_email` (or `manager_email`) and updates `revealed_at`.
+5. Below the revealed email: **"Have CCD reach out for you"** checkbox → sets `forward_requested = true` and triggers another internal email to `hello@catscandance.com` titled "Forwarded booking ask".
 
-## 4. Multi-source event curation fix
+Rate limit per requester email: 5 OTP requests / hour, in-table check.
 
-The `curate-events` edge function already supports `sortmyscene | insider | skillboxes | district | highape | bookmyshow`, but in practice only Skillboxes is producing rows. Two fixes:
+## 5. Submit Your Event → admin
 
-1. **Admin trigger always defaults to Skillboxes.** Add a "Run all sources" call path that hits `curate-events` with `{ mode: "all", city: "all" }` (or delegate to `scheduled-curate`). Surface this as a button group in Admin → Curated Events: per-source × per-city dropdown + "Run All".
-2. **Source robustness pass** in `supabase/functions/curate-events/index.ts`:
-  - Add `waitFor: 5000` to the per-event scrape too (currently only listing waits) — Insider/District are JS-heavy.
-  - Loosen `linkMatch` for Insider (`/insider\.in\/(?:[a-z0-9-]+\/)?(?:event|e)\//i`) and District (allow `/events/<slug>` and `/events/<slug>/buy-tickets`).
-  - Add a fallback: if Firecrawl returns 0 candidate links, retry the listing with `formats:["markdown","links"]` and parse `(https?:\/\/...)` from the markdown using each source's `linkMatch`.
-  - Log per-source failure reasons into the `runs[]` response so we can see why a source is empty.
-3. Trigger `scheduled-curate` once after deploy from the Admin button to backfill all sources × cities.
+Already wired: `SubmitEvent.tsx` inserts into `promoter_applications` and Admin already has a `PROMOTERS` tab calling `admin-promoters`. Verify it loads; if it's empty/broken, fix the function/tab. Rename tab label to **EVENT SUBMISSIONS** and surface: title (sample_event), city, date, contact, status, approve/reject. Approving copies into `events`.
 
-## 5. Wiring
+## 6. Email infrastructure
 
-- Register routes in `src/App.tsx`: `/care` → `CatsCanCare`, `/artists` → `Artists`.
-- Update `src/components/Nav.tsx`:
-  - Primary links: add `{ to: "/artists", label: "Artists" }`.
-  - More dropdown: add `Cats Can Care` → `/care`, and `Learn` → external Lovable URL.
-  - Mobile flat list mirrors the same.
-- SEO: add `<SEO>` block on each new page (title, description, canonical, JSON-LD `ItemList` for Artists and `Organization` list for Care).
+Requires Lovable email domain + transactional infra (`setup_email_infra` + `scaffold_transactional_email`). Templates:
+- `booking-otp` (to requester)
+- `booking-request-internal` (to hello@catscandance.com)
+- `artist-submission-internal` (to hello@catscandance.com)
+- `forwarded-booking-internal` (to hello@catscandance.com)
 
-## Technical details
+If no email domain is configured yet, I'll prompt the setup dialog before building the booking flow.
 
-- No DB migrations needed — both new pages use static TS datasets.
-- Edge function changes deploy automatically.
-- Files to create: `src/pages/CatsCanCare.tsx`, `src/pages/Artists.tsx`, `src/content/ngos.ts`, `src/content/artists.ts`.
-- Files to edit: `src/App.tsx`, `src/components/Nav.tsx`, `supabase/functions/curate-events/index.ts`, `src/pages/Admin.tsx` (curated-events panel — confirm location once I open it during build).
+## Technical summary
+
+**New edge functions**
+- `artist-enrich` (admin)
+- `artist-submit` (public)
+- `booking-otp-start` (public, rate-limited)
+- `booking-otp-verify` (public)
+- `admin-artists` (CRUD + approve)
+
+**Edited**
+- `src/pages/Artists.tsx` — DB-backed, drops tier/rank/Boiler-Room, adds Submit + Book modals
+- `src/pages/Admin.tsx` — new ARTISTS tab, rename PROMOTERS → EVENT SUBMISSIONS, fix list if broken
+- `src/content/artists.ts` — used only for one-time seed, then deleted
+
+**Deleted after seed**
+- `src/content/artists.ts`
+
+## Out of scope (confirm before I extend)
+- SMS OTP (you chose email only)
+- Public profile pages per artist (`/artists/:slug`) — easy follow-up if you want
