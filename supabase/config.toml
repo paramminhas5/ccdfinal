@@ -5,18 +5,3 @@ verify_jwt = false
 
 [functions.admin-publish-blog]
 verify_jwt = false
-
-[functions.artist-submit]
-verify_jwt = false
-
-[functions.booking-otp-start]
-verify_jwt = false
-
-[functions.booking-otp-verify]
-verify_jwt = false
-
-[functions.admin-artists]
-verify_jwt = false
-
-[functions.artist-enrich]
-verify_jwt = false
