@@ -194,7 +194,230 @@ function venueMatchesCity(venue: string | null | undefined, blurb: string | null
   return !otherCityHit;
 }
 
+// ──────────────────────────────────────────────────────────────────
+// District: sitemap + JSON-LD extraction (no Firecrawl needed)
+// ──────────────────────────────────────────────────────────────────
+const DISTRICT_SITEMAP_INDEX = "https://www.district.in/sitemap.xml";
+const DISTRICT_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const MUSIC_KEYWORDS = ["music","dj","techno","house","disco","electronic","rave","club","nightlife","concert","gig","live","band","party","sundowner","boiler","afro","tech-house","minimal","trance","bass","jungle","dnb","drum-and-bass","garage","downtempo","edm"];
+const NON_MUSIC_KEYWORDS = ["trek","workshop","kids","comedy","standup","stand-up","trampoline","scuba","paint","yoga","retreat","brunch","movie","quiz","craft","painting","brewery-tour","food-walk","spa","wellness","kalari"];
+let _districtUrlCache: string[] | null = null;
+
+async function fetchDistrictSitemapUrls(): Promise<string[]> {
+  if (_districtUrlCache) return _districtUrlCache;
+  const idx = await fetch(DISTRICT_SITEMAP_INDEX, { headers: { "User-Agent": DISTRICT_UA } }).then(r => r.text()).catch(() => "");
+  const subSitemaps = Array.from(idx.matchAll(/<loc>([^<]+events[^<]+)<\/loc>/gi)).map(m => m[1]);
+  const eventUrls: string[] = [];
+  for (const sm of subSitemaps) {
+    const xml = await fetch(sm, { headers: { "User-Agent": DISTRICT_UA } }).then(r => r.text()).catch(() => "");
+    // sitemap of sitemaps?
+    const nested = Array.from(xml.matchAll(/<loc>([^<]+\.xml[^<]*)<\/loc>/gi)).map(m => m[1]);
+    if (nested.length) {
+      for (const n of nested) {
+        const x = await fetch(n, { headers: { "User-Agent": DISTRICT_UA } }).then(r => r.text()).catch(() => "");
+        for (const m of x.matchAll(/<loc>(https?:\/\/[^<]+)<\/loc>/gi)) eventUrls.push(m[1]);
+      }
+    } else {
+      for (const m of xml.matchAll(/<loc>(https?:\/\/[^<]+)<\/loc>/gi)) eventUrls.push(m[1]);
+    }
+  }
+  _districtUrlCache = eventUrls;
+  return eventUrls;
+}
+
+function filterDistrictUrlsForCity(urls: string[], city: CityConfig, max = 30): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const url of urls) {
+    if (out.length >= max) break;
+    const slug = url.toLowerCase();
+    if (!slug.includes("/events/")) continue;
+    if (!city.aliases.some(a => slug.includes(`-${a.replace(/\s+/g, "-")}-`) || slug.includes(`-${a.replace(/\s+/g, "-")}`))) continue;
+    // exclude obviously non-music
+    if (NON_MUSIC_KEYWORDS.some(k => slug.includes(`-${k}-`) || slug.includes(`-${k}`))) continue;
+    // require at least one music keyword
+    if (!MUSIC_KEYWORDS.some(k => slug.includes(k))) continue;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+
+// District event pages embed JSON-LD inside the Next.js RSC payload as the
+// JSON-encoded string value of a "children" property:
+//   "children":"{\"@context\":\"http://schema.org\",\"@type\":\"Event\",...}"
+// We find the escaped Event marker, walk back to the opening quote of the
+// containing string literal, then read the string honoring \-escapes, and
+// JSON.parse the decoded payload.
+function extractDistrictEventJsonLd(html: string): any | null {
+  const marker = '\\"@type\\":\\"Event\\"';
+  const evIdx = html.indexOf(marker);
+  if (evIdx < 0) return null;
+
+  // Walk backwards from evIdx to find the opening unescaped `"` of the JSON string.
+  // We look for `"` that is preceded by a non-`\` (or by `:"` pattern).
+  let strStart = -1;
+  for (let i = evIdx; i >= 1; i--) {
+    if (html[i] === '"' && html[i - 1] !== "\\") {
+      strStart = i + 1;
+      break;
+    }
+  }
+  if (strStart < 0) return null;
+
+  // Walk forward from strStart, reading characters and decoding escapes,
+  // tracking brace depth on the decoded stream, stop when depth returns to 0.
+  let decoded = "";
+  let depth = 0, inStr = false, esc = false, started = false;
+  for (let i = strStart; i < html.length; i++) {
+    const ch = html[i];
+    // Handle escape sequences in the raw HTML (the outer JSON string).
+    if (ch === "\\") {
+      const nxt = html[i + 1];
+      if (nxt === '"') { decoded += '"'; i++; }
+      else if (nxt === "\\") { decoded += "\\"; i++; }
+      else if (nxt === "n") { decoded += " "; i++; }
+      else if (nxt === "t") { decoded += " "; i++; }
+      else if (nxt === "/") { decoded += "/"; i++; }
+      else if (nxt === "u" && /^[0-9a-fA-F]{4}$/.test(html.slice(i + 2, i + 6))) {
+        decoded += String.fromCharCode(parseInt(html.slice(i + 2, i + 6), 16));
+        i += 5;
+      } else { decoded += ch; }
+    } else if (ch === '"') {
+      // Unescaped `"` ends the outer JSON string — stop.
+      break;
+    } else {
+      decoded += ch;
+    }
+
+    // Update brace depth on the decoded character we just appended.
+    const last = decoded[decoded.length - 1];
+    if (inStr) {
+      if (esc) { esc = false; }
+      else if (last === "\\") { esc = true; }
+      else if (last === '"') { inStr = false; }
+    } else {
+      if (last === '"') { inStr = true; }
+      else if (last === "{") { depth++; started = true; }
+      else if (last === "}") { depth--; if (started && depth === 0) break; }
+    }
+  }
+
+  // Trim to the JSON object payload.
+  const firstBrace = decoded.indexOf("{");
+  const lastBrace = decoded.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  const payload = decoded.slice(firstBrace, lastBrace + 1);
+  try { return JSON.parse(payload); }
+  catch (e) { console.error("district jsonld parse failed", String(e).slice(0, 120)); return null; }
+}
+
+function flattenLocation(loc: any): { venue: string | null; address: string } {
+  if (!loc) return { venue: null, address: "" };
+  const arr = Array.isArray(loc) ? loc : [loc];
+  const first = arr[0] ?? {};
+  const venue = typeof first.name === "string" ? first.name : null;
+  const addrObj = first.address ?? {};
+  const addrStr = typeof addrObj === "string"
+    ? addrObj
+    : [addrObj.streetAddress, addrObj.addressLocality, addrObj.addressRegion].filter(Boolean).join(", ");
+  return { venue, address: addrStr };
+}
+
+function deriveDistrictGenres(slug: string, name: string, desc: string): string[] {
+  const hay = `${slug} ${name} ${desc}`.toLowerCase();
+  const out = new Set<string>();
+  if (/\b(drum.?n.?bass|d&b|dnb)\b/.test(hay)) out.add("Drum & Bass");
+  if (/\bjungle\b/.test(hay)) out.add("Jungle");
+  if (/\bgarage\b/.test(hay)) out.add("Garage");
+  if (/\bdisco\b/.test(hay)) out.add("Disco");
+  if (/\btechno\b/.test(hay)) out.add("Techno");
+  if (/\bhouse\b/.test(hay)) out.add("House");
+  if (/\b(electro|edm|electronic|club)\b/.test(hay)) out.add("Electronic");
+  if (/\b(live|band|indie|rock|jazz|gig)\b/.test(hay)) out.add("Live");
+  return Array.from(out);
+}
+
+async function runDistrict(city: CityConfig, limit: number, supabase: any) {
+  const stats: any = {
+    source: "district", city: city.key, listingUrl: DISTRICT_SITEMAP_INDEX,
+    candidateLinks: 0, scrapedPages: 0, extracted: 0, upserted: 0, rejectedCity: 0,
+    errors: [] as string[], samples: [] as string[],
+  };
+  let urls: string[] = [];
+  try {
+    urls = await fetchDistrictSitemapUrls();
+  } catch (e: any) {
+    stats.errors.push(`sitemap: ${e?.message ?? e}`);
+    return stats;
+  }
+  const candidates = filterDistrictUrlsForCity(urls, city, 30);
+  stats.candidateLinks = candidates.length;
+  stats.samples = candidates.slice(0, 5);
+  if (!candidates.length) {
+    stats.errors.push(`no candidates after filter (sitemap had ${urls.length})`);
+    return stats;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  for (const url of candidates) {
+    if (stats.upserted >= limit) break;
+    if (stats.scrapedPages >= 12) break;
+    try {
+      const html = await fetch(url, { headers: { "User-Agent": DISTRICT_UA } }).then(r => r.ok ? r.text() : "");
+      stats.scrapedPages += 1;
+      if (!html || html.length < 1000) { stats.errors.push(`empty html: ${url}`); continue; }
+      const ev = extractDistrictEventJsonLd(html);
+      if (!ev || !ev.name) { stats.errors.push(`no jsonld: ${url}`); continue; }
+      stats.extracted += 1;
+
+      const { venue, address } = flattenLocation(ev.location);
+      const startDate: string = typeof ev.startDate === "string" ? ev.startDate : "";
+      const event_date = startDate.slice(0, 10) || null;
+      const event_time = startDate.length >= 16 ? startDate.slice(11, 16) : null;
+      if (event_date && event_date < today) { stats.errors.push(`past: ${url}`); continue; }
+
+      const desc: string = typeof ev.description === "string" ? ev.description : "";
+      // City sanity check
+      const hay = `${venue ?? ""} ${address} ${url} ${desc}`.toLowerCase();
+      if (!city.aliases.some(a => hay.includes(a))) { stats.rejectedCity += 1; continue; }
+
+      let image_url: string | null = null;
+      const img = ev.image;
+      if (typeof img === "string") image_url = img;
+      else if (Array.isArray(img) && typeof img[0] === "string") image_url = img[0];
+      else if (img && typeof img.url === "string") image_url = img.url;
+      if (image_url && /\b(logo|favicon|icon|sprite)\b/i.test(image_url)) image_url = null;
+
+      const blurb = desc ? desc.replace(/\s+/g, " ").trim().slice(0, 200) : null;
+      const slugPart = url.split("/events/")[1]?.replace(/-buy-tickets$/, "") ?? "";
+      const row = {
+        title: String(ev.name).slice(0, 200),
+        venue: venue ?? null,
+        event_date,
+        event_time,
+        url,
+        source: "district",
+        city: city.key,
+        blurb,
+        genre: deriveDistrictGenres(slugPart, ev.name, desc),
+        image_url,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("curated_events").upsert(row, { onConflict: "url" });
+      if (error) stats.errors.push(`upsert: ${error.message}`);
+      else stats.upserted += 1;
+    } catch (e: any) {
+      stats.errors.push(`${url}: ${String(e?.message ?? e).slice(0, 120)}`);
+    }
+  }
+  return stats;
+}
+
 async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcKey: string, lovableKey: string, supabase: any) {
+  if (cfg.key === "district") return await runDistrict(city, limit, supabase);
+
   const listingUrl = cfg.listingUrl(city);
   const stats: any = {
     source: cfg.key, city: city.key, listingUrl,
