@@ -244,59 +244,73 @@ function filterDistrictUrlsForCity(urls: string[], city: CityConfig, max = 30): 
   return out;
 }
 
-// District event pages embed JSON-LD inside the Next.js RSC payload as escaped JSON.
-// Extract by finding "@type":"Event" and walking balanced braces backwards/forwards.
+// District event pages embed JSON-LD inside the Next.js RSC payload as the
+// JSON-encoded string value of a "children" property:
+//   "children":"{\"@context\":\"http://schema.org\",\"@type\":\"Event\",...}"
+// We find the escaped Event marker, walk back to the opening quote of the
+// containing string literal, then read the string honoring \-escapes, and
+// JSON.parse the decoded payload.
 function extractDistrictEventJsonLd(html: string): any | null {
-  // 1. Find a marker for the JSON-LD ld+json segment
-  const m = html.match(/ld\\?\+json["'][^{]{0,200}\{[^]*?"@type"\s*:\s*"Event"/);
-  let startIdx = -1;
-  if (m && typeof m.index === "number") {
-    startIdx = html.indexOf("{", m.index);
-  } else {
-    const ev = html.indexOf('"@type":"Event"');
-    const ev2 = html.indexOf('\\"@type\\":\\"Event\\"');
-    const idx = ev >= 0 ? ev : ev2;
-    if (idx < 0) return null;
-    // walk backwards to nearest { (could be escaped \{)
-    for (let i = idx; i >= 0; i--) {
-      if (html[i] === "{") { startIdx = i; break; }
+  const marker = '\\"@type\\":\\"Event\\"';
+  const evIdx = html.indexOf(marker);
+  if (evIdx < 0) return null;
+
+  // Walk backwards from evIdx to find the opening unescaped `"` of the JSON string.
+  // We look for `"` that is preceded by a non-`\` (or by `:"` pattern).
+  let strStart = -1;
+  for (let i = evIdx; i >= 1; i--) {
+    if (html[i] === '"' && html[i - 1] !== "\\") {
+      strStart = i + 1;
+      break;
     }
   }
-  if (startIdx < 0) return null;
+  if (strStart < 0) return null;
 
-  // Walk forward tracking string state and brace depth.
-  let depth = 0, inStr = false, esc = false;
-  let endIdx = -1;
-  for (let i = startIdx; i < html.length; i++) {
+  // Walk forward from strStart, reading characters and decoding escapes,
+  // tracking brace depth on the decoded stream, stop when depth returns to 0.
+  let decoded = "";
+  let depth = 0, inStr = false, esc = false, started = false;
+  for (let i = strStart; i < html.length; i++) {
     const ch = html[i];
-    if (inStr) {
-      if (esc) { esc = false; continue; }
-      if (ch === "\\") { esc = true; continue; }
-      if (ch === '"') inStr = false;
-      continue;
+    // Handle escape sequences in the raw HTML (the outer JSON string).
+    if (ch === "\\") {
+      const nxt = html[i + 1];
+      if (nxt === '"') { decoded += '"'; i++; }
+      else if (nxt === "\\") { decoded += "\\"; i++; }
+      else if (nxt === "n") { decoded += " "; i++; }
+      else if (nxt === "t") { decoded += " "; i++; }
+      else if (nxt === "/") { decoded += "/"; i++; }
+      else if (nxt === "u" && /^[0-9a-fA-F]{4}$/.test(html.slice(i + 2, i + 6))) {
+        decoded += String.fromCharCode(parseInt(html.slice(i + 2, i + 6), 16));
+        i += 5;
+      } else { decoded += ch; }
+    } else if (ch === '"') {
+      // Unescaped `"` ends the outer JSON string — stop.
+      break;
     } else {
-      if (ch === '"') { inStr = true; continue; }
-      if (ch === "{") depth++;
-      else if (ch === "}") { depth--; if (depth === 0) { endIdx = i + 1; break; } }
+      decoded += ch;
+    }
+
+    // Update brace depth on the decoded character we just appended.
+    const last = decoded[decoded.length - 1];
+    if (inStr) {
+      if (esc) { esc = false; }
+      else if (last === "\\") { esc = true; }
+      else if (last === '"') { inStr = false; }
+    } else {
+      if (last === '"') { inStr = true; }
+      else if (last === "{") { depth++; started = true; }
+      else if (last === "}") { depth--; if (started && depth === 0) break; }
     }
   }
-  if (endIdx < 0) return null;
 
-  let raw = html.slice(startIdx, endIdx);
-  // Try direct parse first.
-  try { return JSON.parse(raw); } catch { /* fall through */ }
-  // Unescape JSON-string-encoded content (double-escaped quotes/backslashes).
-  try {
-    const unescaped = raw
-      .replace(/\\"/g, '"')
-      .replace(/\\\\/g, "\\")
-      .replace(/\\n/g, " ")
-      .replace(/\\t/g, " ");
-    return JSON.parse(unescaped);
-  } catch (e) {
-    console.error("district jsonld parse failed", String(e).slice(0, 120));
-    return null;
-  }
+  // Trim to the JSON object payload.
+  const firstBrace = decoded.indexOf("{");
+  const lastBrace = decoded.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  const payload = decoded.slice(firstBrace, lastBrace + 1);
+  try { return JSON.parse(payload); }
+  catch (e) { console.error("district jsonld parse failed", String(e).slice(0, 120)); return null; }
 }
 
 function flattenLocation(loc: any): { venue: string | null; address: string } {
