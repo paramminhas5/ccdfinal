@@ -1,68 +1,73 @@
-# Plan: Learn link, Cats Can Care, Artists, Multi-source curation
+# Plan: District scraper rewrite + wire Artists page to DB
 
-## 1. Nav: Add "Learn" external link
+Two fixes, both confirmed by inspection:
 
-- In `src/components/Nav.tsx`, add `Learn` to the **More** dropdown (and mobile flat list) as an external `<a href="https://ablelive.lovable.com">`.
-- Style matches other dropdown items.
+1. The `artists` table has 100 rows but **all rows are `status = 'pending'`**, and the only `SELECT` policy is `status = 'approved'` — so the DB is invisible to the public site. Meanwhile `src/pages/Artists.tsx` reads from the static `src/content/artists.ts` and ignores the table entirely.
+2. District scraping via Firecrawl listing page has 0 hits. Confirmed the District sitemap exposes **4,613 event URLs** at `https://www.district.in/events/search-sitemap/event-detail-pages.xml`, and each event page embeds full schema.org `Event` JSON-LD inside the Next.js RSC payload — no JS rendering required.
 
-## 2. Cats Can Care (Welfare) page — `/care`
+---
 
-New route + nav entry under **More** → "Cats Can Care".
+## 1. District scraper — sitemap + JSON-LD
 
-**Data source:** Ship the 100 NGOs as a static TS dataset at `src/content/ngos.ts` (parsed from the uploaded CSV). Each row: `{ rank, name, founded, founded_by, location, focus[], donation_method, impact, website?, city, category }`. I'll derive:
+Rewrite the `district` source in `supabase/functions/curate-events/index.ts` so it no longer scrapes the listing page.
 
-- `city` from Location column (Bangalore/Mumbai/Delhi/Chennai/National/etc.)
-- `category` from Focus keywords (Rescue, Wildlife, Adoption, Sterilisation/ABC, Sanctuary, Advocacy, Funding)
-- `website` extracted from the Donation_Method text where present.
+**Discovery (per city):**
+- Fetch (cached for the run) `https://www.district.in/events/search-sitemap/sitemap-events.xml` → resolve to `event-detail-pages.xml` → extract all `<loc>` URLs (~4.6k).
+- Filter URLs by:
+  - city slug match in URL path (`-bangalore-`, `-bengaluru-`, `-mumbai-`, `-new-delhi-`, `-delhi-`, `-gurgaon-`, etc. — reuse `CITIES[city].aliases`)
+  - music keyword allowlist in slug (`music`, `dj`, `techno`, `house`, `disco`, `electronic`, `rave`, `club`, `nightlife`, `concert`, `live`, plus known venue tokens)
+  - exclude obvious non-music tokens (`trek`, `workshop`, `kids`, `comedy`, `standup`, `trampoline`, `scuba`, `paint`)
+- Cap to top N (e.g. 25 per city per run) to stay within Firecrawl/runtime budget.
 
-**Page (`src/pages/CatsCanCare.tsx`):**
+**Per-event extraction (no Firecrawl):**
+- Plain `fetch(url)` with a desktop User-Agent.
+- Extract JSON-LD with a regex tolerant of the RSC envelope:
+  - Match `"@type":"Event"...` payload, then find balanced JSON by scanning braces. Unescape (`\"` → `"`, `\\` → `\`, `\n` → space).
+  - `JSON.parse` and read `name`, `startDate`, `location.name` / `location.address`, `image`, `description`, `offers.url` (fallback to source URL).
+- Map to the existing `curated_events` row shape (title, venue, event_date, event_time, url, source=`district`, blurb, image_url, city, genre — derive genre tags from slug/description).
 
-- Hero strip with intro copy.
-- **Search bar** (full-text over name/focus/location/impact).
-- **Filter chips**: city, category (multi-select), "Has online donation".
-- **Grid of cards**: name, location, founded, focus tags, impact blurb, "Donate" button (links to website / falls back to a search), "Adopt" tag if category includes Adoption.
-- **Adopt section** (anchor `#adopt`): pre-filtered list of NGOs whose focus mentions "adoption / shelter / rehoming", plus a short "How to adopt responsibly" copy block.
-- Uses existing semantic tokens (`bg-cream`, `text-ink`, `chunk-shadow`, etc.) — neo-brutalist consistency.
+**Fallback path:** if JSON-LD extraction fails for a URL, fall through to the existing Firecrawl `scrape` call (markdown) so we degrade gracefully instead of returning 0.
 
-## 3. Artists page — `/artists`
+**Observability:** add per-source counters to the existing `runs[]` response: `{ source, city, discovered, kept, inserted, errors[] }`.
 
-New top-level nav link (primary nav, after Events).
+---
 
-**Data source:** Static dataset at `src/content/artists.ts` parsed from `India_Top_100_Electronic_DJs_Festival_Credentialed_May_2026.txt`. Each artist: `{ rank, name, members?, from, based, genres[], tier, festivals[], boilerRoom?, label?, why, instagram?, website?, bookingEmail?, priceRange? }`.
+## 2. Wire Artists page to the `artists` table
 
-**Page (`src/pages/Artists.tsx`):**
+The static dataset stays as a one-time seed source; the page reads live from Supabase.
 
-- Hero: "India's Electronic Artists — Directory.
-- **Search** (name, genre, label, city).
-- **Filters**: Tier (1/2/3…), Genre chips (House, Techno, DnB, Bass, Ambient…), City
-- **Sort**: Rank | A–Z | .
-- **Cards** (clickable): name, tier badge, based-in, genres, top 3 festivals, "Why" excerpt, IG/website/booking links.
-- **Detail drawer/modal** on card click with full bio fields (no separate per-artist route to keep scope tight).
+**Migration (one-off seed + access):**
+- Insert all 100 rows from `src/content/artists.ts` into `public.artists` with `status = 'approved'`, `source = 'seed'`, generating `slug` from name. Use `ON CONFLICT (slug) DO UPDATE` so re-running is safe (need a unique index on `slug` — add it if missing).
+- No RLS change needed; the existing "Anyone can read approved artists" policy already covers the page.
 
-## 4. Multi-source event curation fix
+**`src/pages/Artists.tsx` changes:**
+- Replace the `ARTISTS` import with a `useEffect` + `supabase.from('artists').select('*').eq('status','approved').order('name')`.
+- Map DB columns (`based_city`, `from_city`, `genres`, `festivals`, `instagram`, `website`, `booking_email`, `photo_url`, `bio`) onto the existing card/drawer UI. Drop fields the table doesn't have (`tier`, `rank`, `priceRange`, `boilerRoom`, `why`) — derive what's reasonable from `bio`/`festivals` (e.g. Boiler Room badge if `festivals` contains "Boiler Room"); remove tier/rank filters and sort, keep genre / city / search.
+- Loading + empty states.
+- Keep `src/content/artists.ts` only as the migration source; mark with a comment that runtime reads from DB.
 
-The `curate-events` edge function already supports `sortmyscene | insider | skillboxes | district | highape | bookmyshow`, but in practice only Skillboxes is producing rows. Two fixes:
+**Submission flow already exists** (`artist_submissions` table + insert policy) — out of scope here, but the page can keep linking to a future submit form.
 
-1. **Admin trigger always defaults to Skillboxes.** Add a "Run all sources" call path that hits `curate-events` with `{ mode: "all", city: "all" }` (or delegate to `scheduled-curate`). Surface this as a button group in Admin → Curated Events: per-source × per-city dropdown + "Run All".
-2. **Source robustness pass** in `supabase/functions/curate-events/index.ts`:
-  - Add `waitFor: 5000` to the per-event scrape too (currently only listing waits) — Insider/District are JS-heavy.
-  - Loosen `linkMatch` for Insider (`/insider\.in\/(?:[a-z0-9-]+\/)?(?:event|e)\//i`) and District (allow `/events/<slug>` and `/events/<slug>/buy-tickets`).
-  - Add a fallback: if Firecrawl returns 0 candidate links, retry the listing with `formats:["markdown","links"]` and parse `(https?:\/\/...)` from the markdown using each source's `linkMatch`.
-  - Log per-source failure reasons into the `runs[]` response so we can see why a source is empty.
-3. Trigger `scheduled-curate` once after deploy from the Admin button to backfill all sources × cities.
-
-## 5. Wiring
-
-- Register routes in `src/App.tsx`: `/care` → `CatsCanCare`, `/artists` → `Artists`.
-- Update `src/components/Nav.tsx`:
-  - Primary links: add `{ to: "/artists", label: "Artists" }`.
-  - More dropdown: add `Cats Can Care` → `/care`, and `Learn` → external Lovable URL.
-  - Mobile flat list mirrors the same.
-- SEO: add `<SEO>` block on each new page (title, description, canonical, JSON-LD `ItemList` for Artists and `Organization` list for Care).
+---
 
 ## Technical details
 
-- No DB migrations needed — both new pages use static TS datasets.
-- Edge function changes deploy automatically.
-- Files to create: `src/pages/CatsCanCare.tsx`, `src/pages/Artists.tsx`, `src/content/ngos.ts`, `src/content/artists.ts`.
-- Files to edit: `src/App.tsx`, `src/components/Nav.tsx`, `supabase/functions/curate-events/index.ts`, `src/pages/Admin.tsx` (curated-events panel — confirm location once I open it during build).
+- Files to edit: `supabase/functions/curate-events/index.ts`, `src/pages/Artists.tsx`.
+- Migration: insert seed + add `CREATE UNIQUE INDEX IF NOT EXISTS artists_slug_key ON public.artists (slug);`.
+- No new secrets, no schema columns added.
+- Edge function redeploys automatically on save.
+- After deploy: trigger `curate-events` once with `{ source: "district", city: "all" }` from Admin to backfill.
+
+```text
+District flow
+─────────────
+sitemap.xml ─► event-detail-pages.xml ─► [4.6k URLs]
+                                          │
+                       filter by city + music keywords
+                                          │
+                                  top N URLs / city
+                                          │
+                          fetch(url) ─► regex JSON-LD ─► Event{}
+                                          │
+                                upsert into curated_events
+```
