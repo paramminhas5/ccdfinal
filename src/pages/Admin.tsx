@@ -2697,3 +2697,83 @@ function PromoterApplicationsTab() {
   );
 }
 
+type ArtistsTabProps = {
+  artists: Array<{
+    id: string; slug: string; name: string; instagram: string | null;
+    photo_url: string | null; booking_email: string | null; manager_email: string | null;
+    bio: string | null; based_city: string | null;
+    enrichment_status: string; enriched_at: string | null;
+  }>;
+  reload: () => Promise<void>;
+  enrichAll: (force: boolean) => Promise<void>;
+  enrichOne: (id: string) => Promise<void>;
+  busy: boolean;
+};
+
+function ArtistsTab({ artists, reload, enrichAll, enrichOne, busy }: ArtistsTabProps) {
+  const counts = artists.reduce((m, a) => { m[a.enrichment_status] = (m[a.enrichment_status] || 0) + 1; return m; }, {} as Record<string, number>);
+  const statusColor = (s: string) =>
+    s === "enriched" ? "bg-acid-yellow" : s === "enriching" ? "bg-cream" : s === "failed" ? "bg-red-200" : "bg-cream";
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-cream border-4 border-ink chunk-shadow p-5 flex flex-wrap items-center gap-3">
+        <div className="font-display text-2xl text-ink mr-4">ROSTER ({artists.length})</div>
+        <div className="font-mono text-xs text-ink/70">
+          enriched {counts.enriched ?? 0} · pending {counts.pending ?? 0} · failed {counts.failed ?? 0}
+        </div>
+        <div className="flex-1" />
+        <button disabled={busy} onClick={reload}
+          className="bg-cream text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow disabled:opacity-50">
+          REFRESH
+        </button>
+        <button disabled={busy} onClick={() => enrichAll(false)}
+          className="bg-acid-yellow text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow disabled:opacity-50">
+          ENRICH ALL PENDING
+        </button>
+        <button disabled={busy} onClick={() => enrichAll(true)}
+          className="bg-ink text-cream font-display px-4 py-2 border-4 border-ink chunk-shadow disabled:opacity-50">
+          FORCE RE-ENRICH ALL
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {artists.map((a) => (
+          <div key={a.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex gap-4">
+            {a.photo_url ? (
+              <img src={a.photo_url} alt={a.name} className="w-20 h-20 object-cover border-2 border-ink" />
+            ) : (
+              <div className="w-20 h-20 border-2 border-ink bg-ink/10 flex items-center justify-center text-xs font-mono text-ink/50">no photo</div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-display text-xl text-ink">{a.name}</div>
+                  <div className="font-mono text-xs text-ink/60">{a.based_city ?? "—"} · @{a.instagram ?? "?"}</div>
+                </div>
+                <span className={`font-mono text-[10px] uppercase px-2 py-1 border-2 border-ink ${statusColor(a.enrichment_status)}`}>
+                  {a.enrichment_status}
+                </span>
+              </div>
+              <div className="font-mono text-xs text-ink/70 mt-2 line-clamp-2">{a.bio ?? "—"}</div>
+              <div className="font-mono text-xs text-ink/60 mt-1">
+                booking: {a.booking_email ?? "—"}{a.manager_email ? ` · mgr: ${a.manager_email}` : ""}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button disabled={busy} onClick={() => enrichOne(a.id)}
+                  className="bg-acid-yellow text-ink font-display text-xs px-3 py-1 border-2 border-ink disabled:opacity-50">
+                  ✨ ENRICH
+                </button>
+                <a href={`/artists/${a.slug}`} target="_blank" rel="noreferrer"
+                  className="bg-cream text-ink font-display text-xs px-3 py-1 border-2 border-ink">
+                  VIEW
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
