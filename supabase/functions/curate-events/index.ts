@@ -10,7 +10,9 @@ const FIRECRAWL = "https://api.firecrawl.dev/v2";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 type SourceKey = "sortmyscene" | "insider" | "skillboxes" | "district" | "highape" | "bookmyshow";
-type CityKey = "bangalore" | "mumbai" | "delhi" | "pune";
+type CityKey =
+  | "bangalore" | "mumbai" | "delhi" | "pune"
+  | "hyderabad" | "indore" | "ranchi" | "kochi" | "jaipur" | "shillong" | "chennai";
 
 type CityConfig = {
   key: CityKey;
@@ -23,6 +25,13 @@ const CITIES: Record<CityKey, CityConfig> = {
   mumbai:    { key: "mumbai",    aliases: ["mumbai", "bombay", "navi mumbai"], slugs: {} },
   delhi:     { key: "delhi",     aliases: ["delhi", "new delhi", "ncr", "gurgaon", "gurugram", "noida"], slugs: { insider: "new-delhi", district: "new-delhi", bookmyshow: "national-capital-region-ncr" } },
   pune:      { key: "pune",      aliases: ["pune"], slugs: {} },
+  hyderabad: { key: "hyderabad", aliases: ["hyderabad", "secunderabad", "hyd"], slugs: { insider: "hyderabad", district: "hyderabad" } },
+  indore:    { key: "indore",    aliases: ["indore"], slugs: { insider: "indore", district: "indore" } },
+  ranchi:    { key: "ranchi",    aliases: ["ranchi"], slugs: { insider: "ranchi", district: "ranchi" } },
+  kochi:     { key: "kochi",     aliases: ["kochi", "cochin", "ernakulam"], slugs: { insider: "kochi", district: "kochi" } },
+  jaipur:    { key: "jaipur",    aliases: ["jaipur"], slugs: { insider: "jaipur", district: "jaipur" } },
+  shillong:  { key: "shillong",  aliases: ["shillong"], slugs: { insider: "shillong", district: "shillong" } },
+  chennai:   { key: "chennai",   aliases: ["chennai", "madras"], slugs: { insider: "chennai", district: "chennai" } },
 };
 
 type SourceConfig = {
@@ -34,6 +43,8 @@ type SourceConfig = {
 
 const CITY_TITLE: Record<CityKey, string> = {
   bangalore: "Bengaluru", mumbai: "Mumbai", delhi: "Delhi", pune: "Pune",
+  hyderabad: "Hyderabad", indore: "Indore", ranchi: "Ranchi", kochi: "Kochi",
+  jaipur: "Jaipur", shillong: "Shillong", chennai: "Chennai",
 };
 
 const SOURCES: Record<SourceKey, SourceConfig> = {
