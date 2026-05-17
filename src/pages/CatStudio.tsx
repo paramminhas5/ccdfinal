@@ -274,7 +274,7 @@ const CatStudio = () => {
                       onChange={(e) => setName(e.target.value)}
                       maxLength={20}
                       placeholder="MEOW DJ"
-                      className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-display text-lg placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
+                      className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-display text-lg placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow"
                     />
                   </div>
                 </div>
@@ -329,7 +329,7 @@ const CatStudio = () => {
                       onChange={(e) => setAiName(e.target.value)}
                       maxLength={40}
                       placeholder="DJ MITTENS"
-                      className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-display text-lg placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
+                      className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-display text-lg placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow"
                     />
                   </div>
 
