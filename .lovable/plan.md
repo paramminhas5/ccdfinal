@@ -1,73 +1,57 @@
-# Plan: District scraper rewrite + wire Artists page to DB
+# Why junk events still get in
 
-Two fixes, both confirmed by inspection:
+The current filter has two leaks:
 
-1. The `artists` table has 100 rows but **all rows are `status = 'pending'`**, and the only `SELECT` policy is `status = 'approved'` — so the DB is invisible to the public site. Meanwhile `src/pages/Artists.tsx` reads from the static `src/content/artists.ts` and ignores the table entirely.
-2. District scraping via Firecrawl listing page has 0 hits. Confirmed the District sitemap exposes **4,613 event URLs** at `https://www.district.in/events/search-sitemap/event-detail-pages.xml`, and each event page embeds full schema.org `Event` JSON-LD inside the Next.js RSC payload — no JS rendering required.
+1. **District** never URL-filters out non-music: `filterDistrictUrlsForCity` only requires a music keyword to be *present*, but lots of District slugs contain `music` or `club` while actually being Bollywood/Sufi/drone-meditation nights. JSON-LD then passes because `deriveDistrictGenres` runs on description but it's just additive — an event with **no** detected genre still gets inserted.
+2. **AI extractor** for Skillbox/Insider/HighApe/BMS is told to reject Bollywood etc., but the prompt is advisory and the model often returns the event anyway. There is no post-AI sanity check on title/blurb.
 
----
-
-## 1. District scraper — sitemap + JSON-LD
-
-Rewrite the `district` source in `supabase/functions/curate-events/index.ts` so it no longer scrapes the listing page.
-
-**Discovery (per city):**
-- Fetch (cached for the run) `https://www.district.in/events/search-sitemap/sitemap-events.xml` → resolve to `event-detail-pages.xml` → extract all `<loc>` URLs (~4.6k).
-- Filter URLs by:
-  - city slug match in URL path (`-bangalore-`, `-bengaluru-`, `-mumbai-`, `-new-delhi-`, `-delhi-`, `-gurgaon-`, etc. — reuse `CITIES[city].aliases`)
-  - music keyword allowlist in slug (`music`, `dj`, `techno`, `house`, `disco`, `electronic`, `rave`, `club`, `nightlife`, `concert`, `live`, plus known venue tokens)
-  - exclude obvious non-music tokens (`trek`, `workshop`, `kids`, `comedy`, `standup`, `trampoline`, `scuba`, `paint`)
-- Cap to top N (e.g. 25 per city per run) to stay within Firecrawl/runtime budget.
-
-**Per-event extraction (no Firecrawl):**
-- Plain `fetch(url)` with a desktop User-Agent.
-- Extract JSON-LD with a regex tolerant of the RSC envelope:
-  - Match `"@type":"Event"...` payload, then find balanced JSON by scanning braces. Unescape (`\"` → `"`, `\\` → `\`, `\n` → space).
-  - `JSON.parse` and read `name`, `startDate`, `location.name` / `location.address`, `image`, `description`, `offers.url` (fallback to source URL).
-- Map to the existing `curated_events` row shape (title, venue, event_date, event_time, url, source=`district`, blurb, image_url, city, genre — derive genre tags from slug/description).
-
-**Fallback path:** if JSON-LD extraction fails for a URL, fall through to the existing Firecrawl `scrape` call (markdown) so we degrade gracefully instead of returning 0.
-
-**Observability:** add per-source counters to the existing `runs[]` response: `{ source, city, discovered, kept, inserted, errors[] }`.
+Also the deny list is missing common offenders the user explicitly called out: `drone`, `meditation`, `sound-bath`, `sound-healing`, `tabla`, `flute`, `sitar`, `fusion-classical`, `harmonium`, `bhakti`, `satsang`, `devotional`, `kirtan-night`, `raga`, `gurbani`.
 
 ---
 
-## 2. Wire Artists page to the `artists` table
+# Fix
 
-The static dataset stays as a one-time seed source; the page reads live from Supabase.
+## 1. Expand `REJECT_KEYWORDS` (`supabase/functions/curate-events/index.ts`)
 
-**Migration (one-off seed + access):**
-- Insert all 100 rows from `src/content/artists.ts` into `public.artists` with `status = 'approved'`, `source = 'seed'`, generating `slug` from name. Use `ON CONFLICT (slug) DO UPDATE` so re-running is safe (need a unique index on `slug` — add it if missing).
-- No RLS change needed; the existing "Anyone can read approved artists" policy already covers the page.
+Add: `drone`, `drone-meditation`, `meditation`, `sound-bath`, `sound-healing`, `sound-journey`, `breathwork`, `tabla`, `flute`, `sitar`, `santoor`, `harmonium`, `bhakti`, `satsang`, `devotional`, `raga`, `gurbani`, `fusion-classical`, `aarti`, `puja`, `mantra`, `chanting`, `tantra`, `cacao`, `ecstatic-dance` (the wellness kind — ironically not a club night), `silent-disco-yoga`, `morning-rave`, `sober`, `bhakti-night`, `singer-songwriter-night` (often acoustic-Bollywood), `bollywood-night`, `bolly`, `retro-bollywood`, `90s-bollywood`, `punjabi-night`, `desi-night`, `arijit`, `kishore`, `mohammed-rafi`.
 
-**`src/pages/Artists.tsx` changes:**
-- Replace the `ARTISTS` import with a `useEffect` + `supabase.from('artists').select('*').eq('status','approved').order('name')`.
-- Map DB columns (`based_city`, `from_city`, `genres`, `festivals`, `instagram`, `website`, `booking_email`, `photo_url`, `bio`) onto the existing card/drawer UI. Drop fields the table doesn't have (`tier`, `rank`, `priceRange`, `boilerRoom`, `why`) — derive what's reasonable from `bio`/`festivals` (e.g. Boiler Room badge if `festivals` contains "Boiler Room"); remove tier/rank filters and sort, keep genre / city / search.
-- Loading + empty states.
-- Keep `src/content/artists.ts` only as the migration source; mark with a comment that runtime reads from DB.
+## 2. Make the music gate strict, not additive
 
-**Submission flow already exists** (`artist_submissions` table + insert policy) — out of scope here, but the page can keep linking to a future submit form.
+Replace `urlPassesMusicFilter` so that:
+- it rejects on **any** keyword in the expanded `REJECT_KEYWORDS`
+- it requires at least one of a smaller **HARD_MUSIC_KEYWORDS** set: `techno, house, disco, dnb, drum-and-bass, jungle, garage, electronic, edm, rave, club-night, nightlife, boiler, b2b, warehouse, after-hours, afterhours, label-night, sound-system, indie, rock, jazz, gig, live-band, concert, sundowner` (drop loose tokens like `music`, `party`, `set`, `showcase` which were letting everything through)
+
+## 3. Add a post-extraction validator and use it everywhere
+
+New helper `isAcceptableMusicEvent({ title, blurb, url, genres }): boolean` that:
+- Rejects if any expanded reject keyword appears in `title + blurb + url`
+- Accepts only if **either** `genres.length > 0` **or** any hard music keyword appears in `title + blurb`
+
+Wire it into:
+- `runDistrict` right before the `upsert` (currently no such check — this is the main District leak)
+- The AI path right after `extractWithAI` returns, before `tryAdd`
+
+## 4. Strengthen the AI extractor
+
+In `extractWithAI` system prompt:
+- Add the new reject categories (drone meditation, sound bath, devotional, Bollywood nostalgia nights, Punjabi/desi nights, classical instrumental, wellness/cacao)
+- Require the model to set `genre` to a non-empty array from the allowed buckets, otherwise return `events: []`
+- Add a one-shot example pair (accept: a techno gig; reject: a "Drone Meditation Sound Journey")
+
+## 5. One-time purge of existing junk
+
+Add a SQL migration that deletes rows from `curated_events` where `lower(title || ' ' || coalesce(blurb,''))` matches any of the new reject keywords, or where `jsonb_array_length(genre) = 0` AND title/blurb contains none of the hard music keywords. Keeps `source IN ('manual','community')` and `is_featured = true` rows untouched.
+
+## 6. Admin UX nicety (optional, small)
+
+In `src/pages/Admin.tsx` curated-events table, add a one-click "Reject (delete + remember)" button that just calls the existing delete. A persistent denylist of titles/urls would be larger scope — flag it only if you want it.
 
 ---
 
-## Technical details
+# Files touched
 
-- Files to edit: `supabase/functions/curate-events/index.ts`, `src/pages/Artists.tsx`.
-- Migration: insert seed + add `CREATE UNIQUE INDEX IF NOT EXISTS artists_slug_key ON public.artists (slug);`.
-- No new secrets, no schema columns added.
-- Edge function redeploys automatically on save.
-- After deploy: trigger `curate-events` once with `{ source: "district", city: "all" }` from Admin to backfill.
+- `supabase/functions/curate-events/index.ts` — items 1–4
+- `supabase/migrations/<new>.sql` — item 5
+- `src/pages/Admin.tsx` — only if you want item 6
 
-```text
-District flow
-─────────────
-sitemap.xml ─► event-detail-pages.xml ─► [4.6k URLs]
-                                          │
-                       filter by city + music keywords
-                                          │
-                                  top N URLs / city
-                                          │
-                          fetch(url) ─► regex JSON-LD ─► Event{}
-                                          │
-                                upsert into curated_events
-```
+No new secrets, no schema changes, no scheduled-curate changes. Edge function redeploys on save; trigger a refresh of all cities from Admin after deploy and the lists should be clean.
