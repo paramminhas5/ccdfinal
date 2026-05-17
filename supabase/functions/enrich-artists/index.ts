@@ -184,19 +184,22 @@ async function enrichOne(a: Artist, force: boolean) {
 
   // 3. Scrape official website if found
   if (website) {
-    const site = await fcScrape(website);
-    const md: string = site?.data?.markdown ?? site?.markdown ?? "";
-    collectedMd += `\n\n[SITE]\n${md}`;
-    const meta = site?.data?.metadata ?? site?.metadata ?? {};
-    if (!imgCandidate && meta?.ogImage) imgCandidate = meta.ogImage;
-    const ex = extractFromMarkdown(md);
-    if (!bookingEmail && ex.email) bookingEmail = ex.email;
-    // crude manager extraction
-    const mgr = md.match(
-      /(?:manager|management|mgmt)[^@\n]{0,40}([\w.+-]+@[\w-]+\.[\w.-]+)/i,
-    );
-    if (mgr) managerEmail = mgr[1];
-    log.site = { ok: !!md, len: md.length };
+    try {
+      const site = await fcScrape(website);
+      const md: string = site?.data?.markdown ?? site?.markdown ?? "";
+      collectedMd += `\n\n[SITE]\n${md}`;
+      const meta = site?.data?.metadata ?? site?.metadata ?? {};
+      if (!imgCandidate && meta?.ogImage) imgCandidate = meta.ogImage;
+      const ex = extractFromMarkdown(md);
+      if (!bookingEmail && ex.email) bookingEmail = ex.email;
+      const mgr = md.match(
+        /(?:manager|management|mgmt)[^@\n]{0,40}([\w.+-]+@[\w-]+\.[\w.-]+)/i,
+      );
+      if (mgr) managerEmail = mgr[1];
+      log.site = { ok: !!md, len: md.length };
+    } catch (e) {
+      log.site = { error: String(e) };
+    }
   }
 
   // 4. Upload photo
