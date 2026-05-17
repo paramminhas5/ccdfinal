@@ -484,6 +484,8 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     if (seen.has(url)) return;
     if (!cfg.linkMatch.test(url)) return;
     if (cfg.linkReject.some((r) => r.test(url))) return;
+    // Hard music-only URL filter: reject Bollywood / comedy / kids / etc.
+    if (REJECT_KEYWORDS.some((k) => url.toLowerCase().includes(k))) return;
     seen.add(url);
     candidates.push(url);
   };
