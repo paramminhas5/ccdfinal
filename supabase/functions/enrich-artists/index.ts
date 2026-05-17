@@ -152,11 +152,22 @@ async function enrichOne(a: Artist, force: boolean) {
   }
 
   // 2. Search for booking contact / official site
-  const search = await fcSearch(
-    `${a.name} ${a.based_city ?? ""} booking contact email`,
-  );
-  const results = search?.data ?? search?.results?.web ?? [];
-  log.search = { count: results.length };
+  let results: any[] = [];
+  try {
+    const search = await fcSearch(
+      `${a.name} ${a.based_city ?? ""} booking contact email`,
+    );
+    results = Array.isArray(search?.data?.web)
+      ? search.data.web
+      : Array.isArray(search?.data)
+      ? search.data
+      : Array.isArray(search?.results?.web)
+      ? search.results.web
+      : [];
+    log.search = { count: results.length };
+  } catch (e) {
+    log.search = { error: String(e) };
+  }
   for (const res of results.slice(0, 2)) {
     const url = res.url;
     if (!url) continue;
