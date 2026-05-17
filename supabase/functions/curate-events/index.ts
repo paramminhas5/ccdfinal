@@ -89,29 +89,57 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
 // Cities we explicitly DO NOT cover (used to reject events leaking in from other places).
 const CITY_REJECT = ["goa", "kolkata", "ahmedabad", "chandigarh", "lucknow", "guwahati", "bhopal", "nagpur", "surat"];
 
-// Hard "this is NOT the kind of event we want" filter (Bollywood, comedy, kids, etc.)
+// Hard "this is NOT the kind of event we want" filter.
 const REJECT_KEYWORDS = [
-  "bollywood","sufi","ghazal","kirtan","bhajan","carnatic","hindustani","classical-vocal","qawwali",
+  // Bollywood / desi nostalgia nights
+  "bollywood","bolly","retro-bollywood","90s-bollywood","punjabi-night","desi-night",
+  "arijit","kishore","mohammed-rafi","lata","kk-tribute","bolly-night",
+  // Devotional / classical / instrumental
+  "sufi","ghazal","kirtan","bhajan","bhakti","satsang","devotional","raga","gurbani",
+  "carnatic","hindustani","classical-vocal","qawwali","fusion-classical","aarti","puja",
+  "mantra","chanting","tantra","tabla","flute","sitar","santoor","harmonium",
+  // Wellness / "sound" non-music
+  "drone","drone-meditation","meditation","sound-bath","sound-healing","sound-journey",
+  "breathwork","cacao","ecstatic-dance","silent-disco-yoga","morning-rave","sober-rave",
+  // Comedy / spoken word
   "comedy","standup","stand-up","open-mic","openmic","poetry","kavi","shayari","mushaira",
+  // Misc non-music
   "kids","children","family-friendly","trek","trekking","workshop","yoga","retreat","brunch","movie",
   "screening","quiz","craft","painting","brewery-tour","food-walk","spa","wellness","kalari",
   "magic-show","theatre","theater","play","drama","musical-play","stage-play","cricket","sports",
   "fashion-show","exhibition","art-exhibition","seminar","conference","masterclass","bootcamp",
+  "singer-songwriter-night",
+  // Cultural festivals
   "dussehra","diwali","holi","navratri","garba","dandiya","raas",
 ];
 
-// Music keywords we LOOK FOR in URL slugs / titles to confirm a music event.
-const STRICT_MUSIC_KEYWORDS = [
-  "music","dj","techno","house","disco","electronic","rave","club","nightlife","concert","gig",
-  "live-music","band","party","sundowner","boiler","afro","tech-house","minimal","trance","bass",
-  "jungle","dnb","drum-and-bass","garage","downtempo","edm","underground","rooftop","warehouse",
-  "after-hours","afterhours","b2b","set","showcase","label-night","sound-system",
+// HARD music keywords: must be present in url/title/blurb to qualify.
+// Loose tokens like "music"/"party"/"set"/"showcase" intentionally excluded.
+const HARD_MUSIC_KEYWORDS = [
+  "techno","house","tech-house","deep-house","disco","nu-disco","dnb","drum-and-bass",
+  "drum-n-bass","jungle","garage","electronic","edm","trance","downtempo","ambient-club",
+  "rave","club-night","nightlife","boiler","b2b","warehouse","after-hours","afterhours",
+  "label-night","sound-system","minimal","afro-house","afro-tech","bass-music",
+  "indie","rock","jazz","gig","live-band","concert","sundowner",
 ];
+
+// Back-compat alias for older callers.
+const STRICT_MUSIC_KEYWORDS = HARD_MUSIC_KEYWORDS;
 
 function urlPassesMusicFilter(url: string): boolean {
   const u = url.toLowerCase();
   if (REJECT_KEYWORDS.some((k) => u.includes(k))) return false;
-  return STRICT_MUSIC_KEYWORDS.some((k) => u.includes(k));
+  return HARD_MUSIC_KEYWORDS.some((k) => u.includes(k));
+}
+
+// Post-extraction sanity check applied to every event before upsert.
+function isAcceptableMusicEvent(opts: {
+  title?: string | null; blurb?: string | null; url?: string | null; genres?: string[];
+}): boolean {
+  const hay = `${opts.title ?? ""} ${opts.blurb ?? ""} ${opts.url ?? ""}`.toLowerCase();
+  if (REJECT_KEYWORDS.some((k) => hay.includes(k))) return false;
+  if ((opts.genres?.length ?? 0) > 0) return true;
+  return HARD_MUSIC_KEYWORDS.some((k) => hay.includes(k));
 }
 
 const GENRE_BUCKETS = ["House", "Techno", "Disco", "Jungle", "Drum & Bass", "Garage", "Electronic", "Live"];
