@@ -245,8 +245,8 @@ function venueMatchesCity(venue: string | null | undefined, blurb: string | null
 // ──────────────────────────────────────────────────────────────────
 const DISTRICT_SITEMAP_INDEX = "https://www.district.in/sitemap.xml";
 const DISTRICT_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
-const MUSIC_KEYWORDS = ["music","dj","techno","house","disco","electronic","rave","club","nightlife","concert","gig","live","band","party","sundowner","boiler","afro","tech-house","minimal","trance","bass","jungle","dnb","drum-and-bass","garage","downtempo","edm"];
-const NON_MUSIC_KEYWORDS = ["trek","workshop","kids","comedy","standup","stand-up","trampoline","scuba","paint","yoga","retreat","brunch","movie","quiz","craft","painting","brewery-tour","food-walk","spa","wellness","kalari"];
+const MUSIC_KEYWORDS = STRICT_MUSIC_KEYWORDS;
+const NON_MUSIC_KEYWORDS = REJECT_KEYWORDS;
 let _districtUrlCache: string[] | null = null;
 
 async function fetchDistrictSitemapUrls(): Promise<string[]> {
@@ -409,7 +409,7 @@ async function runDistrict(city: CityConfig, limit: number, supabase: any) {
   const today = new Date().toISOString().slice(0, 10);
   for (const url of candidates) {
     if (stats.upserted >= limit) break;
-    if (stats.scrapedPages >= 12) break;
+    if (stats.scrapedPages >= 30) break;
     try {
       const html = await fetch(url, { headers: { "User-Agent": DISTRICT_UA } }).then(r => r.ok ? r.text() : "");
       stats.scrapedPages += 1;
@@ -490,7 +490,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
 
   for (const link of rawLinks) {
     tryAdd(link);
-    if (candidates.length >= 12) break;
+    if (candidates.length >= 30) break;
   }
 
   // Fallback: parse links out of markdown if no candidates found
@@ -499,7 +499,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     let m: RegExpExecArray | null;
     while ((m = urlRe.exec(listingMd))) {
       tryAdd(m[1]);
-      if (candidates.length >= 12) break;
+      if (candidates.length >= 30) break;
     }
   }
 
@@ -510,7 +510,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
 
   for (const url of candidates) {
     if (stats.upserted >= limit) break;
-    if (stats.scrapedPages >= 8) break;
+    if (stats.scrapedPages >= 25) break;
     try {
       const page = await firecrawlScrape(url, fcKey, ["markdown"], 3000);
       stats.scrapedPages += 1;
@@ -579,7 +579,7 @@ Deno.serve(async (req) => {
   // Default mode is "all" when no explicit source is given, so a no-arg call
   // hits every source instead of only Skillboxes.
   const mode = body?.mode === "single" || requestedSource ? (body?.mode === "all" ? "all" : "single") : "all";
-  const limit = Math.min(Math.max(Number(body?.limit) || 5, 1), 8);
+  const limit = Math.min(Math.max(Number(body?.limit) || 10, 1), 20);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
