@@ -1685,6 +1685,13 @@ const CURATED_CITIES = [
   { key: "mumbai", label: "Mumbai" },
   { key: "delhi", label: "Delhi" },
   { key: "pune", label: "Pune" },
+  { key: "hyderabad", label: "Hyderabad" },
+  { key: "chennai", label: "Chennai" },
+  { key: "kochi", label: "Kochi" },
+  { key: "jaipur", label: "Jaipur" },
+  { key: "indore", label: "Indore" },
+  { key: "ranchi", label: "Ranchi" },
+  { key: "shillong", label: "Shillong" },
   { key: "all", label: "All Cities" },
 ] as const;
 
@@ -1753,7 +1760,7 @@ function CuratedEventsTab() {
       const res = await fetch(`${projectUrl}/functions/v1/curate-events`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ source: crawlSource, city: crawlCity, mode: "single", limit: 5 }),
+        body: JSON.stringify({ source: crawlSource, city: crawlCity, mode: "single", limit: 10 }),
       });
       const data = await res.json();
       if (res.ok) {
