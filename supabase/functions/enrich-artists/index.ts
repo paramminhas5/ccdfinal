@@ -225,7 +225,7 @@ async function enrichOne(a: Artist, force: boolean) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
-  if (req.headers.get("x-admin-token") !== ADMIN) {
+  if (req.headers.get("x-admin-password") !== ADMIN) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { ...cors, "Content-Type": "application/json" },
