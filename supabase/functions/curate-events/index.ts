@@ -190,16 +190,25 @@ async function extractWithAI(text: string, sourceUrl: string, source: string, ci
   const sys = `You extract a SINGLE music event from one event page. Today is ${today}.
 Return the event ONLY if ALL of these are true:
 - it is a real bookable individual event page (NOT a category, listing, or venue homepage)
-- it is an UNDERGROUND / ELECTRONIC / CLUB / LIVE-BAND music event: techno, house, disco, drum & bass, jungle, garage, electronic, indie, rock, jazz, experimental, gig, club night, rave, festival, boiler-room style.
+- it is an UNDERGROUND / ELECTRONIC / CLUB / LIVE-BAND music event: techno, house, tech-house, disco, drum & bass, jungle, garage, electronic, EDM, trance, indie, rock, jazz, experimental gig, club night, rave, festival, boiler-room style, warehouse/after-hours.
 - it is located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}).
+- you can set a non-empty "genre" array from: House, Techno, Disco, Jungle, Drum & Bass, Garage, Electronic, Live. If you can't, return events: [].
 
 REJECT and return events: [] if the page is ANY of:
-- Bollywood night, Sufi, ghazal, qawwali, kirtan, bhajan, classical vocal, carnatic, Hindustani
-- Comedy / stand-up / open mic / poetry / shayari / mushaira
+- Bollywood night, Bollywood tribute, retro Bollywood, 90s Bollywood, Punjabi night, desi night, Arijit/Kishore/KK/Rafi tribute
+- Sufi, ghazal, qawwali, kirtan, bhajan, bhakti, satsang, devotional, classical vocal, carnatic, Hindustani, raga, gurbani, fusion-classical, aarti, puja, mantra, chanting
+- Solo classical instrument: tabla, flute, sitar, santoor, harmonium (unless explicitly part of an electronic/jazz fusion gig)
+- Drone meditation, sound bath, sound healing, sound journey, breathwork, cacao ceremony, ecstatic-dance (wellness), silent-disco-yoga, "morning rave", sober rave
+- Comedy / stand-up / open mic / poetry / shayari / mushaira / singer-songwriter night
 - Kids / family / trek / workshop / yoga / retreat / brunch / quiz / painting / wellness / spa
-- Theatre / play / drama / musical play / fashion show / art exhibition / seminar / conference
+- Theatre / play / drama / musical play / fashion show / art exhibition / seminar / conference / masterclass
 - Garba / dandiya / Holi / Diwali / Navratri / Dussehra cultural events
 - a venue in another Indian city (Goa, Kolkata, Ahmedabad, etc.) — unless it matches ${city.key}.
+
+Examples:
+- ACCEPT: "BLOT! presents Warehouse Techno — 6hr set" → genre: ["Techno"]
+- REJECT: "Drone Meditation Sound Journey at Sunset" → events: []
+- REJECT: "Bollywood Night with DJ XYZ — Retro Hits" → events: []
 
 Prefer future events; leave event_date empty if unknown.
 For image_url use the first content image or og:image — skip logos/icons (URLs with 'logo','icon','favicon').
