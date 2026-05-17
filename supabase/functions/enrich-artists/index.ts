@@ -140,15 +140,19 @@ async function enrichOne(a: Artist, force: boolean) {
 
   // 1. Scrape Instagram
   if (a.instagram) {
-    const igUrl = `https://www.instagram.com/${a.instagram.replace(/^@/, "")}/`;
-    const ig = await fcScrape(igUrl);
-    const md: string = ig?.data?.markdown ?? ig?.markdown ?? "";
-    collectedMd += `\n\n[IG]\n${md}`;
-    const meta = ig?.data?.metadata ?? ig?.metadata ?? {};
-    if (meta?.ogImage) imgCandidate = meta.ogImage;
-    const ex = extractFromMarkdown(md);
-    if (ex.email) bookingEmail = ex.email;
-    log.ig = { ok: !!md, len: md.length };
+    try {
+      const igUrl = `https://www.instagram.com/${a.instagram.replace(/^@/, "")}/`;
+      const ig = await fcScrape(igUrl);
+      const md: string = ig?.data?.markdown ?? ig?.markdown ?? "";
+      collectedMd += `\n\n[IG]\n${md}`;
+      const meta = ig?.data?.metadata ?? ig?.metadata ?? {};
+      if (meta?.ogImage) imgCandidate = meta.ogImage;
+      const ex = extractFromMarkdown(md);
+      if (ex.email) bookingEmail = ex.email;
+      log.ig = { ok: !!md, len: md.length };
+    } catch (e) {
+      log.ig = { error: String(e) };
+    }
   }
 
   // 2. Search for booking contact / official site
