@@ -99,6 +99,9 @@ export type Database = {
           bio: string | null
           booking_email: string | null
           created_at: string
+          enriched_at: string | null
+          enrichment_log: Json
+          enrichment_status: string
           featured: boolean
           fee_currency: string
           fee_max_inr: number | null
@@ -130,6 +133,9 @@ export type Database = {
           bio?: string | null
           booking_email?: string | null
           created_at?: string
+          enriched_at?: string | null
+          enrichment_log?: Json
+          enrichment_status?: string
           featured?: boolean
           fee_currency?: string
           fee_max_inr?: number | null
@@ -161,6 +167,9 @@ export type Database = {
           bio?: string | null
           booking_email?: string | null
           created_at?: string
+          enriched_at?: string | null
+          enrichment_log?: Json
+          enrichment_status?: string
           featured?: boolean
           fee_currency?: string
           fee_max_inr?: number | null

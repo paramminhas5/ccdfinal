@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.admin-publish-blog]
 verify_jwt = false
+
+[functions.enrich-artists]
+verify_jwt = false

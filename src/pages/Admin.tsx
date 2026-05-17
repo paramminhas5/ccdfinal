@@ -160,6 +160,67 @@ const Admin = () => {
   const [rsvpEventFilter, setRsvpEventFilter] = useState<string>("");
   const [rsvpsLoaded, setRsvpsLoaded] = useState(false);
 
+  // Artists
+  type AdminArtist = {
+    id: string; slug: string; name: string; instagram: string | null;
+    photo_url: string | null; booking_email: string | null; manager_email: string | null;
+    bio: string | null; based_city: string | null;
+    enrichment_status: string; enriched_at: string | null;
+  };
+  const [artists, setArtists] = useState<AdminArtist[]>([]);
+  const [artistsLoaded, setArtistsLoaded] = useState(false);
+  const [artistsBusy, setArtistsBusy] = useState(false);
+
+  const loadArtists = async () => {
+    const { data, error } = await supabase
+      .from("artists")
+      .select("id,slug,name,instagram,photo_url,booking_email,manager_email,bio,based_city,enrichment_status,enriched_at")
+      .order("name");
+    if (error) { toast.error("Failed to load artists"); return; }
+    setArtists((data ?? []) as AdminArtist[]);
+    setArtistsLoaded(true);
+  };
+
+  const callEnrich = async (body: Record<string, unknown>) => {
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const res = await fetch(`${projectUrl}/functions/v1/enrich-artists`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || "Enrichment failed");
+    return j;
+  };
+
+  const enrichAllArtists = async (force: boolean) => {
+    if (!confirm(force ? "Force re-enrich ALL artists? This will overwrite existing data." : "Enrich all pending artists?")) return;
+    setArtistsBusy(true);
+    toast.message("Enrichment started — this may take a few minutes.");
+    try {
+      const j = await callEnrich({ all: true, force });
+      toast.success(`Enriched ${j.count} artists`);
+      await loadArtists();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setArtistsBusy(false); }
+  };
+
+  const enrichOneArtist = async (id: string) => {
+    setArtistsBusy(true);
+    try {
+      await callEnrich({ artist_id: id, force: true });
+      toast.success("Enriched");
+      await loadArtists();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setArtistsBusy(false); }
+  };
+
   // Videos
   type SiteVideo = { id: string; youtube_id: string; title: string; thumbnail_url: string | null; published_at: string | null; sort_order: number; is_featured: boolean };
   const [videos, setVideos] = useState<SiteVideo[]>([]);
@@ -556,6 +617,7 @@ const Admin = () => {
                 <TabsTrigger value="blog" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">BLOG</TabsTrigger>
                 <TabsTrigger value="curated" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">CURATED</TabsTrigger>
                 <TabsTrigger value="promoters" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">PROMOTERS</TabsTrigger>
+                <TabsTrigger value="artists" onClick={() => { if (!artistsLoaded) loadArtists(); }} className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">ARTISTS</TabsTrigger>
                 <TabsTrigger value="seo" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">SEO</TabsTrigger>
                 <TabsTrigger value="marquees" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">MARQUEES</TabsTrigger>
                 <TabsTrigger value="theme" className="font-display data-[state=active]:bg-ink data-[state=active]:text-cream">THEME</TabsTrigger>
@@ -815,6 +877,17 @@ const Admin = () => {
               {/* PROMOTERS */}
               <TabsContent value="promoters">
                 <PromoterApplicationsTab />
+              </TabsContent>
+
+              {/* ARTISTS */}
+              <TabsContent value="artists">
+                <ArtistsTab
+                  artists={artists}
+                  reload={loadArtists}
+                  enrichAll={enrichAllArtists}
+                  enrichOne={enrichOneArtist}
+                  busy={artistsBusy}
+                />
               </TabsContent>
 
               {/* SEO CHECKLIST */}
@@ -2616,6 +2689,86 @@ function PromoterApplicationsTab() {
               </button>
               <button onClick={() => edit(r)} className="text-xs font-display bg-acid-yellow text-ink px-3 py-1.5 border-2 border-ink">EDIT</button>
               <button onClick={() => r.id && del(r.id)} className="text-xs font-display bg-destructive text-cream px-3 py-1.5 border-2 border-ink">DEL</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type ArtistsTabProps = {
+  artists: Array<{
+    id: string; slug: string; name: string; instagram: string | null;
+    photo_url: string | null; booking_email: string | null; manager_email: string | null;
+    bio: string | null; based_city: string | null;
+    enrichment_status: string; enriched_at: string | null;
+  }>;
+  reload: () => Promise<void>;
+  enrichAll: (force: boolean) => Promise<void>;
+  enrichOne: (id: string) => Promise<void>;
+  busy: boolean;
+};
+
+function ArtistsTab({ artists, reload, enrichAll, enrichOne, busy }: ArtistsTabProps) {
+  const counts = artists.reduce((m, a) => { m[a.enrichment_status] = (m[a.enrichment_status] || 0) + 1; return m; }, {} as Record<string, number>);
+  const statusColor = (s: string) =>
+    s === "enriched" ? "bg-acid-yellow" : s === "enriching" ? "bg-cream" : s === "failed" ? "bg-red-200" : "bg-cream";
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-cream border-4 border-ink chunk-shadow p-5 flex flex-wrap items-center gap-3">
+        <div className="font-display text-2xl text-ink mr-4">ROSTER ({artists.length})</div>
+        <div className="font-mono text-xs text-ink/70">
+          enriched {counts.enriched ?? 0} · pending {counts.pending ?? 0} · failed {counts.failed ?? 0}
+        </div>
+        <div className="flex-1" />
+        <button disabled={busy} onClick={reload}
+          className="bg-cream text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow disabled:opacity-50">
+          REFRESH
+        </button>
+        <button disabled={busy} onClick={() => enrichAll(false)}
+          className="bg-acid-yellow text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow disabled:opacity-50">
+          ENRICH ALL PENDING
+        </button>
+        <button disabled={busy} onClick={() => enrichAll(true)}
+          className="bg-ink text-cream font-display px-4 py-2 border-4 border-ink chunk-shadow disabled:opacity-50">
+          FORCE RE-ENRICH ALL
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {artists.map((a) => (
+          <div key={a.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex gap-4">
+            {a.photo_url ? (
+              <img src={a.photo_url} alt={a.name} className="w-20 h-20 object-cover border-2 border-ink" />
+            ) : (
+              <div className="w-20 h-20 border-2 border-ink bg-ink/10 flex items-center justify-center text-xs font-mono text-ink/50">no photo</div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-display text-xl text-ink">{a.name}</div>
+                  <div className="font-mono text-xs text-ink/60">{a.based_city ?? "—"} · @{a.instagram ?? "?"}</div>
+                </div>
+                <span className={`font-mono text-[10px] uppercase px-2 py-1 border-2 border-ink ${statusColor(a.enrichment_status)}`}>
+                  {a.enrichment_status}
+                </span>
+              </div>
+              <div className="font-mono text-xs text-ink/70 mt-2 line-clamp-2">{a.bio ?? "—"}</div>
+              <div className="font-mono text-xs text-ink/60 mt-1">
+                booking: {a.booking_email ?? "—"}{a.manager_email ? ` · mgr: ${a.manager_email}` : ""}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button disabled={busy} onClick={() => enrichOne(a.id)}
+                  className="bg-acid-yellow text-ink font-display text-xs px-3 py-1 border-2 border-ink disabled:opacity-50">
+                  ✨ ENRICH
+                </button>
+                <a href={`/artists/${a.slug}`} target="_blank" rel="noreferrer"
+                  className="bg-cream text-ink font-display text-xs px-3 py-1 border-2 border-ink">
+                  VIEW
+                </a>
+              </div>
             </div>
           </div>
         ))}
