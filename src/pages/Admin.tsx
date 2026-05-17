@@ -160,6 +160,67 @@ const Admin = () => {
   const [rsvpEventFilter, setRsvpEventFilter] = useState<string>("");
   const [rsvpsLoaded, setRsvpsLoaded] = useState(false);
 
+  // Artists
+  type AdminArtist = {
+    id: string; slug: string; name: string; instagram: string | null;
+    photo_url: string | null; booking_email: string | null; manager_email: string | null;
+    bio: string | null; based_city: string | null;
+    enrichment_status: string; enriched_at: string | null;
+  };
+  const [artists, setArtists] = useState<AdminArtist[]>([]);
+  const [artistsLoaded, setArtistsLoaded] = useState(false);
+  const [artistsBusy, setArtistsBusy] = useState(false);
+
+  const loadArtists = async () => {
+    const { data, error } = await supabase
+      .from("artists")
+      .select("id,slug,name,instagram,photo_url,booking_email,manager_email,bio,based_city,enrichment_status,enriched_at")
+      .order("name");
+    if (error) { toast.error("Failed to load artists"); return; }
+    setArtists((data ?? []) as AdminArtist[]);
+    setArtistsLoaded(true);
+  };
+
+  const callEnrich = async (body: Record<string, unknown>) => {
+    const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
+    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+    const res = await fetch(`${projectUrl}/functions/v1/enrich-artists`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": pwd,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || "Enrichment failed");
+    return j;
+  };
+
+  const enrichAllArtists = async (force: boolean) => {
+    if (!confirm(force ? "Force re-enrich ALL artists? This will overwrite existing data." : "Enrich all pending artists?")) return;
+    setArtistsBusy(true);
+    toast.message("Enrichment started — this may take a few minutes.");
+    try {
+      const j = await callEnrich({ all: true, force });
+      toast.success(`Enriched ${j.count} artists`);
+      await loadArtists();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setArtistsBusy(false); }
+  };
+
+  const enrichOneArtist = async (id: string) => {
+    setArtistsBusy(true);
+    try {
+      await callEnrich({ artist_id: id, force: true });
+      toast.success("Enriched");
+      await loadArtists();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setArtistsBusy(false); }
+  };
+
   // Videos
   type SiteVideo = { id: string; youtube_id: string; title: string; thumbnail_url: string | null; published_at: string | null; sort_order: number; is_featured: boolean };
   const [videos, setVideos] = useState<SiteVideo[]>([]);
