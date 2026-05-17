@@ -593,6 +593,10 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
         image_url,
         updated_at: new Date().toISOString(),
       };
+      if (!isAcceptableMusicEvent({ title: row.title, blurb: row.blurb, url, genres: row.genre })) {
+        stats.errors.push(`rejected non-music: ${url}`);
+        continue;
+      }
       const { error } = await supabase.from("curated_events").upsert(row, { onConflict: "url" });
       if (error) { stats.errors.push(`upsert: ${error.message}`); }
       else { stats.upserted += 1; }
