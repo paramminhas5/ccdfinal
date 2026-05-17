@@ -63,15 +63,22 @@ async function fcSearch(q: string) {
 }
 
 async function aiBio(name: string, scraped: string, genres: string[]) {
-  const prompt = `You are writing artist directory copy for a music booking platform focused on India's underground electronic scene.
+  const hasContext = scraped.trim().length > 200;
+  const prompt = hasContext
+    ? `You are writing artist directory copy for a music booking platform focused on India's underground electronic scene.
 Artist: ${name}
 Known genres: ${genres.join(", ") || "electronic"}
 Reference material scraped from the web (may be partial or noisy):
-"""${scraped.slice(0, 4000)}"""
+"""${scraped.slice(0, 8000)}"""
 
 Return JSON only with this exact shape:
 { "bio": "120-180 word third-person bio, factual, no hype, no emojis", "why": "single sentence hook (<=120 chars) describing what makes them worth booking", "genres": ["..."], "festivals": ["..."] }
-Use only facts supported by the reference material. If unsure leave festivals empty.`;
+Use only facts supported by the reference material. If unsure leave festivals empty.`
+    : `You are writing artist directory copy for a music booking platform focused on India's underground electronic scene.
+Artist: ${name}. No reliable scraped material was available. Use only widely-known public facts; if you don't know, keep the bio short and generic about their genre/scene without inventing specifics (no fake festivals, labels, or release names).
+
+Return JSON only with this exact shape:
+{ "bio": "80-140 word third-person bio, factual, no hype, no emojis, no invented facts", "why": "single sentence hook (<=120 chars)", "genres": ["..."], "festivals": [] }`;
 
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -140,23 +147,38 @@ async function enrichOne(a: Artist, force: boolean) {
 
   // 1. Scrape Instagram
   if (a.instagram) {
-    const igUrl = `https://www.instagram.com/${a.instagram.replace(/^@/, "")}/`;
-    const ig = await fcScrape(igUrl);
-    const md: string = ig?.data?.markdown ?? ig?.markdown ?? "";
-    collectedMd += `\n\n[IG]\n${md}`;
-    const meta = ig?.data?.metadata ?? ig?.metadata ?? {};
-    if (meta?.ogImage) imgCandidate = meta.ogImage;
-    const ex = extractFromMarkdown(md);
-    if (ex.email) bookingEmail = ex.email;
-    log.ig = { ok: !!md, len: md.length };
+    try {
+      const igUrl = `https://www.instagram.com/${a.instagram.replace(/^@/, "")}/`;
+      const ig = await fcScrape(igUrl);
+      const md: string = ig?.data?.markdown ?? ig?.markdown ?? "";
+      collectedMd += `\n\n[IG]\n${md}`;
+      const meta = ig?.data?.metadata ?? ig?.metadata ?? {};
+      if (meta?.ogImage) imgCandidate = meta.ogImage;
+      const ex = extractFromMarkdown(md);
+      if (ex.email) bookingEmail = ex.email;
+      log.ig = { ok: !!md, len: md.length };
+    } catch (e) {
+      log.ig = { error: String(e) };
+    }
   }
 
   // 2. Search for booking contact / official site
-  const search = await fcSearch(
-    `${a.name} ${a.based_city ?? ""} booking contact email`,
-  );
-  const results = search?.data ?? search?.results?.web ?? [];
-  log.search = { count: results.length };
+  let results: any[] = [];
+  try {
+    const search = await fcSearch(
+      `${a.name} ${a.based_city ?? ""} booking contact email`,
+    );
+    results = Array.isArray(search?.data?.web)
+      ? search.data.web
+      : Array.isArray(search?.data)
+      ? search.data
+      : Array.isArray(search?.results?.web)
+      ? search.results.web
+      : [];
+    log.search = { count: results.length };
+  } catch (e) {
+    log.search = { error: String(e) };
+  }
   for (const res of results.slice(0, 2)) {
     const url = res.url;
     if (!url) continue;
@@ -169,19 +191,22 @@ async function enrichOne(a: Artist, force: boolean) {
 
   // 3. Scrape official website if found
   if (website) {
-    const site = await fcScrape(website);
-    const md: string = site?.data?.markdown ?? site?.markdown ?? "";
-    collectedMd += `\n\n[SITE]\n${md}`;
-    const meta = site?.data?.metadata ?? site?.metadata ?? {};
-    if (!imgCandidate && meta?.ogImage) imgCandidate = meta.ogImage;
-    const ex = extractFromMarkdown(md);
-    if (!bookingEmail && ex.email) bookingEmail = ex.email;
-    // crude manager extraction
-    const mgr = md.match(
-      /(?:manager|management|mgmt)[^@\n]{0,40}([\w.+-]+@[\w-]+\.[\w.-]+)/i,
-    );
-    if (mgr) managerEmail = mgr[1];
-    log.site = { ok: !!md, len: md.length };
+    try {
+      const site = await fcScrape(website);
+      const md: string = site?.data?.markdown ?? site?.markdown ?? "";
+      collectedMd += `\n\n[SITE]\n${md}`;
+      const meta = site?.data?.metadata ?? site?.metadata ?? {};
+      if (!imgCandidate && meta?.ogImage) imgCandidate = meta.ogImage;
+      const ex = extractFromMarkdown(md);
+      if (!bookingEmail && ex.email) bookingEmail = ex.email;
+      const mgr = md.match(
+        /(?:manager|management|mgmt)[^@\n]{0,40}([\w.+-]+@[\w-]+\.[\w.-]+)/i,
+      );
+      if (mgr) managerEmail = mgr[1];
+      log.site = { ok: !!md, len: md.length };
+    } catch (e) {
+      log.site = { error: String(e) };
+    }
   }
 
   // 4. Upload photo
