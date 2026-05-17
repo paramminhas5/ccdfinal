@@ -238,7 +238,7 @@ const PartnerContactDialog = ({ kind, trigger, defaultReason, defaultMessage, op
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 placeholder="Tell us a bit more…"
-                className="w-full bg-cream text-ink border-4 border-ink px-3 py-2.5 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow resize-none"
+                className="w-full bg-cream text-ink border-4 border-ink px-3 py-2.5 font-medium placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow resize-none"
               />
             </div>
 

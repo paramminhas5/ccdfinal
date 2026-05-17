@@ -134,7 +134,7 @@ const Contact = () => {
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="Your name"
                     maxLength={100}
-                    className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
+                    className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow"
                   />
                 </div>
                 <div>
@@ -149,7 +149,7 @@ const Contact = () => {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="your@email.com"
                     maxLength={255}
-                    className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
+                    className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow"
                   />
                 </div>
               </div>
@@ -182,7 +182,7 @@ const Contact = () => {
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                   placeholder="What's up?"
                   maxLength={2000}
-                  className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow resize-none"
+                  className="w-full bg-cream text-ink border-4 border-ink px-4 py-3 font-medium placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow resize-none"
                 />
               </div>
 

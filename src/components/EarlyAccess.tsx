@@ -92,7 +92,7 @@ const EarlyAccess = () => {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             maxLength={255}
-            className="flex-1 bg-cream text-ink border-4 border-ink px-5 py-4 font-display text-lg placeholder:text-ink/40 focus:outline-none focus:bg-acid-yellow"
+            className="flex-1 bg-cream text-ink border-4 border-ink px-5 py-4 font-display text-lg placeholder:text-ink/60 focus:outline-none focus:bg-acid-yellow"
           />
           <button
             type="submit"
