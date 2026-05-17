@@ -73,15 +73,19 @@ const ArtistDetail = () => {
         .eq("status", "approved")
         .maybeSingle();
       if (error || !data) { setNotFound(true); setLoading(false); return; }
-      setA(data as Artist);
-      const city = (data as Artist).based_city || (data as Artist).from_city;
+      const norm = (r: any): Artist => ({
+        ...r,
+        gallery: Array.isArray(r.gallery) ? r.gallery : [],
+        videos: Array.isArray(r.videos) ? r.videos : [],
+      });
+      setA(norm(data));
       const { data: rel } = await supabase
         .from("artists")
         .select("*")
         .eq("status", "approved")
         .neq("slug", slug)
         .limit(3);
-      setRelated((rel ?? []) as Artist[]);
+      setRelated(((rel ?? []) as any[]).map(norm));
       setLoading(false);
       void city;
     })();
