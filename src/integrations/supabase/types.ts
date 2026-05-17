@@ -99,8 +99,13 @@ export type Database = {
           bio: string | null
           booking_email: string | null
           created_at: string
+          featured: boolean
+          fee_currency: string
+          fee_max_inr: number | null
+          fee_min_inr: number | null
           festivals: string[]
           from_city: string | null
+          gallery: Json
           genres: string[]
           id: string
           instagram: string | null
@@ -115,7 +120,9 @@ export type Database = {
           spotify: string | null
           status: string
           updated_at: string
+          videos: Json
           website: string | null
+          why: string | null
         }
         Insert: {
           bandcamp?: string | null
@@ -123,8 +130,13 @@ export type Database = {
           bio?: string | null
           booking_email?: string | null
           created_at?: string
+          featured?: boolean
+          fee_currency?: string
+          fee_max_inr?: number | null
+          fee_min_inr?: number | null
           festivals?: string[]
           from_city?: string | null
+          gallery?: Json
           genres?: string[]
           id?: string
           instagram?: string | null
@@ -139,7 +151,9 @@ export type Database = {
           spotify?: string | null
           status?: string
           updated_at?: string
+          videos?: Json
           website?: string | null
+          why?: string | null
         }
         Update: {
           bandcamp?: string | null
@@ -147,8 +161,13 @@ export type Database = {
           bio?: string | null
           booking_email?: string | null
           created_at?: string
+          featured?: boolean
+          fee_currency?: string
+          fee_max_inr?: number | null
+          fee_min_inr?: number | null
           festivals?: string[]
           from_city?: string | null
+          gallery?: Json
           genres?: string[]
           id?: string
           instagram?: string | null
@@ -163,7 +182,9 @@ export type Database = {
           spotify?: string | null
           status?: string
           updated_at?: string
+          videos?: Json
           website?: string | null
+          why?: string | null
         }
         Relationships: []
       }
@@ -430,6 +451,63 @@ export type Database = {
           title?: string
           updated_at?: string
           venue?: string
+        }
+        Relationships: []
+      }
+      promoters: {
+        Row: {
+          blurb: string | null
+          booking_email: string | null
+          cities: string[]
+          city: string | null
+          crawl_urls: Json
+          created_at: string
+          genres: string[]
+          id: string
+          instagram: string | null
+          logo_url: string | null
+          name: string
+          slug: string
+          status: string
+          trusted: boolean
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          blurb?: string | null
+          booking_email?: string | null
+          cities?: string[]
+          city?: string | null
+          crawl_urls?: Json
+          created_at?: string
+          genres?: string[]
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          name: string
+          slug: string
+          status?: string
+          trusted?: boolean
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          blurb?: string | null
+          booking_email?: string | null
+          cities?: string[]
+          city?: string | null
+          crawl_urls?: Json
+          created_at?: string
+          genres?: string[]
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          status?: string
+          trusted?: boolean
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
