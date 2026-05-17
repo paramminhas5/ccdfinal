@@ -398,7 +398,7 @@ async function runDistrict(city: CityConfig, limit: number, supabase: any) {
     stats.errors.push(`sitemap: ${e?.message ?? e}`);
     return stats;
   }
-  const candidates = filterDistrictUrlsForCity(urls, city, 30);
+  const candidates = filterDistrictUrlsForCity(urls, city, 60);
   stats.candidateLinks = candidates.length;
   stats.samples = candidates.slice(0, 5);
   if (!candidates.length) {
