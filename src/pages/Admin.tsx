@@ -818,6 +818,17 @@ const Admin = () => {
                 <PromoterApplicationsTab />
               </TabsContent>
 
+              {/* ARTISTS */}
+              <TabsContent value="artists">
+                <ArtistsTab
+                  artists={artists}
+                  reload={loadArtists}
+                  enrichAll={enrichAllArtists}
+                  enrichOne={enrichOneArtist}
+                  busy={artistsBusy}
+                />
+              </TabsContent>
+
               {/* SEO CHECKLIST */}
               <TabsContent value="seo">
                 <div className="space-y-6">
