@@ -63,15 +63,22 @@ async function fcSearch(q: string) {
 }
 
 async function aiBio(name: string, scraped: string, genres: string[]) {
-  const prompt = `You are writing artist directory copy for a music booking platform focused on India's underground electronic scene.
+  const hasContext = scraped.trim().length > 200;
+  const prompt = hasContext
+    ? `You are writing artist directory copy for a music booking platform focused on India's underground electronic scene.
 Artist: ${name}
 Known genres: ${genres.join(", ") || "electronic"}
 Reference material scraped from the web (may be partial or noisy):
-"""${scraped.slice(0, 4000)}"""
+"""${scraped.slice(0, 8000)}"""
 
 Return JSON only with this exact shape:
 { "bio": "120-180 word third-person bio, factual, no hype, no emojis", "why": "single sentence hook (<=120 chars) describing what makes them worth booking", "genres": ["..."], "festivals": ["..."] }
-Use only facts supported by the reference material. If unsure leave festivals empty.`;
+Use only facts supported by the reference material. If unsure leave festivals empty.`
+    : `You are writing artist directory copy for a music booking platform focused on India's underground electronic scene.
+Artist: ${name}. No reliable scraped material was available. Use only widely-known public facts; if you don't know, keep the bio short and generic about their genre/scene without inventing specifics (no fake festivals, labels, or release names).
+
+Return JSON only with this exact shape:
+{ "bio": "80-140 word third-person bio, factual, no hype, no emojis, no invented facts", "why": "single sentence hook (<=120 chars)", "genres": ["..."], "festivals": [] }`;
 
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
