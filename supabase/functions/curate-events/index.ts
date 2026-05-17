@@ -10,7 +10,9 @@ const FIRECRAWL = "https://api.firecrawl.dev/v2";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 type SourceKey = "sortmyscene" | "insider" | "skillboxes" | "district" | "highape" | "bookmyshow";
-type CityKey = "bangalore" | "mumbai" | "delhi" | "pune";
+type CityKey =
+  | "bangalore" | "mumbai" | "delhi" | "pune"
+  | "hyderabad" | "indore" | "ranchi" | "kochi" | "jaipur" | "shillong" | "chennai";
 
 type CityConfig = {
   key: CityKey;
@@ -23,6 +25,13 @@ const CITIES: Record<CityKey, CityConfig> = {
   mumbai:    { key: "mumbai",    aliases: ["mumbai", "bombay", "navi mumbai"], slugs: {} },
   delhi:     { key: "delhi",     aliases: ["delhi", "new delhi", "ncr", "gurgaon", "gurugram", "noida"], slugs: { insider: "new-delhi", district: "new-delhi", bookmyshow: "national-capital-region-ncr" } },
   pune:      { key: "pune",      aliases: ["pune"], slugs: {} },
+  hyderabad: { key: "hyderabad", aliases: ["hyderabad", "secunderabad", "hyd"], slugs: { insider: "hyderabad", district: "hyderabad" } },
+  indore:    { key: "indore",    aliases: ["indore"], slugs: { insider: "indore", district: "indore" } },
+  ranchi:    { key: "ranchi",    aliases: ["ranchi"], slugs: { insider: "ranchi", district: "ranchi" } },
+  kochi:     { key: "kochi",     aliases: ["kochi", "cochin", "ernakulam"], slugs: { insider: "kochi", district: "kochi" } },
+  jaipur:    { key: "jaipur",    aliases: ["jaipur"], slugs: { insider: "jaipur", district: "jaipur" } },
+  shillong:  { key: "shillong",  aliases: ["shillong"], slugs: { insider: "shillong", district: "shillong" } },
+  chennai:   { key: "chennai",   aliases: ["chennai", "madras"], slugs: { insider: "chennai", district: "chennai" } },
 };
 
 type SourceConfig = {
@@ -34,6 +43,8 @@ type SourceConfig = {
 
 const CITY_TITLE: Record<CityKey, string> = {
   bangalore: "Bengaluru", mumbai: "Mumbai", delhi: "Delhi", pune: "Pune",
+  hyderabad: "Hyderabad", indore: "Indore", ranchi: "Ranchi", kochi: "Kochi",
+  jaipur: "Jaipur", shillong: "Shillong", chennai: "Chennai",
 };
 
 const SOURCES: Record<SourceKey, SourceConfig> = {
@@ -75,7 +86,33 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
   },
 };
 
-const CITY_REJECT = ["goa", "hyderabad", "chennai", "kolkata", "jaipur", "ahmedabad", "kochi", "chandigarh", "lucknow", "indore", "guwahati", "shillong"];
+// Cities we explicitly DO NOT cover (used to reject events leaking in from other places).
+const CITY_REJECT = ["goa", "kolkata", "ahmedabad", "chandigarh", "lucknow", "guwahati", "bhopal", "nagpur", "surat"];
+
+// Hard "this is NOT the kind of event we want" filter (Bollywood, comedy, kids, etc.)
+const REJECT_KEYWORDS = [
+  "bollywood","sufi","ghazal","kirtan","bhajan","carnatic","hindustani","classical-vocal","qawwali",
+  "comedy","standup","stand-up","open-mic","openmic","poetry","kavi","shayari","mushaira",
+  "kids","children","family-friendly","trek","trekking","workshop","yoga","retreat","brunch","movie",
+  "screening","quiz","craft","painting","brewery-tour","food-walk","spa","wellness","kalari",
+  "magic-show","theatre","theater","play","drama","musical-play","stage-play","cricket","sports",
+  "fashion-show","exhibition","art-exhibition","seminar","conference","masterclass","bootcamp",
+  "dussehra","diwali","holi","navratri","garba","dandiya","raas",
+];
+
+// Music keywords we LOOK FOR in URL slugs / titles to confirm a music event.
+const STRICT_MUSIC_KEYWORDS = [
+  "music","dj","techno","house","disco","electronic","rave","club","nightlife","concert","gig",
+  "live-music","band","party","sundowner","boiler","afro","tech-house","minimal","trance","bass",
+  "jungle","dnb","drum-and-bass","garage","downtempo","edm","underground","rooftop","warehouse",
+  "after-hours","afterhours","b2b","set","showcase","label-night","sound-system",
+];
+
+function urlPassesMusicFilter(url: string): boolean {
+  const u = url.toLowerCase();
+  if (REJECT_KEYWORDS.some((k) => u.includes(k))) return false;
+  return STRICT_MUSIC_KEYWORDS.some((k) => u.includes(k));
+}
 
 const GENRE_BUCKETS = ["House", "Techno", "Disco", "Jungle", "Drum & Bass", "Garage", "Electronic", "Live"];
 function normalizeGenres(input: unknown): string[] {
@@ -123,13 +160,22 @@ async function firecrawlScrape(url: string, apiKey: string, formats: string[] = 
 async function extractWithAI(text: string, sourceUrl: string, source: string, city: CityConfig, lovableKey: string) {
   const today = new Date().toISOString().slice(0, 10);
   const sys = `You extract a SINGLE music event from one event page. Today is ${today}.
-Return the event ONLY if it is:
-- a real bookable individual event page (NOT a category, listing, or venue homepage)
-- music-related (any genre: dance, electronic, techno, house, indie, rock, jazz, live, club, festival)
-- located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}). Reject if the venue is clearly in another Indian city (Goa, Hyderabad, Chennai, Kolkata, Jaipur, etc.).
-Prefer future events (event_date today or later) but include events even if no date is found — leave event_date empty.
-For image_url, look at the first markdown image (![](URL)) at the top of the page or the og:image — capture the absolute URL. Skip logos/icons (anything with 'logo', 'icon', 'favicon' in URL).
-Always include the title. Use empty string for unknown fields. If page is not a valid event in ${city.key} or another city is named, return events: [].`;
+Return the event ONLY if ALL of these are true:
+- it is a real bookable individual event page (NOT a category, listing, or venue homepage)
+- it is an UNDERGROUND / ELECTRONIC / CLUB / LIVE-BAND music event: techno, house, disco, drum & bass, jungle, garage, electronic, indie, rock, jazz, experimental, gig, club night, rave, festival, boiler-room style.
+- it is located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}).
+
+REJECT and return events: [] if the page is ANY of:
+- Bollywood night, Sufi, ghazal, qawwali, kirtan, bhajan, classical vocal, carnatic, Hindustani
+- Comedy / stand-up / open mic / poetry / shayari / mushaira
+- Kids / family / trek / workshop / yoga / retreat / brunch / quiz / painting / wellness / spa
+- Theatre / play / drama / musical play / fashion show / art exhibition / seminar / conference
+- Garba / dandiya / Holi / Diwali / Navratri / Dussehra cultural events
+- a venue in another Indian city (Goa, Kolkata, Ahmedabad, etc.) — unless it matches ${city.key}.
+
+Prefer future events; leave event_date empty if unknown.
+For image_url use the first content image or og:image — skip logos/icons (URLs with 'logo','icon','favicon').
+Use empty string for unknown fields.`;
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
@@ -199,8 +245,8 @@ function venueMatchesCity(venue: string | null | undefined, blurb: string | null
 // ──────────────────────────────────────────────────────────────────
 const DISTRICT_SITEMAP_INDEX = "https://www.district.in/sitemap.xml";
 const DISTRICT_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
-const MUSIC_KEYWORDS = ["music","dj","techno","house","disco","electronic","rave","club","nightlife","concert","gig","live","band","party","sundowner","boiler","afro","tech-house","minimal","trance","bass","jungle","dnb","drum-and-bass","garage","downtempo","edm"];
-const NON_MUSIC_KEYWORDS = ["trek","workshop","kids","comedy","standup","stand-up","trampoline","scuba","paint","yoga","retreat","brunch","movie","quiz","craft","painting","brewery-tour","food-walk","spa","wellness","kalari"];
+const MUSIC_KEYWORDS = STRICT_MUSIC_KEYWORDS;
+const NON_MUSIC_KEYWORDS = REJECT_KEYWORDS;
 let _districtUrlCache: string[] | null = null;
 
 async function fetchDistrictSitemapUrls(): Promise<string[]> {
@@ -352,7 +398,7 @@ async function runDistrict(city: CityConfig, limit: number, supabase: any) {
     stats.errors.push(`sitemap: ${e?.message ?? e}`);
     return stats;
   }
-  const candidates = filterDistrictUrlsForCity(urls, city, 30);
+  const candidates = filterDistrictUrlsForCity(urls, city, 60);
   stats.candidateLinks = candidates.length;
   stats.samples = candidates.slice(0, 5);
   if (!candidates.length) {
@@ -363,7 +409,7 @@ async function runDistrict(city: CityConfig, limit: number, supabase: any) {
   const today = new Date().toISOString().slice(0, 10);
   for (const url of candidates) {
     if (stats.upserted >= limit) break;
-    if (stats.scrapedPages >= 12) break;
+    if (stats.scrapedPages >= 30) break;
     try {
       const html = await fetch(url, { headers: { "User-Agent": DISTRICT_UA } }).then(r => r.ok ? r.text() : "");
       stats.scrapedPages += 1;
@@ -438,13 +484,15 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     if (seen.has(url)) return;
     if (!cfg.linkMatch.test(url)) return;
     if (cfg.linkReject.some((r) => r.test(url))) return;
+    // Hard music-only URL filter: reject Bollywood / comedy / kids / etc.
+    if (REJECT_KEYWORDS.some((k) => url.toLowerCase().includes(k))) return;
     seen.add(url);
     candidates.push(url);
   };
 
   for (const link of rawLinks) {
     tryAdd(link);
-    if (candidates.length >= 12) break;
+    if (candidates.length >= 30) break;
   }
 
   // Fallback: parse links out of markdown if no candidates found
@@ -453,7 +501,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
     let m: RegExpExecArray | null;
     while ((m = urlRe.exec(listingMd))) {
       tryAdd(m[1]);
-      if (candidates.length >= 12) break;
+      if (candidates.length >= 30) break;
     }
   }
 
@@ -464,7 +512,7 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
 
   for (const url of candidates) {
     if (stats.upserted >= limit) break;
-    if (stats.scrapedPages >= 8) break;
+    if (stats.scrapedPages >= 25) break;
     try {
       const page = await firecrawlScrape(url, fcKey, ["markdown"], 3000);
       stats.scrapedPages += 1;
@@ -533,7 +581,7 @@ Deno.serve(async (req) => {
   // Default mode is "all" when no explicit source is given, so a no-arg call
   // hits every source instead of only Skillboxes.
   const mode = body?.mode === "single" || requestedSource ? (body?.mode === "all" ? "all" : "single") : "all";
-  const limit = Math.min(Math.max(Number(body?.limit) || 5, 1), 8);
+  const limit = Math.min(Math.max(Number(body?.limit) || 10, 1), 20);
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
