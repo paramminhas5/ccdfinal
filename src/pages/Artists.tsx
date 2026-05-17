@@ -29,9 +29,9 @@ const isBoilerRoom = (a: DBArtist) =>
   (a.bio ?? "").toLowerCase().includes("boiler room") ||
   a.festivals.some((f) => f.toLowerCase().includes("boiler"));
 
-const ArtistCard = ({ a, onOpen }: { a: DBArtist; onOpen: () => void }) => (
-  <button
-    onClick={onOpen}
+const ArtistCard = ({ a }: { a: DBArtist }) => (
+  <a
+    href={`/artists/${a.slug}`}
     className="text-left bg-cream border-4 border-ink chunk-shadow p-5 flex flex-col gap-3 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
   >
     <header className="flex items-start justify-between gap-3">
@@ -62,7 +62,7 @@ const ArtistCard = ({ a, onOpen }: { a: DBArtist; onOpen: () => void }) => (
         <span className="font-display">FEST:</span> {a.festivals.slice(0, 3).join(" · ")}
       </p>
     )}
-  </button>
+  </a>
 );
 
 const ArtistsPage = () => {

@@ -2469,27 +2469,35 @@ function BlogTab() {
 }
 
 
-// ============= PROMOTER APPLICATIONS TAB =============
-type PromoterApplication = {
-  id: string;
+// ============= PROMOTERS DIRECTORY TAB =============
+type PromoterRow = {
+  id?: string;
+  slug: string;
   name: string;
-  email: string;
+  city: string | null;
+  cities: string[];
+  blurb: string | null;
+  genres: string[];
   instagram: string | null;
   website: string | null;
-  city: string;
-  genres: string[];
-  bio: string;
-  sample_event: string | null;
-  status: "pending" | "approved" | "rejected";
-  notes: string | null;
-  created_at: string;
+  booking_email: string | null;
+  logo_url: string | null;
+  trusted: boolean;
+  crawl_urls: { label: string; url: string; kind?: string }[];
+  status: string;
+};
+
+const EMPTY_PROMOTER: PromoterRow = {
+  slug: "", name: "", city: "", cities: [], blurb: "", genres: [],
+  instagram: null, website: null, booking_email: null, logo_url: null,
+  trusted: true, crawl_urls: [], status: "approved",
 };
 
 function PromoterApplicationsTab() {
-  const [apps, setApps] = useState<PromoterApplication[]>([]);
+  const [rows, setRows] = useState<PromoterRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
-  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [draft, setDraft] = useState<PromoterRow>(EMPTY_PROMOTER);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
   const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
@@ -2505,143 +2513,114 @@ function PromoterApplicationsTab() {
     try {
       const res = await fetch(`${projectUrl}/functions/v1/admin-promoters`, { headers });
       const data = await res.json();
-      if (res.ok) setApps(data.applications ?? []);
-      else toast.error(data?.error ?? "Could not load applications");
-    } catch { toast.error("Could not load applications"); }
+      if (res.ok) setRows((data.promoters ?? []).map((p: any) => ({
+        ...p, cities: p.cities ?? [], genres: p.genres ?? [], crawl_urls: p.crawl_urls ?? [],
+      })));
+      else toast.error(data?.error ?? "Could not load promoters");
+    } catch { toast.error("Could not load promoters"); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
 
-  const updateStatus = async (id: string, status: "approved" | "rejected", note?: string) => {
+  const save = async () => {
+    if (!draft.slug || !draft.name) { toast.error("Slug and name required"); return; }
     try {
       const res = await fetch(`${projectUrl}/functions/v1/admin-promoters`, {
         method: "POST", headers,
-        body: JSON.stringify({ action: "update_status", id, status, notes: note ?? notes[id] ?? "" }),
+        body: JSON.stringify({ action: "upsert", payload: editingId ? { ...draft, id: editingId } : draft }),
       });
-      if (res.ok) {
-        toast.success(status === "approved" ? "✓ Approved" : "Rejected");
-        setApps(apps.map((a) => a.id === id ? { ...a, status, notes: note ?? notes[id] ?? a.notes } : a));
-      } else toast.error("Update failed");
-    } catch { toast.error("Update failed"); }
+      if (res.ok) { toast.success("Saved"); setDraft(EMPTY_PROMOTER); setEditingId(null); load(); }
+      else { const e = await res.json(); toast.error(e?.error ?? "Save failed"); }
+    } catch { toast.error("Save failed"); }
   };
 
-  const triggerScheduled = async () => {
-    toast.info("Running scraper… this takes ~2 minutes");
-    try {
-      const res = await fetch(`${projectUrl}/functions/v1/scheduled-curate`, {
-        method: "POST",
-        headers: { "x-admin-password": pwd, "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (res.ok) toast.success(`Scraper done: ${data.total_upserted} events upserted, ${data.pruned} old pruned`);
-      else toast.error(data?.error ?? "Scraper failed");
-    } catch { toast.error("Scraper failed"); }
+  const toggleTrust = async (id: string, trusted: boolean) => {
+    const res = await fetch(`${projectUrl}/functions/v1/admin-promoters`, {
+      method: "POST", headers,
+      body: JSON.stringify({ action: "toggle_trust", payload: { id, trusted } }),
+    });
+    if (res.ok) { setRows(rows.map((r) => r.id === id ? { ...r, trusted } : r)); }
+    else toast.error("Update failed");
   };
 
-  const filtered = apps.filter((a) => filter === "all" || a.status === filter);
-  const counts = { pending: apps.filter((a) => a.status === "pending").length, approved: apps.filter((a) => a.status === "approved").length, rejected: apps.filter((a) => a.status === "rejected").length };
+  const del = async (id: string) => {
+    if (!confirm("Delete this promoter?")) return;
+    const res = await fetch(`${projectUrl}/functions/v1/admin-promoters`, {
+      method: "POST", headers,
+      body: JSON.stringify({ action: "delete", payload: { id } }),
+    });
+    if (res.ok) { toast.success("Deleted"); setRows(rows.filter((r) => r.id !== id)); }
+    else toast.error("Delete failed");
+  };
+
+  const edit = (r: PromoterRow) => { setDraft(r); setEditingId(r.id ?? null); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h3 className="font-display text-2xl text-ink">PROMOTER APPLICATIONS</h3>
-          <p className="text-ink/70 font-medium text-sm">
-            {counts.pending} pending · {counts.approved} approved · {counts.rejected} rejected
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={triggerScheduled}
-            className="bg-acid-yellow text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-sm">
-            🔄 RUN SCRAPER NOW
-          </button>
-          <button onClick={load}
-            className="bg-cream text-ink font-display px-4 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform text-sm">
-            REFRESH
-          </button>
-        </div>
+      <div>
+        <h3 className="font-display text-2xl text-ink">PROMOTERS DIRECTORY</h3>
+        <p className="text-ink/70 font-medium text-sm">
+          {rows.length} total · {rows.filter((r) => r.trusted).length} trusted (feed the crawler)
+        </p>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2">
-        {(["pending", "approved", "rejected", "all"] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`font-display text-sm px-4 py-2 border-4 border-ink uppercase ${filter === f ? "bg-ink text-cream" : "bg-cream text-ink hover:bg-acid-yellow"}`}>
-            {f}{f !== "all" && ` (${counts[f] ?? 0})`}
+      <div className="bg-cream border-4 border-ink chunk-shadow p-5 space-y-3">
+        <p className="font-display text-lg uppercase">{editingId ? "Edit promoter" : "Add promoter"}</p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <input value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="slug (e.g. krunk)" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Name" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.city ?? ""} onChange={(e) => setDraft({ ...draft, city: e.target.value })} placeholder="Primary city" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.cities.join(", ")} onChange={(e) => setDraft({ ...draft, cities: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="All cities (comma separated)" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.genres.join(", ")} onChange={(e) => setDraft({ ...draft, genres: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="Genres (comma separated)" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.instagram ?? ""} onChange={(e) => setDraft({ ...draft, instagram: e.target.value || null })} placeholder="Instagram handle" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.website ?? ""} onChange={(e) => setDraft({ ...draft, website: e.target.value || null })} placeholder="Website" className="border-2 border-ink px-3 py-2" />
+          <input value={draft.booking_email ?? ""} onChange={(e) => setDraft({ ...draft, booking_email: e.target.value || null })} placeholder="Booking email" className="border-2 border-ink px-3 py-2" />
+        </div>
+        <textarea value={draft.blurb ?? ""} onChange={(e) => setDraft({ ...draft, blurb: e.target.value })} placeholder="Blurb" rows={3} className="w-full border-2 border-ink px-3 py-2" />
+        <textarea
+          value={JSON.stringify(draft.crawl_urls, null, 2)}
+          onChange={(e) => { try { setDraft({ ...draft, crawl_urls: JSON.parse(e.target.value) }); } catch {} }}
+          placeholder='Crawl URLs JSON: [{"label":"Instagram","url":"https://...","kind":"instagram"}]'
+          rows={4}
+          className="w-full border-2 border-ink px-3 py-2 font-mono text-xs"
+        />
+        <label className="inline-flex items-center gap-2 font-display text-sm">
+          <input type="checkbox" checked={draft.trusted} onChange={(e) => setDraft({ ...draft, trusted: e.target.checked })} className="w-4 h-4 accent-magenta" />
+          Trusted (feeds the crawler)
+        </label>
+        <div className="flex gap-2">
+          <button onClick={save} className="bg-ink text-cream font-display px-5 py-2 border-4 border-ink chunk-shadow">
+            {editingId ? "UPDATE" : "ADD"}
           </button>
-        ))}
+          {editingId && (
+            <button onClick={() => { setDraft(EMPTY_PROMOTER); setEditingId(null); }} className="bg-cream text-ink font-display px-5 py-2 border-4 border-ink">
+              CANCEL
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && <p className="text-ink/60">Loading…</p>}
 
-      <div className="space-y-4">
-        {filtered.map((app) => (
-          <div key={app.id} className={`bg-cream border-4 border-ink chunk-shadow p-5 ${app.status === "approved" ? "border-lime" : app.status === "rejected" ? "opacity-60" : ""}`}>
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-              <div>
-                <p className="font-display text-xl text-ink">{app.name}</p>
-                <a href={`mailto:${app.email}`} className="text-magenta underline font-medium text-sm">{app.email}</a>
-                <span className={`ml-3 text-[10px] font-bold px-2 py-1 border-2 border-ink uppercase ${
-                  app.status === "approved" ? "bg-lime text-ink" : app.status === "rejected" ? "bg-ink text-cream" : "bg-acid-yellow text-ink"}`}>
-                  {app.status}
-                </span>
-              </div>
-              <p className="text-ink/50 text-xs">{new Date(app.created_at).toLocaleDateString()}</p>
+      <div className="space-y-3">
+        {rows.map((r) => (
+          <div key={r.id} className={`bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center justify-between gap-3 ${r.trusted ? "" : "opacity-70"}`}>
+            <div className="min-w-0">
+              <p className="font-display text-lg text-ink">{r.name} <span className="text-ink/40 text-xs">/{r.slug}</span></p>
+              <p className="text-xs text-ink/60">{r.city ?? r.cities[0]} · {r.genres.slice(0,4).join(" · ")}</p>
             </div>
-
-            <div className="grid sm:grid-cols-3 gap-3 mb-3 text-sm">
-              <div><span className="font-display text-ink/50 text-xs">CITY</span><p className="font-medium text-ink">{app.city}</p></div>
-              <div><span className="font-display text-ink/50 text-xs">INSTAGRAM</span>
-                {app.instagram ? <a href={`https://instagram.com/${app.instagram.replace("@","")}`} target="_blank" rel="noopener noreferrer" className="block text-magenta underline font-medium">{app.instagram}</a> : <p className="text-ink/50">—</p>}
-              </div>
-              <div><span className="font-display text-ink/50 text-xs">WEBSITE</span>
-                {app.website ? <a href={app.website} target="_blank" rel="noopener noreferrer" className="block text-magenta underline font-medium truncate">{app.website}</a> : <p className="text-ink/50">—</p>}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => r.id && toggleTrust(r.id, !r.trusted)} className={`text-xs font-display px-3 py-1.5 border-2 border-ink ${r.trusted ? "bg-magenta text-cream" : "bg-cream text-ink"}`}>
+                {r.trusted ? "TRUSTED" : "UNTRUSTED"}
+              </button>
+              <button onClick={() => edit(r)} className="text-xs font-display bg-acid-yellow text-ink px-3 py-1.5 border-2 border-ink">EDIT</button>
+              <button onClick={() => r.id && del(r.id)} className="text-xs font-display bg-destructive text-cream px-3 py-1.5 border-2 border-ink">DEL</button>
             </div>
-
-            {app.genres.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
-                {app.genres.map((g) => <span key={g} className="text-[10px] uppercase bg-ink text-cream px-2 py-0.5 font-bold">{g}</span>)}
-              </div>
-            )}
-
-            <p className="text-ink/80 font-medium text-sm mb-3 bg-background/50 p-3 border-2 border-ink/20">{app.bio}</p>
-
-            {app.sample_event && (
-              <a href={app.sample_event} target="_blank" rel="noopener noreferrer"
-                className="text-magenta underline text-sm font-medium block mb-3">
-                Sample event ↗
-              </a>
-            )}
-
-            {app.status === "pending" && (
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block font-display text-xs text-ink/50 mb-1">NOTES (optional)</label>
-                  <input value={notes[app.id] ?? ""} onChange={(e) => setNotes({ ...notes, [app.id]: e.target.value })}
-                    placeholder="Internal note…"
-                    className="w-full bg-cream text-ink border-2 border-ink px-3 py-2 font-medium text-sm focus:outline-none focus:bg-acid-yellow" />
-                </div>
-                <button onClick={() => updateStatus(app.id, "approved")}
-                  className="bg-lime text-ink font-display px-5 py-2 border-4 border-ink chunk-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-transform">
-                  ✓ APPROVE
-                </button>
-                <button onClick={() => updateStatus(app.id, "rejected")}
-                  className="bg-destructive text-cream font-display px-5 py-2 border-4 border-ink">
-                  REJECT
-                </button>
-              </div>
-            )}
           </div>
         ))}
-        {!loading && filtered.length === 0 && (
-          <p className="text-ink/60 py-8 text-center font-display text-xl">NO {filter.toUpperCase()} APPLICATIONS.</p>
-        )}
       </div>
     </div>
   );
 }
+

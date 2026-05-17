@@ -30,24 +30,55 @@ Deno.serve(async (req) => {
 
   if (req.method === "GET") {
     const { data, error } = await supabase
-      .from("promoter_applications")
+      .from("promoters")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("trusted", { ascending: false })
+      .order("name", { ascending: true });
     if (error) return json({ error: error.message }, 500);
-    return json({ applications: data ?? [] });
+    return json({ promoters: data ?? [] });
   }
 
   if (req.method === "POST") {
     const body = await req.json().catch(() => ({}));
-    const { action, id, status, notes } = body;
+    const { action, payload } = body;
 
-    if (action === "update_status") {
-      if (!id || !["approved", "rejected", "pending"].includes(status))
-        return json({ error: "Invalid params" }, 400);
-      const { error } = await supabase
-        .from("promoter_applications")
-        .update({ status, notes: notes ?? null, updated_at: new Date().toISOString() })
-        .eq("id", id);
+    if (action === "upsert") {
+      const p = payload ?? {};
+      if (!p.slug || !p.name) return json({ error: "slug and name required" }, 400);
+      const row: Record<string, unknown> = {
+        slug: p.slug,
+        name: p.name,
+        city: p.city ?? null,
+        cities: Array.isArray(p.cities) ? p.cities : [],
+        blurb: p.blurb ?? null,
+        genres: Array.isArray(p.genres) ? p.genres : [],
+        instagram: p.instagram ?? null,
+        website: p.website ?? null,
+        booking_email: p.booking_email ?? null,
+        logo_url: p.logo_url ?? null,
+        trusted: !!p.trusted,
+        crawl_urls: Array.isArray(p.crawl_urls) ? p.crawl_urls : [],
+        status: p.status ?? "approved",
+        updated_at: new Date().toISOString(),
+      };
+      if (p.id) row.id = p.id;
+      const { error } = await supabase.from("promoters").upsert(row, { onConflict: "slug" });
+      if (error) return json({ error: error.message }, 500);
+      return json({ ok: true });
+    }
+
+    if (action === "toggle_trust") {
+      if (!payload?.id) return json({ error: "id required" }, 400);
+      const { error } = await supabase.from("promoters")
+        .update({ trusted: !!payload.trusted, updated_at: new Date().toISOString() })
+        .eq("id", payload.id);
+      if (error) return json({ error: error.message }, 500);
+      return json({ ok: true });
+    }
+
+    if (action === "delete") {
+      if (!payload?.id) return json({ error: "id required" }, 400);
+      const { error } = await supabase.from("promoters").delete().eq("id", payload.id);
       if (error) return json({ error: error.message }, 500);
       return json({ ok: true });
     }
