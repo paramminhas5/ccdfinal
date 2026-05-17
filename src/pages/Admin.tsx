@@ -1703,6 +1703,9 @@ function CuratedEventsTab() {
   const [crawlSource, setCrawlSource] = useState<string>("skillboxes");
   const [crawlCity, setCrawlCity] = useState<string>("bangalore");
   const [lastRun, setLastRun] = useState<any>(null);
+  const [filterSource, setFilterSource] = useState<string>("all");
+  const [filterCity, setFilterCity] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("date-asc");
 
   const projectUrl = import.meta.env.VITE_SUPABASE_URL;
   const pwd = sessionStorage.getItem(PASS_KEY) ?? "";
@@ -1914,23 +1917,68 @@ function CuratedEventsTab() {
         </button>
       </div>
 
-      <div className="space-y-3">
-        <p className="text-ink/70 font-medium text-sm">{rows.length} curated event{rows.length === 1 ? "" : "s"}</p>
-        {loading && <p className="text-ink/60">Loading…</p>}
-        {rows.map((r) => (
-          <div key={r.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-3 justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="font-display text-lg text-ink">{r.title}</p>
-              <p className="text-ink/70 text-sm">
-                {r.source} · {r.event_date || "no date"} {r.event_time && `· ${r.event_time}`} {r.venue && `· ${r.venue}`}
-                {r.is_featured && " · ⭐"}
+      {(() => {
+        const visible = rows
+          .filter((r) => filterSource === "all" || r.source === filterSource)
+          .filter((r) => filterCity === "all" || (r as any).city === filterCity)
+          .slice()
+          .sort((a, b) => {
+            const da = a.event_date || "9999-12-31";
+            const db = b.event_date || "9999-12-31";
+            switch (sortBy) {
+              case "date-desc": return db.localeCompare(da);
+              case "source": return (a.source || "").localeCompare(b.source || "");
+              case "city": return ((a as any).city || "").localeCompare((b as any).city || "");
+              case "featured": return Number(!!b.is_featured) - Number(!!a.is_featured);
+              case "date-asc":
+              default: return da.localeCompare(db);
+            }
+          });
+        return (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2 items-center">
+              <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)} className="border-4 border-ink bg-cream text-ink font-display px-3 py-2">
+                <option value="all">All sources</option>
+                {CURATED_SOURCES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+                <option value="manual">CCD Pick</option>
+              </select>
+              <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="border-4 border-ink bg-cream text-ink font-display px-3 py-2">
+                {CURATED_CITIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+              </select>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="border-4 border-ink bg-cream text-ink font-display px-3 py-2">
+                <option value="date-asc">Sort: Date ↑</option>
+                <option value="date-desc">Sort: Date ↓</option>
+                <option value="source">Sort: Source</option>
+                <option value="city">Sort: City</option>
+                <option value="featured">Sort: Featured first</option>
+              </select>
+              <p className="text-ink/70 font-medium text-sm ml-auto">
+                {visible.length} of {rows.length} event{rows.length === 1 ? "" : "s"}
               </p>
-              <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-magenta text-xs underline break-all">{r.url}</a>
             </div>
-            <button onClick={() => r.id && remove(r.id)} className="bg-destructive text-cream font-display px-4 py-2">DELETE</button>
+            {loading && <p className="text-ink/60">Loading…</p>}
+            {visible.map((r) => (
+              <div key={r.id} className="bg-cream border-4 border-ink chunk-shadow p-4 flex flex-wrap items-center gap-3 justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="font-display text-lg text-ink">{r.title}</p>
+                  <p className="text-ink/70 text-sm">
+                    {r.source} · {(r as any).city || "—"} · {r.event_date || "no date"} {r.event_time && `· ${r.event_time}`} {r.venue && `· ${r.venue}`}
+                    {r.is_featured && " · ⭐"}
+                  </p>
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-magenta text-xs underline break-all">{r.url}</a>
+                </div>
+                <button
+                  onClick={() => upsert({ ...r, is_featured: !r.is_featured })}
+                  className="bg-acid-yellow text-ink font-display px-4 py-2 border-4 border-ink"
+                >
+                  {r.is_featured ? "UNFEATURE" : "FEATURE"}
+                </button>
+                <button onClick={() => r.id && remove(r.id)} className="bg-destructive text-cream font-display px-4 py-2">DELETE</button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
     </div>
   );
 }
