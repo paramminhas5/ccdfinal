@@ -89,29 +89,57 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
 // Cities we explicitly DO NOT cover (used to reject events leaking in from other places).
 const CITY_REJECT = ["goa", "kolkata", "ahmedabad", "chandigarh", "lucknow", "guwahati", "bhopal", "nagpur", "surat"];
 
-// Hard "this is NOT the kind of event we want" filter (Bollywood, comedy, kids, etc.)
+// Hard "this is NOT the kind of event we want" filter.
 const REJECT_KEYWORDS = [
-  "bollywood","sufi","ghazal","kirtan","bhajan","carnatic","hindustani","classical-vocal","qawwali",
+  // Bollywood / desi nostalgia nights
+  "bollywood","bolly","retro-bollywood","90s-bollywood","punjabi-night","desi-night",
+  "arijit","kishore","mohammed-rafi","lata","kk-tribute","bolly-night",
+  // Devotional / classical / instrumental
+  "sufi","ghazal","kirtan","bhajan","bhakti","satsang","devotional","raga","gurbani",
+  "carnatic","hindustani","classical-vocal","qawwali","fusion-classical","aarti","puja",
+  "mantra","chanting","tantra","tabla","flute","sitar","santoor","harmonium",
+  // Wellness / "sound" non-music
+  "drone","drone-meditation","meditation","sound-bath","sound-healing","sound-journey",
+  "breathwork","cacao","ecstatic-dance","silent-disco-yoga","morning-rave","sober-rave",
+  // Comedy / spoken word
   "comedy","standup","stand-up","open-mic","openmic","poetry","kavi","shayari","mushaira",
+  // Misc non-music
   "kids","children","family-friendly","trek","trekking","workshop","yoga","retreat","brunch","movie",
   "screening","quiz","craft","painting","brewery-tour","food-walk","spa","wellness","kalari",
   "magic-show","theatre","theater","play","drama","musical-play","stage-play","cricket","sports",
   "fashion-show","exhibition","art-exhibition","seminar","conference","masterclass","bootcamp",
+  "singer-songwriter-night",
+  // Cultural festivals
   "dussehra","diwali","holi","navratri","garba","dandiya","raas",
 ];
 
-// Music keywords we LOOK FOR in URL slugs / titles to confirm a music event.
-const STRICT_MUSIC_KEYWORDS = [
-  "music","dj","techno","house","disco","electronic","rave","club","nightlife","concert","gig",
-  "live-music","band","party","sundowner","boiler","afro","tech-house","minimal","trance","bass",
-  "jungle","dnb","drum-and-bass","garage","downtempo","edm","underground","rooftop","warehouse",
-  "after-hours","afterhours","b2b","set","showcase","label-night","sound-system",
+// HARD music keywords: must be present in url/title/blurb to qualify.
+// Loose tokens like "music"/"party"/"set"/"showcase" intentionally excluded.
+const HARD_MUSIC_KEYWORDS = [
+  "techno","house","tech-house","deep-house","disco","nu-disco","dnb","drum-and-bass",
+  "drum-n-bass","jungle","garage","electronic","edm","trance","downtempo","ambient-club",
+  "rave","club-night","nightlife","boiler","b2b","warehouse","after-hours","afterhours",
+  "label-night","sound-system","minimal","afro-house","afro-tech","bass-music",
+  "indie","rock","jazz","gig","live-band","concert","sundowner",
 ];
+
+// Back-compat alias for older callers.
+const STRICT_MUSIC_KEYWORDS = HARD_MUSIC_KEYWORDS;
 
 function urlPassesMusicFilter(url: string): boolean {
   const u = url.toLowerCase();
   if (REJECT_KEYWORDS.some((k) => u.includes(k))) return false;
-  return STRICT_MUSIC_KEYWORDS.some((k) => u.includes(k));
+  return HARD_MUSIC_KEYWORDS.some((k) => u.includes(k));
+}
+
+// Post-extraction sanity check applied to every event before upsert.
+function isAcceptableMusicEvent(opts: {
+  title?: string | null; blurb?: string | null; url?: string | null; genres?: string[];
+}): boolean {
+  const hay = `${opts.title ?? ""} ${opts.blurb ?? ""} ${opts.url ?? ""}`.toLowerCase();
+  if (REJECT_KEYWORDS.some((k) => hay.includes(k))) return false;
+  if ((opts.genres?.length ?? 0) > 0) return true;
+  return HARD_MUSIC_KEYWORDS.some((k) => hay.includes(k));
 }
 
 const GENRE_BUCKETS = ["House", "Techno", "Disco", "Jungle", "Drum & Bass", "Garage", "Electronic", "Live"];
@@ -162,16 +190,25 @@ async function extractWithAI(text: string, sourceUrl: string, source: string, ci
   const sys = `You extract a SINGLE music event from one event page. Today is ${today}.
 Return the event ONLY if ALL of these are true:
 - it is a real bookable individual event page (NOT a category, listing, or venue homepage)
-- it is an UNDERGROUND / ELECTRONIC / CLUB / LIVE-BAND music event: techno, house, disco, drum & bass, jungle, garage, electronic, indie, rock, jazz, experimental, gig, club night, rave, festival, boiler-room style.
+- it is an UNDERGROUND / ELECTRONIC / CLUB / LIVE-BAND music event: techno, house, tech-house, disco, drum & bass, jungle, garage, electronic, EDM, trance, indie, rock, jazz, experimental gig, club night, rave, festival, boiler-room style, warehouse/after-hours.
 - it is located in ${city.key.toUpperCase()} or its metro area (aliases: ${city.aliases.join(", ")}).
+- you can set a non-empty "genre" array from: House, Techno, Disco, Jungle, Drum & Bass, Garage, Electronic, Live. If you can't, return events: [].
 
 REJECT and return events: [] if the page is ANY of:
-- Bollywood night, Sufi, ghazal, qawwali, kirtan, bhajan, classical vocal, carnatic, Hindustani
-- Comedy / stand-up / open mic / poetry / shayari / mushaira
+- Bollywood night, Bollywood tribute, retro Bollywood, 90s Bollywood, Punjabi night, desi night, Arijit/Kishore/KK/Rafi tribute
+- Sufi, ghazal, qawwali, kirtan, bhajan, bhakti, satsang, devotional, classical vocal, carnatic, Hindustani, raga, gurbani, fusion-classical, aarti, puja, mantra, chanting
+- Solo classical instrument: tabla, flute, sitar, santoor, harmonium (unless explicitly part of an electronic/jazz fusion gig)
+- Drone meditation, sound bath, sound healing, sound journey, breathwork, cacao ceremony, ecstatic-dance (wellness), silent-disco-yoga, "morning rave", sober rave
+- Comedy / stand-up / open mic / poetry / shayari / mushaira / singer-songwriter night
 - Kids / family / trek / workshop / yoga / retreat / brunch / quiz / painting / wellness / spa
-- Theatre / play / drama / musical play / fashion show / art exhibition / seminar / conference
+- Theatre / play / drama / musical play / fashion show / art exhibition / seminar / conference / masterclass
 - Garba / dandiya / Holi / Diwali / Navratri / Dussehra cultural events
 - a venue in another Indian city (Goa, Kolkata, Ahmedabad, etc.) — unless it matches ${city.key}.
+
+Examples:
+- ACCEPT: "BLOT! presents Warehouse Techno — 6hr set" → genre: ["Techno"]
+- REJECT: "Drone Meditation Sound Journey at Sunset" → events: []
+- REJECT: "Bollywood Night with DJ XYZ — Retro Hits" → events: []
 
 Prefer future events; leave event_date empty if unknown.
 For image_url use the first content image or og:image — skip logos/icons (URLs with 'logo','icon','favicon').
@@ -451,6 +488,10 @@ async function runDistrict(city: CityConfig, limit: number, supabase: any) {
         image_url,
         updated_at: new Date().toISOString(),
       };
+      if (!isAcceptableMusicEvent({ title: row.title, blurb: row.blurb, url, genres: row.genre })) {
+        stats.errors.push(`rejected non-music: ${url}`);
+        continue;
+      }
       const { error } = await supabase.from("curated_events").upsert(row, { onConflict: "url" });
       if (error) stats.errors.push(`upsert: ${error.message}`);
       else stats.upserted += 1;
@@ -552,6 +593,10 @@ async function runSource(cfg: SourceConfig, city: CityConfig, limit: number, fcK
         image_url,
         updated_at: new Date().toISOString(),
       };
+      if (!isAcceptableMusicEvent({ title: row.title, blurb: row.blurb, url, genres: row.genre })) {
+        stats.errors.push(`rejected non-music: ${url}`);
+        continue;
+      }
       const { error } = await supabase.from("curated_events").upsert(row, { onConflict: "url" });
       if (error) { stats.errors.push(`upsert: ${error.message}`); }
       else { stats.upserted += 1; }
