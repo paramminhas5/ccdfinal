@@ -178,11 +178,10 @@ function ClaimBanner({ artist }: { artist: Artist }) {
     if (!email.trim()) { toast.error("Email required"); return; }
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/artist/dashboard?claim=${artist.id}` },
+      const { error } = await supabase.functions.invoke("artist-magic-link", {
+        body: { email, claim_id: artist.id, redirect_to: `${window.location.origin}/artist/dashboard?claim=${artist.id}` },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message ?? "Failed to send link");
       setSent(true);
       toast.success("Magic link sent \u2014 check your inbox.");
     } catch (e: any) { toast.error(e?.message ?? "Failed"); }
