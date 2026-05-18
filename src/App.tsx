@@ -36,6 +36,7 @@ import CcdxSocial from "./pages/CcdxSocial.tsx";
 import CatsCanCare from "./pages/CatsCanCare.tsx";
 import ArtistsPage from "./pages/Artists.tsx";
 import ArtistDetail from "./pages/ArtistDetail.tsx";
+import ArtistPortal from "./pages/ArtistPortal.tsx";
 import PromotersPage from "./pages/Promoters.tsx";
 import { useCartSync } from "@/hooks/useCartSync";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -94,6 +95,7 @@ const App = () => (
                   <Route path="/care" element={<CatsCanCare />} />
                   <Route path="/artists" element={<ArtistsPage />} />
                   <Route path="/artists/:slug" element={<ArtistDetail />} />
+                  <Route path="/artist/dashboard" element={<ArtistPortal />} />
                   <Route path="/promoters" element={<PromotersPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
