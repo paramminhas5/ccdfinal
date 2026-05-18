@@ -25,9 +25,6 @@ type DBArtist = {
 
 const ensureUrl = (s: string | null) => (s ? (/^https?:\/\//i.test(s) ? s : `https://${s}`) : null);
 const cityOf = (a: DBArtist) => a.based_city || a.from_city || "";
-const isBoilerRoom = (a: DBArtist) =>
-  (a.bio ?? "").toLowerCase().includes("boiler room") ||
-  a.festivals.some((f) => f.toLowerCase().includes("boiler"));
 
 const ArtistCard = ({ a }: { a: DBArtist }) => (
   <a
@@ -43,11 +40,7 @@ const ArtistCard = ({ a }: { a: DBArtist }) => (
           {a.from_city && a.based_city && a.from_city !== a.based_city ? ` · from ${a.from_city}` : ""}
         </p>
       </div>
-      {isBoilerRoom(a) && (
-        <span className="shrink-0 text-[10px] font-display bg-ink text-cream px-2 py-1 border-2 border-ink">
-          BR
-        </span>
-      )}
+
     </header>
     <div className="flex flex-wrap gap-1.5">
       {a.genres.slice(0, 3).map((g) => (
@@ -59,7 +52,7 @@ const ArtistCard = ({ a }: { a: DBArtist }) => (
     {a.bio && <p className="text-sm text-ink/80 line-clamp-3">{a.bio.split("\n")[0]}</p>}
     {a.festivals.length > 0 && (
       <p className="text-xs text-ink/60 mt-auto pt-2 line-clamp-1">
-        <span className="font-display">FEST:</span> {a.festivals.slice(0, 3).join(" · ")}
+        <span className="font-display">CREDITS:</span> {a.festivals.slice(0, 3).join(" · ")}
       </p>
     )}
   </a>
@@ -71,7 +64,6 @@ const ArtistsPage = () => {
   const [q, setQ] = useState("");
   const [city, setCity] = useState("All");
   const [genres, setGenres] = useState<Set<string>>(new Set());
-  const [boilerOnly, setBoilerOnly] = useState(false);
   const [sort, setSort] = useState<"az" | "city">("az");
   const [open, setOpen] = useState<DBArtist | null>(null);
 
@@ -112,7 +104,6 @@ const ArtistsPage = () => {
   const filtered = useMemo(() => {
     const ql = q.toLowerCase().trim();
     let rows = artists.filter((a) => {
-      if (boilerOnly && !isBoilerRoom(a)) return false;
       if (city !== "All" && !cityOf(a).toLowerCase().includes(city.toLowerCase())) return false;
       if (genres.size > 0 && !a.genres.some((g) => genres.has(g))) return false;
       if (!ql) return true;
@@ -127,7 +118,7 @@ const ArtistsPage = () => {
     if (sort === "city") rows = [...rows].sort((a, b) => cityOf(a).localeCompare(cityOf(b)) || a.name.localeCompare(b.name));
     else rows = [...rows].sort((a, b) => a.name.localeCompare(b.name));
     return rows;
-  }, [artists, q, city, genres, boilerOnly, sort]);
+  }, [artists, q, city, genres, sort]);
 
   const itemListLd = {
     "@context": "https://schema.org",
@@ -144,16 +135,16 @@ const ArtistsPage = () => {
     <div className="min-h-screen bg-cream">
       <SEO
         title="Artists — India's Top Electronic DJs & Producers | Cats Can Dance"
-        description="A directory of India's top electronic artists — searchable by city, genre, and Boiler Room appearances."
+        description="A directory of India's top electronic artists — searchable by city, genre, and stage credits."
         path="/artists"
-        keywords="Indian electronic DJs, India techno house artists, Boiler Room India, Magnetic Fields lineup"
+        keywords="Indian electronic DJs, India techno house artists, book Indian DJ, Magnetic Fields lineup"
         jsonLd={itemListLd}
       />
       <Nav />
       <PageHero eyebrow="Artists" title="India's Electronic Artists">
         <p className="text-cream/90 max-w-2xl">
-          Festival-credentialed DJs and producers — pure electronic, no Bollywood, no legacy.
-          Filter by city, genre, and platform.
+          Festival-credentialed DJs and producers — pure electronic, no Bollywood.
+          Filter by city, genre, and stage credits.
         </p>
       </PageHero>
 
@@ -194,15 +185,7 @@ const ArtistsPage = () => {
               <option value="city">By city</option>
             </select>
           </div>
-          <label className="inline-flex items-center gap-2 font-display text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={boilerOnly}
-              onChange={(e) => setBoilerOnly(e.target.checked)}
-              className="w-4 h-4 accent-magenta"
-            />
-            Boiler Room only
-          </label>
+
         </div>
 
         <div className="flex flex-wrap gap-2 mb-8">
