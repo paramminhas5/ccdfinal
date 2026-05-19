@@ -360,6 +360,30 @@ const ArtistDetail = () => {
         </div>
       </header>
 
+      {/* STATS BAR */}
+      {(() => {
+        const ins = a.insights ?? {};
+        const stats: { label: string; value: string }[] = [];
+        if (city) stats.push({ label: "Based in", value: city });
+        if (a.genres[0]) stats.push({ label: "Sound", value: a.genres.slice(0, 2).join(" / ") });
+        if (a.festivals.length) stats.push({ label: "Stages", value: `${a.festivals.length}+ played` });
+        if (a.labels) stats.push({ label: "Label", value: a.labels.split(/[,;/]+/)[0].trim() });
+        if (ins.scene_role) stats.push({ label: "Role", value: ins.scene_role });
+        if (stats.length === 0) return null;
+        return (
+          <div className="border-b-4 border-ink bg-ink/5">
+            <div className="container py-4 grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-3">
+              {stats.map((s) => (
+                <div key={s.label}>
+                  <p className="font-display text-[10px] uppercase text-ink/50 tracking-wider">{s.label}</p>
+                  <p className="font-display text-sm md:text-base text-ink mt-0.5">{s.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       <section className="container py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-8">
           {a.why&&(
@@ -368,18 +392,104 @@ const ArtistDetail = () => {
               <p className="text-ink font-medium text-lg leading-snug">{a.why}</p>
             </div>
           )}
+
+          {/* HIDDEN FACT */}
+          {a.insights?.hidden_fact && (
+            <div className="bg-ink text-cream border-4 border-ink p-5 chunk-shadow">
+              <p className="font-display text-xs uppercase text-acid-yellow mb-2">One thing most people don't know</p>
+              <p className="text-cream font-medium text-lg leading-snug italic">"{a.insights.hidden_fact}"</p>
+            </div>
+          )}
+
           {a.bio&&(
             <div>
               <h2 className="font-display text-2xl uppercase text-ink mb-3 border-b-2 border-ink/20 pb-2">Bio</h2>
               <p className="text-ink/90 leading-relaxed whitespace-pre-line">{a.bio}</p>
             </div>
           )}
+
+          {/* CAREER ARC */}
+          {a.insights?.career_arc && a.insights.career_arc.length > 0 && (
+            <div>
+              <h2 className="font-display text-2xl uppercase text-ink mb-3 border-b-2 border-ink/20 pb-2">Career Arc</h2>
+              <ol className="space-y-3">
+                {a.insights.career_arc.map((m, i) => (
+                  <li key={i} className="flex gap-4 items-start">
+                    <span className="font-display text-3xl text-magenta leading-none shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="text-ink/90 leading-snug pt-1">{m}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {scUrl&&(
             <div>
               <h2 className="font-display text-2xl uppercase text-ink mb-3 border-b-2 border-ink/20 pb-2">Listen</h2>
               <SoundCloudEmbed url={scUrl} name={a.name}/>
             </div>
           )}
+
+          {/* SOUNDS LIKE */}
+          {a.insights?.sounds_like && ((a.insights.sounds_like.international?.length ?? 0) + (a.insights.sounds_like.indian?.length ?? 0) > 0) && (
+            <div>
+              <h2 className="font-display text-2xl uppercase text-ink mb-3 border-b-2 border-ink/20 pb-2">Sounds Like</h2>
+              <p className="text-xs text-ink/50 mb-3 font-display uppercase">For fans of</p>
+              <div className="flex flex-wrap gap-2">
+                {(a.insights.sounds_like.international ?? []).map((n) => (
+                  <span key={"i"+n} className="text-sm font-display bg-cream border-4 border-ink px-3 py-1.5 chunk-shadow">{n}</span>
+                ))}
+                {(a.insights.sounds_like.indian ?? []).map((n) => (
+                  <span key={"in"+n} className="text-sm font-display bg-acid-yellow border-4 border-ink px-3 py-1.5 chunk-shadow">{n} <span className="text-[10px] opacity-60">IN</span></span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* COMMON THREADS */}
+          {a.insights?.commonalities && (() => {
+            const c = a.insights.commonalities;
+            const blocks: { title: string; items: { slug: string; name: string; meta?: string }[] }[] = [];
+            if (c.festival_mates?.length) blocks.push({
+              title: "Plays the same stages as",
+              items: c.festival_mates.map((m) => ({ slug: m.slug, name: m.name, meta: `${m.shared} shared` })),
+            });
+            if (c.label_mates?.length) blocks.push({
+              title: "Label mates",
+              items: c.label_mates.map((m) => ({ slug: m.slug, name: m.name })),
+            });
+            if (c.city_mates?.length) blocks.push({
+              title: `Same scene${city ? ` — ${city}` : ""}`,
+              items: c.city_mates.slice(0, 4).map((m) => ({ slug: m.slug, name: m.name })),
+            });
+            if (c.genre_mates?.length) blocks.push({
+              title: "Sonically aligned",
+              items: c.genre_mates.slice(0, 4).map((m) => ({ slug: m.slug, name: m.name, meta: m.shared.slice(0, 2).join(" · ") })),
+            });
+            if (blocks.length === 0) return null;
+            return (
+              <div>
+                <h2 className="font-display text-2xl uppercase text-ink mb-1 border-b-2 border-ink/20 pb-2">Common Threads</h2>
+                <p className="text-xs text-ink/50 mb-4 font-display uppercase">Where {a.name} sits in the roster</p>
+                <div className="space-y-5">
+                  {blocks.map((b) => (
+                    <div key={b.title}>
+                      <p className="font-display text-xs uppercase text-ink/60 mb-2">{b.title}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {b.items.map((it) => (
+                          <Link key={it.slug} to={`/artists/${it.slug}`}
+                            className="text-sm font-display bg-cream border-2 border-ink px-3 py-1.5 hover:bg-magenta hover:text-cream transition-colors">
+                            {it.name}{it.meta && <span className="text-[10px] opacity-60 ml-1">{it.meta}</span>}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {a.festivals.length>0&&(
             <div>
               <h2 className="font-display text-2xl uppercase text-ink mb-3 border-b-2 border-ink/20 pb-2">Stage Credits</h2>
