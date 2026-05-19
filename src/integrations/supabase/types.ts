@@ -94,13 +94,10 @@ export type Database = {
       }
       artists: {
         Row: {
-          available_cities: string[]
           bandcamp: string | null
           based_city: string | null
           bio: string | null
           booking_email: string | null
-          claim_requested_at: string | null
-          claimed_by: string | null
           created_at: string
           enriched_at: string | null
           enrichment_log: Json
@@ -119,7 +116,6 @@ export type Database = {
           manager_email: string | null
           members: string | null
           name: string
-          open_to_bookings: boolean
           photo_url: string | null
           slug: string
           soundcloud: string | null
@@ -132,13 +128,10 @@ export type Database = {
           why: string | null
         }
         Insert: {
-          available_cities?: string[]
           bandcamp?: string | null
           based_city?: string | null
           bio?: string | null
           booking_email?: string | null
-          claim_requested_at?: string | null
-          claimed_by?: string | null
           created_at?: string
           enriched_at?: string | null
           enrichment_log?: Json
@@ -150,121 +143,6 @@ export type Database = {
           festivals?: string[]
           from_city?: string | null
           gallery?: Json
-          genres?: string[]
-          id?: string
-          instagram?: string | null
-          labels?: string | null
-          manager_email?: string | null
-          members?: string | null
-          name: string
-          open_to_bookings?: boolean
-          photo_url?: string | null
-          slug: string
-          soundcloud?: string | null
-          source?: string
-          spotify?: string | null
-          status?: string
-          updated_at?: string
-          videos?: Json
-          website?: string | null
-          why?: string | null
-        }
-        Update: {
-          available_cities?: string[]
-          bandcamp?: string | null
-          based_city?: string | null
-          bio?: string | null
-          booking_email?: string | null
-          claim_requested_at?: string | null
-          claimed_by?: string | null
-          created_at?: string
-          enriched_at?: string | null
-          enrichment_log?: Json
-          enrichment_status?: string
-          featured?: boolean
-          fee_currency?: string
-          fee_max_inr?: number | null
-          fee_min_inr?: number | null
-          festivals?: string[]
-          from_city?: string | null
-          gallery?: Json
-          genres?: string[]
-          id?: string
-          instagram?: string | null
-          labels?: string | null
-          manager_email?: string | null
-          members?: string | null
-          name?: string
-          open_to_bookings?: boolean
-          photo_url?: string | null
-          slug?: string
-          soundcloud?: string | null
-          source?: string
-          spotify?: string | null
-          status?: string
-          updated_at?: string
-          videos?: Json
-          website?: string | null
-          why?: string | null
-        }
-        Relationships: []
-      }
-      artist_dates: {
-        Row: {
-          artist_id: string
-          city: string
-          created_at: string
-          created_by: string
-          event_date: string
-          event_time: string | null
-          id: string
-          is_public: boolean
-          notes: string | null
-          status: string
-          ticket_url: string | null
-          updated_at: string
-          venue: string | null
-        }
-        Insert: {
-          artist_id: string
-          city: string
-          created_at?: string
-          created_by?: string
-          event_date: string
-          event_time?: string | null
-          id?: string
-          is_public?: boolean
-          notes?: string | null
-          status?: string
-          ticket_url?: string | null
-          updated_at?: string
-          venue?: string | null
-        }
-        Update: {
-          artist_id?: string
-          city?: string
-          created_at?: string
-          created_by?: string
-          event_date?: string
-          event_time?: string | null
-          id?: string
-          is_public?: boolean
-          notes?: string | null
-          status?: string
-          ticket_url?: string | null
-          updated_at?: string
-          venue?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "artist_dates_artist_id_fkey"
-            columns: ["artist_id"]
-            isOneToOne: false
-            referencedRelation: "artists"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
           genres?: string[]
           id?: string
           instagram?: string | null
