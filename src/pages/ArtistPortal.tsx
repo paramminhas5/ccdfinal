@@ -67,7 +67,7 @@ function ProfileEditor({ artist, onSaved }: { artist: Artist; onSaved: (a: Artis
         available_cities: form.available_cities.split(",").map((s: string) => s.trim()).filter(Boolean),
         updated_at: new Date().toISOString(),
       };
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("artists")
         .update(patch)
         .eq("id", artist.id)
@@ -75,7 +75,7 @@ function ProfileEditor({ artist, onSaved }: { artist: Artist; onSaved: (a: Artis
         .single();
       if (error) throw error;
       toast.success("Profile updated!");
-      onSaved(data as Artist);
+      onSaved(data as unknown as Artist);
     } catch (e: any) { toast.error(e.message ?? "Save failed"); }
     finally { setSaving(false); }
   };
@@ -145,7 +145,7 @@ function DateManager({ artistId }: { artistId: string }) {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("artist_dates")
       .select("*")
       .eq("artist_id", artistId)
@@ -160,10 +160,10 @@ function DateManager({ artistId }: { artistId: string }) {
     setBusy(true);
     try {
       if (editId) {
-        const { error } = await supabase.from("artist_dates").update({ ...form, created_by: "artist" }).eq("id", editId);
+        const { error } = await (supabase as any).from("artist_dates").update({ ...form, created_by: "artist" }).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("artist_dates").insert({ ...form, artist_id: artistId, created_by: "artist" });
+        const { error } = await (supabase as any).from("artist_dates").insert({ ...form, artist_id: artistId, created_by: "artist" });
         if (error) throw error;
       }
       toast.success(editId ? "Date updated" : "Date added");
@@ -174,7 +174,7 @@ function DateManager({ artistId }: { artistId: string }) {
 
   const del = async (id: string) => {
     if (!confirm("Delete this date?")) return;
-    await supabase.from("artist_dates").delete().eq("id", id);
+    await (supabase as any).from("artist_dates").delete().eq("id", id);
     toast.success("Deleted"); load();
   };
 
