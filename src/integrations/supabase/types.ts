@@ -111,6 +111,8 @@ export type Database = {
           gallery: Json
           genres: string[]
           id: string
+          insights: Json
+          insights_generated_at: string | null
           instagram: string | null
           labels: string | null
           manager_email: string | null
@@ -145,6 +147,8 @@ export type Database = {
           gallery?: Json
           genres?: string[]
           id?: string
+          insights?: Json
+          insights_generated_at?: string | null
           instagram?: string | null
           labels?: string | null
           manager_email?: string | null
@@ -179,6 +183,8 @@ export type Database = {
           gallery?: Json
           genres?: string[]
           id?: string
+          insights?: Json
+          insights_generated_at?: string | null
           instagram?: string | null
           labels?: string | null
           manager_email?: string | null
