@@ -293,8 +293,8 @@ const ArtistDetail = () => {
         open_to_bookings: r.open_to_bookings!==false,
       });
       setA(norm(data));
-      const { data: dd } = await supabase.from("artist_dates").select("*").eq("artist_id",data.id).eq("is_public",true).order("event_date");
-      setDates((dd??[]) as ArtistDate[]);
+      const { data: dd } = await (supabase as any).from("artist_dates").select("*").eq("artist_id",data.id).eq("is_public",true).order("event_date");
+      setDates((dd??[]) as unknown as ArtistDate[]);
       const { data: rel } = await supabase.from("artists").select("id,slug,name,based_city,from_city,genres,photo_url").eq("status","approved").neq("slug",slug).limit(3);
       setRelated(rel??[]);
       setLoading(false);

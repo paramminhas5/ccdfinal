@@ -381,31 +381,32 @@ const ArtistPortal = () => {
       // If came from claim link, link the artist profile to this user
       if (claimId) {
         setClaiming(true);
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from("artists")
           .update({ claimed_by: session.user.id, claim_requested_at: new Date().toISOString() })
           .eq("id", claimId)
-          .is("claimed_by", null); // only claim if not already claimed
+          .is("claimed_by", null);
         if (error) toast.error("Could not claim profile: " + error.message);
         else toast.success("Profile claimed!");
         setClaiming(false);
       }
 
       // Load artist belonging to this user
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("artists")
         .select("*")
         .eq("claimed_by", session.user.id)
         .maybeSingle();
 
-      setArtist(data ? {
-        ...data,
-        genres: Array.isArray(data.genres) ? data.genres : [],
-        festivals: Array.isArray(data.festivals) ? data.festivals : [],
-        gallery: Array.isArray(data.gallery) ? data.gallery : [],
-        videos: Array.isArray(data.videos) ? data.videos : [],
-        available_cities: Array.isArray(data.available_cities) ? data.available_cities : [],
-        open_to_bookings: data.open_to_bookings !== false,
+      const d: any = data;
+      setArtist(d ? {
+        ...d,
+        genres: Array.isArray(d.genres) ? d.genres : [],
+        festivals: Array.isArray(d.festivals) ? d.festivals : [],
+        gallery: Array.isArray(d.gallery) ? d.gallery : [],
+        videos: Array.isArray(d.videos) ? d.videos : [],
+        available_cities: Array.isArray(d.available_cities) ? d.available_cities : [],
+        open_to_bookings: d.open_to_bookings !== false,
       } as Artist : null);
 
       setLoading(false);
