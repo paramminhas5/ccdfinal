@@ -6,6 +6,19 @@ import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type ArtistInsights = {
+  commonalities?: {
+    label_mates?: { slug: string; name: string }[];
+    city_mates?: { slug: string; name: string; city?: string | null }[];
+    festival_mates?: { slug: string; name: string; shared: number }[];
+    genre_mates?: { slug: string; name: string; shared: string[] }[];
+  };
+  sounds_like?: { international?: string[]; indian?: string[] } | null;
+  career_arc?: string[] | null;
+  hidden_fact?: string | null;
+  scene_role?: string | null;
+};
+
 type Artist = {
   id: string; slug: string; name: string; members: string | null;
   from_city: string | null; based_city: string | null;
@@ -18,6 +31,7 @@ type Artist = {
   gallery: { url: string; caption?: string }[];
   videos: { youtube_id?: string; title?: string; source?: string }[];
   open_to_bookings: boolean; available_cities: string[]; claimed_by: string | null;
+  insights?: ArtistInsights;
 };
 
 type ArtistDate = {
