@@ -144,18 +144,21 @@ Deno.serve(async (req) => {
 
   let body: any = {};
   try { body = await req.json(); } catch {}
-  const { artist_id, all, limit = 50 } = body;
+  const { artist_id, all, limit = 20, force = false } = body;
 
-  const { data: roster } = await sb
+  const q = sb
     .from("artists")
-    .select("id,name,slug,genres,festivals,labels,based_city,from_city,bio")
+    .select("id,name,slug,genres,festivals,labels,based_city,from_city,bio,insights_generated_at")
     .eq("status", "approved");
-  const rosterArr = (roster ?? []) as Artist[];
+  const { data: roster } = await q;
+  const rosterArr = (roster ?? []) as (Artist & { insights_generated_at: string | null })[];
 
   let targets: Artist[];
   if (artist_id) targets = rosterArr.filter((a) => a.id === artist_id);
-  else if (all) targets = rosterArr.slice(0, limit);
-  else targets = rosterArr.filter((a) => true).slice(0, limit);
+  else if (all) {
+    const pool = force ? rosterArr : rosterArr.filter((a) => !a.insights_generated_at);
+    targets = pool.slice(0, limit);
+  } else targets = rosterArr.slice(0, limit);
 
   const results: any[] = [];
   for (const t of targets) {
