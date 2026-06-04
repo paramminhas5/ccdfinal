@@ -4,13 +4,6 @@ import "./ccd.css";
 import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
 
-const HERO_CHIPS = [
-  "200 pax per show",
-  "2,000+ at finale",
-  "Outdoor pet zone",
-  "Startdawg · Merman + more",
-  "Jun–Oct 2026",
-];
 
 const STATS = [
   { label: "Per show capacity", value: "~200 pax", bg: "bg-lime", fg: "text-ink" },
