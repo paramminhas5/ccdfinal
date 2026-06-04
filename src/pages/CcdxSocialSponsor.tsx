@@ -124,42 +124,76 @@ const CcdxSocialSponsor = () => {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      {/* HERO */}
-      <section className="relative bg-electric-blue border-b-4 border-ink py-10 md:py-16 lg:py-20 overflow-hidden">
-        {/* Decorative paw-print easter eggs */}
-        <span aria-hidden className="absolute top-6 right-8 text-4xl opacity-30 -rotate-12 select-none">🐾</span>
-        <span aria-hidden className="absolute bottom-8 left-6 text-3xl opacity-25 rotate-12 select-none">🐾</span>
-        <span aria-hidden className="absolute top-1/2 right-1/4 text-2xl opacity-20 rotate-45 select-none">★</span>
-
+      {/* HERO — brutalist collage stacks */}
+      <section className="relative bg-cream border-b-4 border-ink py-8 md:py-12 lg:py-16 bg-grain overflow-hidden">
         <div className="container relative">
-          <div className="inline-block bg-acid-yellow text-ink border-4 border-ink chunk-shadow px-3 py-1 mb-5 font-display text-xs sm:text-sm -rotate-1">
-            / SPONSOR THE SERIES ★ 2026 EDITION
-          </div>
-          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-10 items-start">
-            <div>
-              <h1 className="font-display text-cream leading-[0.9] text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-3 chunk-shadow-text">
-                BE PART OF<br />SOMETHING<br />DIFFERENT.
-              </h1>
-              <p className="text-cream/90 text-sm sm:text-base md:text-lg font-medium max-w-xl">
-                3 shows + 1 grand format show. End of June 2026. Animal lovers and electronic music fans — together.
-                Own a show, own the series, or show up everywhere.
-              </p>
-              <div className="mt-5 inline-flex items-center gap-2 bg-lime text-ink border-4 border-ink chunk-shadow px-3 py-1.5 font-display text-xs sm:text-sm rotate-1">
-                🐾 PET-FRIENDLY · 🎧 LIVE SETS · ★ LIMITED SLOTS
+          <div className="relative w-full border-4 md:border-[6px] border-ink bg-electric-blue shadow-[10px_10px_0_0_hsl(var(--ink))] md:shadow-[16px_16px_0_0_hsl(var(--ink))] flex flex-col lg:flex-row overflow-hidden">
+            {/* LEFT: messaging */}
+            <div className="flex-1 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between border-b-4 md:border-b-[6px] lg:border-b-0 lg:border-r-[6px] border-ink relative z-10">
+              <div>
+                <div className="inline-block bg-magenta text-cream border-[3px] border-ink px-3 py-1 mb-6 md:mb-8 shadow-[4px_4px_0_0_hsl(var(--ink))]">
+                  <span className="font-display tracking-tight uppercase text-[11px] sm:text-xs">
+                    / SPONSOR THE SERIES • 2026 EDITION
+                  </span>
+                </div>
+
+                <h1 className="font-display text-cream leading-[0.9] uppercase text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-5 md:mb-8 break-words">
+                  BE PART OF{" "}
+                  <span className="text-acid-yellow">SOMETHING</span>{" "}
+                  DIFFERENT.
+                </h1>
+
+                <p className="text-cream text-base sm:text-lg md:text-xl font-medium max-w-xl leading-snug">
+                  CCDxSocial: a 4-event pet + electronic music series in Bangalore.
+                  3 shows + 1 grand finale. June–October 2026.
+                </p>
+              </div>
+
+              <div className="mt-8 md:mt-10 flex flex-wrap gap-3 md:gap-4">
+                <a
+                  href="mailto:partners@catscan.dance?subject=CCDxSocial%20Sponsorship"
+                  className="bg-lime text-ink border-4 border-ink px-5 sm:px-7 py-3 sm:py-4 text-lg sm:text-xl md:text-2xl font-display uppercase shadow-[6px_6px_0_0_hsl(var(--ink))] md:shadow-[8px_8px_0_0_hsl(var(--ink))] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                >
+                  Enquire Now
+                </a>
+                <div className="bg-cream text-ink border-4 border-ink px-5 sm:px-7 py-3 sm:py-4 text-lg sm:text-xl md:text-2xl font-display uppercase shadow-[6px_6px_0_0_hsl(var(--ink))] md:shadow-[8px_8px_0_0_hsl(var(--ink))]">
+                  Jun–Oct '26
+                </div>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {HERO_CHIPS.map((c, i) => (
-                <span
-                  key={c}
-                  className={`inline-block bg-electric-blue text-cream border-4 border-cream px-3 py-1.5 font-display text-xs sm:text-sm ${
-                    i % 2 === 0 ? "-rotate-1" : "rotate-1"
-                  }`}
-                >
-                  ★ {c}
-                </span>
-              ))}
+
+            {/* RIGHT: stat collage */}
+            <div className="w-full lg:w-[42%] bg-ink p-5 sm:p-6 md:p-8 flex flex-col gap-4 md:gap-5">
+              <div className="bg-acid-yellow text-ink border-4 border-ink p-5 -rotate-1 shadow-[8px_8px_0_0_hsl(var(--magenta))]">
+                <span className="block font-display uppercase text-[10px] tracking-widest mb-1 opacity-70">Capacity</span>
+                <div className="font-display text-3xl md:text-4xl uppercase leading-none">200 PAX / SHOW</div>
+              </div>
+
+              <div className="bg-magenta text-cream border-4 border-ink p-5 rotate-1 shadow-[8px_8px_0_0_hsl(var(--electric-blue))]">
+                <span className="block font-display uppercase text-[10px] tracking-widest mb-1 opacity-80">The Big One</span>
+                <div className="font-display text-3xl md:text-4xl uppercase leading-none">2,000+ AT FINALE</div>
+              </div>
+
+              <div className="bg-lime text-ink border-4 border-ink p-5 -rotate-2 shadow-[8px_8px_0_0_hsl(var(--acid-yellow))]">
+                <span className="block font-display uppercase text-[10px] tracking-widest mb-1 opacity-70">Features</span>
+                <div className="font-display text-2xl md:text-3xl uppercase leading-none">🐾 OUTDOOR PET ZONE</div>
+              </div>
+
+              <div className="bg-cream text-ink border-4 border-ink p-5 rotate-[1.5deg] shadow-[8px_8px_0_0_hsl(var(--ink))]">
+                <span className="block font-display uppercase text-[10px] tracking-widest mb-1 opacity-70">Lineup</span>
+                <div className="font-display text-xl md:text-2xl uppercase leading-tight">Startdawg • Merman + more</div>
+              </div>
             </div>
+
+            {/* Decorative dot grid */}
+            <div
+              aria-hidden
+              className="absolute bottom-0 left-0 w-24 h-24 md:w-32 md:h-32 opacity-20 pointer-events-none"
+              style={{
+                backgroundImage: "radial-gradient(hsl(var(--ink)) 2px, transparent 0)",
+                backgroundSize: "10px 10px",
+              }}
+            />
           </div>
         </div>
       </section>
