@@ -33,6 +33,7 @@ import SubmitEvent from "./pages/SubmitEvent.tsx";
 import AuthorProfile from "./pages/AuthorProfile.tsx";
 import SceneHub from "./pages/SceneHub.tsx";
 import CcdxSocial from "./pages/CcdxSocial.tsx";
+import CcdxSocialProposal from "./pages/CcdxSocialProposal.tsx";
 import CcdxSocialSponsor from "./pages/CcdxSocialSponsor.tsx";
 import CatsCanCare from "./pages/CatsCanCare.tsx";
 import ArtistsPage from "./pages/Artists.tsx";
@@ -93,6 +94,7 @@ const App = () => (
                   <Route path="/authors/:slug" element={<AuthorProfile />} />
                   <Route path="/submit-event" element={<SubmitEvent />} />
                   <Route path="/ccdxsocial" element={<CcdxSocial />} />
+                  <Route path="/ccdxsocial/proposal" element={<CcdxSocialProposal />} />
                   <Route path="/ccdxsocial/sponsor" element={<CcdxSocialSponsor />} />
                   <Route path="/care" element={<CatsCanCare />} />
                   <Route path="/artists" element={<ArtistsPage />} />
