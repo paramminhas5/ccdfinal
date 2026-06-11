@@ -31,7 +31,7 @@ const OPS_SECTIONS: { id: string; label: string; short: string }[] = [
  * - noindex/nofollow (also disallowed in robots.txt, omitted from sitemap).
  * - Hides the global site Nav/Footer/ThemeSwitcher/DiscoButton while mounted.
  */
-const CcdxSocial = () => {
+const CcdxSocialProposal = () => {
   const [tab, setTab] = useState<TabId>("op");
   const [dlOpen, setDlOpen] = useState(false);
   const [pdfMode, setPdfMode] = useState(false);
@@ -577,4 +577,4 @@ const CcdxSocial = () => {
   );
 };
 
-export default CcdxSocial;
+export default CcdxSocialProposal;
