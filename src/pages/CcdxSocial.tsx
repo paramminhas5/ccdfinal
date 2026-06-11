@@ -10,6 +10,8 @@ import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
 import heroArt from "@/assets/ccdxsocial-hero.png.asset.json";
 import blrPoster from "@/assets/ccdxsocial-blr-poster.jpg.asset.json";
+import mumPoster from "@/assets/ccdxsocial-mum-poster.jpg.asset.json";
+import hydPoster from "@/assets/ccdxsocial-hyd-poster.jpg.asset.json";
 import catDancer from "@/assets/cat-dancer.png";
 import catHandstand from "@/assets/cat-handstand.png";
 import catHeadphones from "@/assets/cat-headphones-dance.png";
