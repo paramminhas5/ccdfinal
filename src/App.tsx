@@ -94,6 +94,7 @@ const App = () => (
                   <Route path="/authors/:slug" element={<AuthorProfile />} />
                   <Route path="/submit-event" element={<SubmitEvent />} />
                   <Route path="/ccdxsocial" element={<CcdxSocial />} />
+                  <Route path="/ccdxsocial/proposal" element={<CcdxSocialProposal />} />
                   <Route path="/ccdxsocial/sponsor" element={<CcdxSocialSponsor />} />
                   <Route path="/care" element={<CatsCanCare />} />
                   <Route path="/artists" element={<ArtistsPage />} />
