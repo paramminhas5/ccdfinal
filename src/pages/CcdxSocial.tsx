@@ -130,7 +130,7 @@ const EXPECT = [
   {
     eyebrow: "4–8 PM",
     title: "THE AFTERNOON",
-    body: "Outdoor pet zone. Agility course, portrait booth, treat bar, vendor market, lookalike + best-dressed contests rotating each city. Bring your dog or just come hang.",
+    body: "Outdoor pet zone. Agility course, portrait booth, treat bar, vendor market, lookalike + best-dressed contests rotating each city. Bring your pet or just come hang.",
     bg: "bg-electric-blue",
     text: "text-cream",
     emoji: "🐾",
@@ -138,7 +138,7 @@ const EXPECT = [
   {
     eyebrow: "8 PM TILL LATE",
     title: "THE EVENING",
-    body: "Dance floor opens inside. House, disco, breaks, UKG, DnB. CCD residents plus a rotating guest selector in every city.",
+    body: "Dance floor opens inside. Residents + rotating guests, late till close.",
     bg: "bg-magenta",
     text: "text-cream",
     emoji: "🎧",
@@ -146,7 +146,7 @@ const EXPECT = [
   {
     eyebrow: "THE VIBE",
     title: "EASY SUNDAY",
-    body: "No dress code, no posture. Free water and treat stations all day. Come for the dogs, stay for the music — or the other way round.",
+    body: "No dress code, no posture. Free water and treat stations all day. Come for the pets, stay for the music — or the other way round.",
     bg: "bg-acid-yellow",
     text: "text-ink",
     emoji: "☀️",
