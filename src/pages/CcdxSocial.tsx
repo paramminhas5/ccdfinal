@@ -190,10 +190,10 @@ function ScrollCats() {
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[5] hidden md:block overflow-hidden">
-      <motion.img src={catDancer} style={{ y: y1, rotate: rot1 }} className="absolute top-[120vh] -left-4 w-20 opacity-80" alt="" />
-      <motion.img src={catHandstand} style={{ y: y2, rotate: rot2 }} className="absolute top-[180vh] right-2 w-24 opacity-80" alt="" />
-      <motion.img src={catHeadphones} style={{ y: y3, rotate: rot1 }} className="absolute top-[260vh] left-4 w-24 opacity-80" alt="" />
-      <motion.img src={catRaver} style={{ y: y4, rotate: rot2 }} className="absolute top-[340vh] right-6 w-28 opacity-80" alt="" />
+      <motion.img src={catDancer} style={{ y: y1, rotate: rot1 }} className="absolute top-[120vh] -left-4 w-16 opacity-60" alt="" />
+      <motion.img src={catHandstand} style={{ y: y2, rotate: rot2 }} className="absolute top-[180vh] right-2 w-16 opacity-60" alt="" />
+      <motion.img src={catHeadphones} style={{ y: y3, rotate: rot1 }} className="absolute top-[260vh] left-4 w-20 opacity-60" alt="" />
+      <motion.img src={catRaver} style={{ y: y4, rotate: rot2 }} className="absolute top-[340vh] right-6 w-20 opacity-60" alt="" />
     </div>
   );
 }
