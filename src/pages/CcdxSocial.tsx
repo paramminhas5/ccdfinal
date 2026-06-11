@@ -1,14 +1,19 @@
 /**
  * CCD × SOCIAL — Public-facing 4-city tour landing page (/ccdxsocial).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import Marquee from "@/components/Marquee";
 import SEO from "@/components/SEO";
-import catSocialHero from "@/assets/cat-social-hero.png";
+import heroArt from "@/assets/ccdxsocial-hero.png.asset.json";
 import blrPoster from "@/assets/ccdxsocial-blr-poster.jpg.asset.json";
+import catDancer from "@/assets/cat-dancer.png";
+import catHandstand from "@/assets/cat-handstand.png";
+import catHeadphones from "@/assets/cat-headphones-dance.png";
+import catRaver from "@/assets/cat-raver.png";
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
 const NEXT_SHOW_DATE = new Date("2026-06-28T10:30:00Z"); // 4 PM IST, Sun 28 Jun 2026
@@ -36,6 +41,24 @@ function useCountdown(target: Date) {
 
 const Pad = (n: number) => String(n).padStart(2, "0");
 
+// Reusable scroll-reveal wrapper
+const Reveal = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 32 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-80px" }}
+    transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
+
+// ── Artists on the decks ──────────────────────────────────────────────────────
+const ARTISTS = [
+  "SARTDAWG", "MERMAN", "DJAZZ", "HEDZ", "KAMARI", "VISHNU", "TANSANE", "+ MORE",
+];
+
 // ── Tour stops ────────────────────────────────────────────────────────────────
 const STOPS = [
   {
@@ -46,7 +69,7 @@ const STOPS = [
     date: "Sun, 28 Jun 2026 · 4 PM till late",
     tagline: "The launch · where it all begins",
     desc: "Our home crowd, our first room. Outdoor pet zone from 4 PM with a vendor market, lookalike contest and portrait booth — dance floor opens inside at 8.",
-    music: "Startdawg b2b Merman · plus a BLR opener",
+    lineup: "Lineup announced soon",
     bg: "bg-electric-blue",
     text: "text-cream",
     accent: "text-acid-yellow",
@@ -61,7 +84,7 @@ const STOPS = [
     date: "Last Sunday of July 2026",
     tagline: "The style stop · midsummer energy",
     desc: "Mumbai brings the looks. Best-dressed contest (pets included), live grooming demo, and a photo corner that doubles as a portrait studio.",
-    music: "Startdawg b2b Merman · plus a Mumbai guest (TBA)",
+    lineup: "Lineup TBA",
     bg: "bg-magenta",
     text: "text-cream",
     accent: "text-acid-yellow",
@@ -76,7 +99,7 @@ const STOPS = [
     date: "Last Sunday of August 2026",
     tagline: "The agility stop · pre-finale",
     desc: "The most physical edition. Two agility courses, timed speed runs, performance contest. Hyderabad's underground takes the late slot.",
-    music: "Startdawg b2b Merman · plus a HYD guest (TBA)",
+    lineup: "Lineup TBA",
     bg: "bg-ink",
     text: "text-cream",
     accent: "text-acid-yellow",
@@ -91,7 +114,7 @@ const STOPS = [
     date: "October 2026 (date soon)",
     tagline: "The grand finale · season closer",
     desc: "Everything the tour has been building toward. Outdoor stage, pet runway, agility finals, full lineup. One last Sunday with the whole pack in one place.",
-    music: "Full lineup TBA — headliner + residents + guests from every city",
+    lineup: "Headliner + residents + guests from every city",
     bg: "bg-acid-yellow",
     text: "text-ink",
     accent: "text-magenta",
@@ -108,13 +131,15 @@ const EXPECT = [
     body: "Outdoor pet zone. Agility course, portrait booth, treat bar, vendor market, lookalike + best-dressed contests rotating each city. Bring your dog or just come hang.",
     bg: "bg-electric-blue",
     text: "text-cream",
+    emoji: "🐾",
   },
   {
     eyebrow: "8 PM TILL LATE",
     title: "THE EVENING",
-    body: "Dance floor opens inside. House, disco, breaks, UKG, DnB. One CCD resident, one open-deck slot, one local guest, and a legend of the game on the late slot.",
+    body: "Dance floor opens inside. House, disco, breaks, UKG, DnB. CCD residents plus a rotating guest selector in every city.",
     bg: "bg-magenta",
     text: "text-cream",
+    emoji: "🎧",
   },
   {
     eyebrow: "THE VIBE",
@@ -122,6 +147,7 @@ const EXPECT = [
     body: "No dress code, no posture. Free water and treat stations all day. Come for the dogs, stay for the music — or the other way round.",
     bg: "bg-acid-yellow",
     text: "text-ink",
+    emoji: "☀️",
   },
   {
     eyebrow: "WHO IT'S FOR",
@@ -129,14 +155,8 @@ const EXPECT = [
     body: "Pet parents, music heads, friends of both, and anyone who wants a different kind of Sunday. Free entry on RSVP. Pets welcome at every stop.",
     bg: "bg-cream",
     text: "text-ink",
+    emoji: "💛",
   },
-];
-
-// ── How to join ───────────────────────────────────────────────────────────────
-const STEPS = [
-  { n: "1", title: "PICK YOUR CITY", body: "Find your stop on the tour below. Tap RSVP — it's free." },
-  { n: "2", title: "SHOW UP SUNDAY", body: "Doors at 4 PM. Bring your pet (or just yourself). Treats and water on us." },
-  { n: "3", title: "STAY FOR THE FLOOR", body: "Music kicks in at 8 PM and runs till late. Same crew every city." },
 ];
 
 // ── JSON-LD ───────────────────────────────────────────────────────────────────
@@ -156,8 +176,32 @@ const jsonLd = {
   ],
 };
 
+// ── Floating scroll-cats (decorative parallax) ────────────────────────────────
+function ScrollCats() {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 3000], [0, -400]);
+  const y2 = useTransform(scrollY, [0, 3000], [0, -700]);
+  const y3 = useTransform(scrollY, [0, 3000], [0, -550]);
+  const y4 = useTransform(scrollY, [0, 3000], [0, -900]);
+  const rot1 = useTransform(scrollY, [0, 3000], [-8, 18]);
+  const rot2 = useTransform(scrollY, [0, 3000], [10, -22]);
+
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-[5] hidden md:block overflow-hidden">
+      <motion.img src={catDancer} style={{ y: y1, rotate: rot1 }} className="absolute top-[120vh] -left-4 w-20 opacity-80" alt="" />
+      <motion.img src={catHandstand} style={{ y: y2, rotate: rot2 }} className="absolute top-[180vh] right-2 w-24 opacity-80" alt="" />
+      <motion.img src={catHeadphones} style={{ y: y3, rotate: rot1 }} className="absolute top-[260vh] left-4 w-24 opacity-80" alt="" />
+      <motion.img src={catRaver} style={{ y: y4, rotate: rot2 }} className="absolute top-[340vh] right-6 w-28 opacity-80" alt="" />
+    </div>
+  );
+}
+
 export default function CcdxSocial() {
   const cd = useCountdown(NEXT_SHOW_DATE);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroArtY = useTransform(heroProgress, [0, 1], [0, 80]);
+  const heroArtScale = useTransform(heroProgress, [0, 1], [1, 1.08]);
 
   return (
     <>
@@ -168,37 +212,58 @@ export default function CcdxSocial() {
         jsonLd={jsonLd}
       />
       <Nav />
+      <ScrollCats />
 
-      <main className="bg-cream text-ink">
-        {/* ── HERO ─────────────────────────────────────────────────────────── */}
-        <section className="bg-ink text-cream pt-28 md:pt-32 pb-16 md:pb-24 border-b-4 border-ink overflow-hidden">
-          <div className="container">
-            <div className="grid lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-14 items-center">
-              {/* Left */}
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-6">
-                  <span className="font-display text-xs px-3 py-1 bg-magenta text-cream border-4 border-cream chunk-shadow">National Tour</span>
-                  <span className="font-display text-xs px-3 py-1 bg-acid-yellow text-ink border-4 border-cream chunk-shadow">4 Cities · Jun–Oct 2026</span>
-                  <span className="font-display text-xs px-3 py-1 bg-electric-blue text-cream border-4 border-cream chunk-shadow">Free Entry · RSVP</span>
-                </div>
+      <main className="bg-cream text-ink relative">
+        {/* ── HERO ── art integrated as background of the whole block */}
+        <section ref={heroRef} className="relative bg-cream text-ink pt-24 md:pt-28 pb-12 md:pb-20 border-b-4 border-ink overflow-hidden">
+          {/* Background art layer */}
+          <motion.div
+            style={{ y: heroArtY, scale: heroArtScale }}
+            className="absolute inset-0 z-0"
+          >
+            <img
+              src={heroArt.url}
+              alt=""
+              aria-hidden
+              className="w-full h-full object-cover object-center"
+            />
+            {/* Soft fade so text on the left stays legible */}
+            <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/85 md:via-cream/70 to-cream/10" />
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-cream to-transparent" />
+          </motion.div>
 
-                <h1 className="font-display leading-[0.85] tracking-tight text-6xl sm:text-7xl md:text-8xl lg:text-9xl">
-                  <span className="block">CATS</span>
-                  <span className="block">CAN</span>
-                  <span className="block text-acid-yellow">DANCE</span>
-                  <span className="block text-magenta">× SOCIAL</span>
-                </h1>
+          <div className="container relative z-10">
+            <Reveal>
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <span className="font-display text-xs px-3 py-1 bg-magenta text-cream border-4 border-ink chunk-shadow">National Tour</span>
+                <span className="font-display text-xs px-3 py-1 bg-acid-yellow text-ink border-4 border-ink chunk-shadow">4 Cities · Jun–Oct 2026</span>
+                <span className="font-display text-xs px-3 py-1 bg-electric-blue text-cream border-4 border-ink chunk-shadow">Free Entry · RSVP</span>
+              </div>
+            </Reveal>
 
-                <p className="mt-8 max-w-xl text-lg md:text-xl text-cream/85 leading-relaxed">
-                  A travelling Sunday party for pet parents and music lovers. We start in Bangalore,
-                  then Mumbai, then Hyderabad — and close it out with a grand finale in Delhi NCR.
-                  Outdoor pet zone in the afternoon, underground dance music after dark, same crew every city.
-                </p>
+            <motion.h1
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="font-display leading-[0.85] tracking-tight text-6xl sm:text-7xl md:text-8xl lg:text-[10rem] max-w-3xl"
+            >
+              <span className="block">CATS CAN</span>
+              <span className="block">DANCE</span>
+              <span className="block text-magenta">× SOCIAL</span>
+            </motion.h1>
 
-                {/* Countdown */}
-                {!cd.over ? (
-                  <div className="mt-8 inline-block bg-cream text-ink border-4 border-cream chunk-shadow p-5">
-                    <div className="font-display text-xs text-magenta mb-3">▶ STOP 01 · BANGALORE IN</div>
+            <Reveal delay={0.15}>
+              <p className="mt-8 max-w-xl text-lg md:text-xl text-ink/85 leading-relaxed bg-cream/80 backdrop-blur-sm p-2 -ml-2">
+                A travelling Sunday party for pet parents and music lovers. Bangalore → Mumbai → Hyderabad → a grand finale in Delhi NCR. Outdoor pet zone in the afternoon, underground dance music after dark.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.25}>
+              <div className="mt-8 flex flex-wrap items-end gap-4">
+                {!cd.over && (
+                  <div className="bg-ink text-cream border-4 border-ink chunk-shadow p-5">
+                    <div className="font-display text-xs text-acid-yellow mb-3">▶ STOP 01 · BANGALORE IN</div>
                     <div className="flex gap-3">
                       {[
                         { val: cd.days, label: "DAYS" },
@@ -208,53 +273,30 @@ export default function CcdxSocial() {
                       ].map(({ val, label }) => (
                         <div key={label} className="text-center">
                           <div className="font-display text-3xl md:text-4xl leading-none">{Pad(val)}</div>
-                          <div className="font-display text-[10px] mt-1 text-ink/60">{label}</div>
+                          <div className="font-display text-[10px] mt-1 text-cream/60">{label}</div>
                         </div>
                       ))}
                     </div>
-                    <div className="font-display text-[11px] mt-3 text-ink/70">SUN 28 JUN · SOCIAL INDIRANAGAR · 4 PM</div>
-                  </div>
-                ) : (
-                  <div className="mt-8">
-                    <p className="font-display text-sm text-magenta">/ NEXT STOP</p>
-                    <p className="font-display text-3xl mt-2">BANGALORE — STOP 01</p>
-                    <p className="text-cream/80 mt-1">Sun, 28 Jun 2026 · Social Indiranagar</p>
+                    <div className="font-display text-[11px] mt-3 text-cream/70">SUN 28 JUN · SOCIAL INDIRANAGAR · 4 PM</div>
                   </div>
                 )}
 
-                <div className="mt-8 flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3">
                   <Link
                     to="/events"
-                    className="inline-block bg-acid-yellow text-ink font-display text-lg px-7 py-4 border-4 border-cream chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
+                    className="inline-block bg-acid-yellow text-ink font-display text-lg px-7 py-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
                   >
                     RSVP FREE →
                   </Link>
                   <a
                     href="#tour"
-                    className="inline-block bg-magenta text-cream font-display text-lg px-7 py-4 border-4 border-cream chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
+                    className="inline-block bg-magenta text-cream font-display text-lg px-7 py-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
                   >
                     SEE THE TOUR ↓
                   </a>
                 </div>
               </div>
-
-              {/* Right — Social-themed hero cat */}
-              <div className="relative">
-                <div className="bg-electric-blue border-4 border-cream chunk-shadow-lg p-4 rotate-[-2deg]">
-                  <img
-                    src={catSocialHero}
-                    alt="DJ cat at Social — CCD × SOCIAL tour"
-                    width={1024}
-                    height={1024}
-                    className="w-full h-auto block"
-                    loading="eager"
-                  />
-                </div>
-                <div className="absolute -bottom-5 -right-3 bg-acid-yellow text-ink font-display text-xs px-3 py-2 border-4 border-ink chunk-shadow rotate-[4deg]">
-                  PETS WELCOME 🐾
-                </div>
-              </div>
-            </div>
+            </Reveal>
           </div>
         </section>
 
@@ -265,38 +307,94 @@ export default function CcdxSocial() {
           items={["CCD × SOCIAL", "BANGALORE 28 JUN", "MUMBAI JULY", "HYDERABAD AUGUST", "DELHI FINALE", "FREE ENTRY · RSVP"]}
         />
 
-        {/* ── WHAT TO EXPECT ── */}
-        <section className="bg-cream py-20 md:py-28 border-b-4 border-ink">
-          <div className="container">
-            <p className="font-display text-sm text-magenta">/ WHAT TO EXPECT</p>
-            <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">
-              HOW IT WORKS.
-            </h2>
-            <p className="mt-4 max-w-2xl text-lg text-ink/80">
-              Every stop runs the same shape: an outdoor afternoon for pets, an indoor evening for music,
-              and one long, easy Sunday in between. What changes city to city is the room, the guests, and the contests.
-            </p>
+        {/* ── HOW IT WORKS — visual & playful ── */}
+        <section className="bg-cream py-20 md:py-28 border-b-4 border-ink relative overflow-hidden">
+          <div className="container relative">
+            <Reveal>
+              <p className="font-display text-sm text-magenta">/ HOW IT WORKS</p>
+              <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">
+                ONE SUNDAY.<br />TWO HALVES.
+              </h2>
+              <p className="mt-4 max-w-2xl text-lg text-ink/80">
+                Every stop runs the same shape. Afternoon for pets, evening for the floor, easy Sunday in between.
+              </p>
+            </Reveal>
 
-            <div className="grid md:grid-cols-2 gap-6 mt-12">
-              {EXPECT.map((e) => (
-                <div key={e.title} className={`${e.bg} ${e.text} border-4 border-ink chunk-shadow p-6 md:p-8`}>
+            {/* Visual day-arc timeline */}
+            <div className="mt-14 grid md:grid-cols-4 gap-6 relative">
+              {/* connecting line */}
+              <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-1 bg-ink/20 z-0" />
+              {EXPECT.map((e, i) => (
+                <motion.div
+                  key={e.title}
+                  initial={{ opacity: 0, y: 40, rotate: i % 2 === 0 ? -2 : 2 }}
+                  whileInView={{ opacity: 1, y: 0, rotate: i % 2 === 0 ? -1.5 : 1.5 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.55, delay: i * 0.12, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  whileHover={{ rotate: 0, y: -4, transition: { duration: 0.2 } }}
+                  className={`${e.bg} ${e.text} border-4 border-ink chunk-shadow p-6 relative z-10`}
+                >
+                  <div className="text-5xl mb-3" aria-hidden>{e.emoji}</div>
                   <p className="font-display text-xs opacity-80">{e.eyebrow}</p>
-                  <h3 className="font-display text-3xl md:text-4xl mt-2">{e.title}</h3>
-                  <p className="mt-4 text-base md:text-lg opacity-90">{e.body}</p>
-                </div>
+                  <h3 className="font-display text-2xl md:text-3xl mt-2">{e.title}</h3>
+                  <p className="mt-3 text-sm md:text-base opacity-90">{e.body}</p>
+                </motion.div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── ON THE DECKS / ARTISTS ── */}
+        <section className="bg-ink text-cream py-16 md:py-20 border-b-4 border-ink overflow-hidden">
+          <div className="container">
+            <Reveal>
+              <p className="font-display text-sm text-acid-yellow">/ ON THE DECKS</p>
+              <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">
+                THE <span className="text-magenta">SELECTORS</span>.
+              </h2>
+              <p className="mt-4 max-w-2xl text-lg text-cream/80">
+                Resident and guest selectors across the tour. Lineups announced city by city — here's the family you'll hear from.
+              </p>
+            </Reveal>
+          </div>
+
+          {/* Scrolling artist marquee */}
+          <div className="mt-10 relative">
+            <motion.div
+              className="flex gap-4 whitespace-nowrap"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ duration: 28, ease: "linear", repeat: Infinity }}
+            >
+              {[...ARTISTS, ...ARTISTS].map((a, i) => (
+                <span
+                  key={`${a}-${i}`}
+                  className={`font-display text-3xl md:text-5xl px-6 py-3 border-4 border-cream chunk-shadow shrink-0 ${
+                    i % 3 === 0 ? "bg-acid-yellow text-ink" : i % 3 === 1 ? "bg-magenta text-cream" : "bg-electric-blue text-cream"
+                  }`}
+                >
+                  {a}
+                </span>
+              ))}
+            </motion.div>
+          </div>
+
+          <div className="container mt-10">
+            <p className="text-sm text-cream/60">
+              Genres on the floor: House · Disco · Breaks · UKG · DnB · Groove
+            </p>
           </div>
         </section>
 
         {/* ── THE TOUR ── */}
         <section id="tour" className="bg-electric-blue text-cream py-20 md:py-28 border-b-4 border-ink">
           <div className="container">
-            <p className="font-display text-sm text-acid-yellow">/ THE TOUR</p>
-            <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">FOUR CITIES.<br />ONE SUNDAY EACH.</h2>
-            <p className="text-lg md:text-xl mt-4 max-w-2xl text-cream/85">
-              Same format, different rooms. We start in Bangalore and end with a large-format finale in Delhi NCR.
-            </p>
+            <Reveal>
+              <p className="font-display text-sm text-acid-yellow">/ THE TOUR</p>
+              <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">FOUR CITIES.<br />ONE SUNDAY EACH.</h2>
+              <p className="text-lg md:text-xl mt-4 max-w-2xl text-cream/85">
+                Same format, different rooms. We start in Bangalore and end with a large-format finale in Delhi NCR.
+              </p>
+            </Reveal>
 
             {/* Step progress bar (desktop) */}
             <div className="hidden md:flex items-center mt-12 mb-10">
@@ -316,9 +414,13 @@ export default function CcdxSocial() {
 
             {/* Stop cards */}
             <div className="grid md:grid-cols-2 gap-6 mt-8">
-              {STOPS.map((stop) => (
-                <article
+              {STOPS.map((stop, i) => (
+                <motion.article
                   key={stop.slug}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.6, delay: i * 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
                   className={`relative ${stop.bg} ${stop.text} border-4 border-cream chunk-shadow p-6 md:p-8`}
                 >
                   {stop.badge === "next" && (
@@ -354,8 +456,8 @@ export default function CcdxSocial() {
                   <p className="mt-4 text-base opacity-90">{stop.desc}</p>
 
                   <div className="mt-5 border-t-2 border-cream/30 pt-4">
-                    <p className="font-display text-xs opacity-80">MUSIC</p>
-                    <p className="mt-1 text-sm opacity-95">{stop.music}</p>
+                    <p className="font-display text-xs opacity-80">LINEUP</p>
+                    <p className="mt-1 text-sm opacity-95">{stop.lineup}</p>
                   </div>
 
                   <div className="mt-6 flex items-end justify-between gap-3">
@@ -370,124 +472,94 @@ export default function CcdxSocial() {
                       {stop.badge === "next" ? "RSVP FREE →" : stop.badge === "finale" ? "GET NOTIFIED →" : "RSVP →"}
                     </Link>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── MUSIC ── */}
-        <section className="bg-ink text-cream py-20 md:py-28 border-b-4 border-ink">
-          <div className="container grid lg:grid-cols-[1fr_1.2fr] gap-12 items-start">
-            <div>
-              <p className="font-display text-sm text-acid-yellow">/ WHAT YOU'LL HEAR</p>
-              <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">THE FLOOR.</h2>
-            </div>
-            <div>
-              <div className="flex flex-wrap gap-2 mb-6">
-                {["House", "Groove", "Disco", "Breaks", "UKG", "DnB"].map((g) => (
-                  <span key={g} className="font-display text-xs px-3 py-2 bg-electric-blue text-cream border-4 border-cream chunk-shadow">
-                    {g}
-                  </span>
-                ))}
-              </div>
-              <p className="text-lg text-cream/85 leading-relaxed">
-                <span className="text-acid-yellow font-display">Startdawg b2b Merman</span> are the residents — they play every stop.
-                Each city gets a local guest on warmup and a legend of the game on the late slot.
-                One open-deck spot per show keeps a door open for the next name up.
-              </p>
-              <p className="mt-4 text-base text-cream/70">
-                Doors at 8 PM, music till close. Same energy, different room.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── HOW TO JOIN ── */}
-        <section className="bg-acid-yellow text-ink py-20 md:py-28 border-b-4 border-ink">
-          <div className="container">
-            <p className="font-display text-sm text-magenta">/ HOW TO JOIN</p>
-            <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">THREE STEPS.</h2>
-            <p className="mt-4 max-w-2xl text-lg">
-              Free entry at every stop. RSVP holds your spot — pets and friends are both welcome.
-            </p>
-
-            <div className="grid md:grid-cols-3 gap-6 mt-12">
-              {STEPS.map((s) => (
-                <div key={s.n} className="bg-ink text-cream border-4 border-ink chunk-shadow p-6">
-                  <p className="font-display text-5xl text-acid-yellow">{s.n}</p>
-                  <h3 className="font-display text-2xl mt-3">{s.title}</h3>
-                  <p className="mt-2 text-base text-cream/85">{s.body}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link
-                to="/events"
-                className="inline-block bg-ink text-cream font-display text-lg px-7 py-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
-              >
-                RSVP FREE →
-              </Link>
-              <a
-                href="https://wa.me/?text=Come%20to%20CCD%20%C3%97%20Social%20with%20me%20%E2%80%94%20https%3A%2F%2Fcatscandance.com%2Fccdxsocial"
-                target="_blank"
-                rel="noopener"
-                className="inline-block bg-cream text-ink font-display text-lg px-7 py-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
-              >
-                BRING A FRIEND →
-              </a>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FOR SPONSORS ── */}
-        <section className="bg-cream text-ink py-20 md:py-28 border-b-4 border-ink">
-          <div className="container grid lg:grid-cols-2 gap-12 items-start">
-            <div>
-              <p className="font-display text-sm text-magenta">/ FOR BRANDS</p>
-              <h2 className="font-display text-5xl md:text-7xl leading-[0.9] mt-3">
-                A NOTE FOR<br />SPONSORS.
+        {/* ── JUST PULL UP ── */}
+        <section className="bg-acid-yellow text-ink py-20 md:py-28 border-b-4 border-ink relative overflow-hidden">
+          <div className="container relative">
+            <Reveal>
+              <p className="font-display text-sm text-magenta">/ HOW TO JOIN</p>
+              <h2 className="font-display text-6xl md:text-8xl leading-[0.85] mt-3 max-w-4xl">
+                NO STEPS.<br />NO LISTS.<br /><span className="text-magenta">JUST PULL UP.</span>
               </h2>
-              <p className="mt-6 text-lg max-w-xl">
-                Want your brand at all four cities? We curate two to three partners per show — pet-first or culture-first,
-                always part of the room rather than a banner on it. One deck, four cities, one consistent audience.
+              <p className="mt-6 max-w-2xl text-lg md:text-xl">
+                RSVP free, show up Sunday, stay for the floor. Life's good. Pets and friends both welcome — no dress code, no cover, no nonsense.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.15}>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link
+                  to="/events"
+                  className="inline-block bg-ink text-cream font-display text-xl md:text-2xl px-8 py-5 border-4 border-ink chunk-shadow-lg hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-transform"
+                >
+                  RSVP FREE →
+                </Link>
+                <a
+                  href="https://wa.me/?text=Come%20to%20CCD%20%C3%97%20Social%20with%20me%20%E2%80%94%20https%3A%2F%2Fcatscandance.com%2Fccdxsocial"
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-block bg-cream text-ink font-display text-xl md:text-2xl px-8 py-5 border-4 border-ink chunk-shadow-lg hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-transform"
+                >
+                  BRING THE PACK →
+                </a>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── FOR BRANDS ── punchy */}
+        <section className="bg-ink text-cream py-20 md:py-28 border-b-4 border-ink">
+          <div className="container grid lg:grid-cols-2 gap-12 items-center">
+            <Reveal>
+              <p className="font-display text-sm text-acid-yellow">/ FOR BRANDS</p>
+              <h2 className="font-display text-5xl md:text-7xl leading-[0.85] mt-3">
+                4 CITIES.<br />4 SUNDAYS.<br /><span className="text-magenta">ONE AUDIENCE</span><br />THAT SHOWS UP.
+              </h2>
+              <p className="mt-6 text-lg md:text-xl max-w-xl text-cream/85">
+                Put your brand in the room — not on a banner outside it. We curate 2–3 partners per show. Pet-first or culture-first, always part of the experience.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   to="/ccdxsocial/sponsor"
-                  className="inline-block bg-magenta text-cream font-display text-lg px-7 py-4 border-4 border-ink chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
+                  className="inline-block bg-acid-yellow text-ink font-display text-lg md:text-xl px-7 py-4 border-4 border-cream chunk-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
                 >
-                  SEE SPONSOR TIERS →
+                  BECOME A PARTNER →
                 </Link>
                 <a
                   href="mailto:hello@catscandance.com?subject=CCD×SOCIAL Sponsorship"
-                  className="inline-block bg-ink text-cream font-display text-lg px-7 py-4 border-4 border-ink hover:bg-ink/90 transition-colors"
+                  className="inline-block bg-transparent text-cream font-display text-lg md:text-xl px-7 py-4 border-4 border-cream hover:bg-cream hover:text-ink transition-colors"
                 >
                   EMAIL US
                 </a>
               </div>
-            </div>
+            </Reveal>
 
-            <div className="grid gap-4">
-              {[
-                { label: "Tour Partner", desc: "All four cities — headline presence everywhere" },
-                { label: "City Sponsor", desc: "Own a single city end to end" },
-                { label: "Community Supporter", desc: "Light touch across the tour" },
-              ].map((t) => (
-                <Link
-                  key={t.label}
-                  to="/ccdxsocial/sponsor"
-                  className="flex items-center justify-between gap-4 bg-ink text-cream border-4 border-ink chunk-shadow p-5 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform"
-                >
-                  <div>
-                    <p className="font-display text-xl">{t.label}</p>
-                    <p className="text-sm text-cream/70 mt-1">{t.desc}</p>
-                  </div>
-                  <span className="font-display text-sm text-acid-yellow">ENQUIRE →</span>
-                </Link>
-              ))}
-            </div>
+            <Reveal delay={0.15}>
+              <div className="grid gap-4">
+                {[
+                  { label: "Tour Partner", desc: "All four cities — headline presence everywhere", bg: "bg-magenta" },
+                  { label: "City Sponsor", desc: "Own a single city end to end", bg: "bg-electric-blue" },
+                  { label: "Community Supporter", desc: "Light touch across the tour", bg: "bg-acid-yellow text-ink" },
+                ].map((t) => (
+                  <Link
+                    key={t.label}
+                    to="/ccdxsocial/sponsor"
+                    className={`flex items-center justify-between gap-4 ${t.bg} border-4 border-cream chunk-shadow p-5 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-transform`}
+                  >
+                    <div>
+                      <p className="font-display text-xl md:text-2xl">{t.label}</p>
+                      <p className="text-sm opacity-80 mt-1">{t.desc}</p>
+                    </div>
+                    <span className="font-display text-sm">ENQUIRE →</span>
+                  </Link>
+                ))}
+              </div>
+            </Reveal>
           </div>
         </section>
 
