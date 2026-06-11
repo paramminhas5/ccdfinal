@@ -130,7 +130,7 @@ const EXPECT = [
   {
     eyebrow: "4–8 PM",
     title: "THE AFTERNOON",
-    body: "Outdoor pet zone. Agility course, portrait booth, treat bar, vendor market, lookalike + best-dressed contests rotating each city. Bring your dog or just come hang.",
+    body: "Outdoor pet zone. Agility course, portrait booth, treat bar, vendor market, lookalike + best-dressed contests rotating each city. Bring your pet or just come hang.",
     bg: "bg-electric-blue",
     text: "text-cream",
     emoji: "🐾",
@@ -138,7 +138,7 @@ const EXPECT = [
   {
     eyebrow: "8 PM TILL LATE",
     title: "THE EVENING",
-    body: "Dance floor opens inside. House, disco, breaks, UKG, DnB. CCD residents plus a rotating guest selector in every city.",
+    body: "Dance floor opens inside. Residents + rotating guests, late till close.",
     bg: "bg-magenta",
     text: "text-cream",
     emoji: "🎧",
@@ -146,7 +146,7 @@ const EXPECT = [
   {
     eyebrow: "THE VIBE",
     title: "EASY SUNDAY",
-    body: "No dress code, no posture. Free water and treat stations all day. Come for the dogs, stay for the music — or the other way round.",
+    body: "No dress code, no posture. Free water and treat stations all day. Come for the pets, stay for the music — or the other way round.",
     bg: "bg-acid-yellow",
     text: "text-ink",
     emoji: "☀️",
@@ -344,45 +344,80 @@ export default function CcdxSocial() {
           </div>
         </section>
 
-        {/* ── ON THE DECKS / ARTISTS ── */}
+        {/* ── THE MUSIC ── */}
         <section className="bg-ink text-cream py-10 md:py-14 border-b-4 border-ink overflow-hidden">
           <div className="container">
             <Reveal>
-              <p className="font-display text-xs text-acid-yellow">/ ON THE DECKS</p>
+              <p className="font-display text-xs text-acid-yellow">/ THE MUSIC</p>
               <h2 className="font-display text-4xl md:text-5xl leading-[0.9] mt-2">
-                THE <span className="text-magenta">SELECTORS</span>.
+                WHAT YOU'LL <span className="text-magenta">HEAR</span>.
               </h2>
-              <p className="mt-3 max-w-2xl text-base text-cream/80">
-                Resident and guest selectors across the tour. Lineups announced city by city.
+              <p className="mt-3 max-w-xl text-base text-cream/80">
+                Easy in the day, proper after dark. Come for the pets, stay for the floor.
               </p>
+            </Reveal>
+
+            {/* Lineup shape: 4 slots per show */}
+            <Reveal delay={0.1}>
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: "OPEN DECK", sub: "Contest winner", bg: "bg-acid-yellow", text: "text-ink" },
+                  { label: "CCD RESIDENT", sub: "One of our own", bg: "bg-magenta", text: "text-cream" },
+                  { label: "LOCAL SELECTA", sub: "From the city", bg: "bg-electric-blue", text: "text-cream" },
+                  { label: "THE LEGEND", sub: "Closing the night", bg: "bg-cream", text: "text-ink" },
+                ].map((slot) => (
+                  <div
+                    key={slot.label}
+                    className={`${slot.bg} ${slot.text} border-4 border-cream chunk-shadow p-4`}
+                  >
+                    <p className="font-display text-base md:text-lg leading-tight">{slot.label}</p>
+                    <p className="text-xs mt-1 opacity-80">{slot.sub}</p>
+                  </div>
+                ))}
+              </div>
             </Reveal>
           </div>
 
-          <div className="mt-6 relative">
-            <motion.div
-              className="flex gap-3 whitespace-nowrap"
-              animate={{ x: ["0%", "-50%"] }}
-              transition={{ duration: 28, ease: "linear", repeat: Infinity }}
-            >
-              {[...ARTISTS, ...ARTISTS].map((a, i) => (
-                <span
-                  key={`${a}-${i}`}
-                  className={`font-display text-xl md:text-3xl px-4 py-2 border-4 border-cream chunk-shadow shrink-0 ${
-                    i % 3 === 0 ? "bg-acid-yellow text-ink" : i % 3 === 1 ? "bg-magenta text-cream" : "bg-electric-blue text-cream"
-                  }`}
-                >
-                  {a}
-                </span>
-              ))}
-            </motion.div>
+          {/* Artist marquee */}
+          <div className="mt-8">
+            <div className="container mb-3">
+              <p className="font-display text-xs text-cream/60">/ ARTISTS WE LOVE</p>
+            </div>
+            <div className="relative">
+              <motion.div
+                className="flex gap-3 whitespace-nowrap"
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ duration: 28, ease: "linear", repeat: Infinity }}
+              >
+                {[...ARTISTS, ...ARTISTS].map((a, i) => (
+                  <span
+                    key={`${a}-${i}`}
+                    className={`font-display text-xl md:text-3xl px-4 py-2 border-4 border-cream chunk-shadow shrink-0 ${
+                      i % 3 === 0 ? "bg-acid-yellow text-ink" : i % 3 === 1 ? "bg-magenta text-cream" : "bg-electric-blue text-cream"
+                    }`}
+                  >
+                    {a}
+                  </span>
+                ))}
+              </motion.div>
+            </div>
           </div>
 
-          <div className="container mt-6">
-            <p className="text-xs text-cream/60">
-              Genres on the floor: House · Disco · Breaks · UKG · DnB · Groove
-            </p>
+          {/* Genre chips */}
+          <div className="container mt-8">
+            <div className="flex flex-wrap gap-2">
+              {["House", "Disco", "Breaks", "UKG", "DnB", "Groove"].map((g) => (
+                <span
+                  key={g}
+                  className="font-display text-xs px-3 py-1 border-2 border-cream/60 text-cream/85"
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
           </div>
         </section>
+
 
         {/* ── THE TOUR · vertical city timeline ── */}
         <section id="tour" className="bg-electric-blue text-cream py-12 md:py-16 border-b-4 border-ink">
