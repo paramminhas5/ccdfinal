@@ -213,7 +213,7 @@ export default function CcdxSocial() {
         path="/ccdxsocial"
         jsonLd={jsonLd}
       />
-      <Nav forceScrolledStyle />
+      <Nav />
       <ScrollCats />
 
       <main className="bg-cream text-ink relative">
