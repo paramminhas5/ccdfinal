@@ -11,6 +11,7 @@ import ccdLogo from "@/assets/ccd-logo.png";
 const primaryLinks = [
   { to: "/about", label: "About" },
   { to: "/events", label: "Events" },
+  { to: "/ccdxsocial", label: "CCD × Social" },
   { to: "/artists", label: "Artists" },
   { to: "/promoters", label: "Promoters" },
   { to: "/shop", label: "Shop" },
