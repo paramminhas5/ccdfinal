@@ -33,6 +33,7 @@ import SubmitEvent from "./pages/SubmitEvent.tsx";
 import AuthorProfile from "./pages/AuthorProfile.tsx";
 import SceneHub from "./pages/SceneHub.tsx";
 import CcdxSocial from "./pages/CcdxSocial.tsx";
+import CcdxSocialProposal from "./pages/CcdxSocialProposal.tsx";
 import CcdxSocialSponsor from "./pages/CcdxSocialSponsor.tsx";
 import CatsCanCare from "./pages/CatsCanCare.tsx";
 import ArtistsPage from "./pages/Artists.tsx";
